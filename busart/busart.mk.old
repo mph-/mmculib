@@ -1,0 +1,11 @@
+FILES = busart.c
+
+busart.a: $(FILES:.c=.o)
+	$(AR) rv $@ $^
+
+%.o: $(DRIVER_DIR)/busart/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+# Include the dependency files.
+#-include busart.d
+

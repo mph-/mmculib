@@ -1,0 +1,6 @@
+GLCD_DIR = $(DRIVER_DIR)/glcd
+
+VPATH += $(GLCD_DIR)
+SRC += glcd.c
+
+INCLUDES += -I$(GLCD_DIR)

@@ -1,0 +1,86 @@
+TODO
+Convert files to use doxygen markup
+
+
+bits.h			Bit twidding macros
+busart.c		Buffered USART driver
+busart.h
+button.c		Button/switch debouncing
+button.h
+buttons.c		Multiple button/switch debouncing
+buttons.h
+chaser.c		Sequenced flashing, uses flasher
+chaser.h
+ds18b20.c		Dallas one wire temperature sensor driver
+ds18b20.h
+ds2450.c		Dallas one wire ADC driver
+ds2450.h
+dscrc16.c		Dallas one wire 16 bit CRC
+dscrc16.h
+dscrc8.c		Dallas one wire 8 bit CRC
+dscrc8.h
+flasher.c		Generalised software PWM/flashing support
+flasher.h
+flasher_tweak.c		Run-time flasher manipulation
+flasher_tweak.h
+font.h			Font definition
+isqrt16.c		16 bit integer square root
+isqrt32.c		32 bit integer square root
+lcd.c			HD44780/KS0066 LCD driver
+lcd.h				
+led.c			Simple LED driver
+led_flash.c		LED flashing support
+led_flash.h
+led.h
+lmatrix.c		LED matrix driver
+lmatrix.h
+mmelody.c		Interpret and sequence monophonic melodies.
+mmelody.h
+mpwm.c
+mpwm.h
+mtext.c			Moving text driver
+mtext.h
+muxleds.c		Multiplexed LED driver
+muxleds.h
+nmea.c			NMEA string printing
+nmea.h
+nrf2401.c		Nordic RF driver
+nrf2401.h
+nrf_config.h
+pga.c			Microchip PGA driver
+pga.h		
+piezo_beep.c		Piezo beep routines
+piezo_beep.h
+piezo.c			Simple piezo driver
+piezo.h
+rf.c			Generalised RF driver
+rf.h
+rf_master.c		Generalised RF master support
+rf_slave.c		Generalised RF slave support
+ring.c			Ring buffer
+ring.h
+scroller.c		Bit-mapped text scroller
+scroller.h
+s_eeprom.c		SPI EEPROM driver
+s_eeprom.h
+seq.c			Simple sequencer
+seq.h
+spwm.c
+spwm.h
+squeaker.c		Simple monophonic tune player
+squeaker.h
+stext.c			Simple text scroller (use mtext now)
+stext.h
+ticker.c		Simple polled timer
+ticker.h
+tweeter.c		PWM control of a piezo tweeter
+tweeter.h
+u1wire.c		Dallas universal one wire bus support
+u1wire_debug.c		Dallas universal one wire bus debugging
+u1wire_discover.c       Dallas universal one wire bus device discovery
+u1wire_discover.h
+u1wire.h
+uint16toa.c		16-bit unsigned integer -> ASCII
+uint16toa.h
+uint8toa.c		8-bit unsigned integer -> ASCII
+uint8toa.h

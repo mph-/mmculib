@@ -1,0 +1,12 @@
+Need new SPI driver
+
+/* This stores driver info.  */
+spi_info_t info
+
+spi = spi_init (&info)
+
+
+spi_select (spi)
+
+spi_deselect (spi)
+
