@@ -95,7 +95,7 @@ glcd_send (glcd_t glcd, char ch)
 
 
 void
-glcd_backlight_enable (glcd_t glcd)
+glcd_backlight_enable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT_PORT
     port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
@@ -105,7 +105,7 @@ glcd_backlight_enable (glcd_t glcd)
 
 
 void
-glcd_backlight_disable (glcd_t glcd)
+glcd_backlight_disable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT_PORT
     port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
