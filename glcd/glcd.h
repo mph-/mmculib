@@ -60,6 +60,14 @@ extern void
 glcd_contrast_set (glcd_t glcd, uint8_t contrast);
 
 
+extern void
+glcd_backlight_enable (glcd_t glcd);
+
+
+extern void
+glcd_backlight_disable (glcd_t glcd);
+
+
 /* CFG is points to configuration data specified by GLCD_CFG to
    define the port the GLCD is connected to.  The returned handle is
    passed to the other glcd_xxx routines to denote the GLCD to

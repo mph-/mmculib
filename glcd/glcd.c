@@ -94,6 +94,26 @@ glcd_send (glcd_t glcd, char ch)
 }
 
 
+void
+glcd_backlight_enable (glcd_t glcd)
+{
+#ifdef GLCD_BACKLIGHT_PORT
+    port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+    port_pin_set_high (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+#endif
+}
+
+
+void
+glcd_backlight_disable (glcd_t glcd)
+{
+#ifdef GLCD_BACKLIGHT_PORT
+    port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+    port_pin_set_low (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+#endif
+}
+
+
 static void
 glcd_config (glcd_t glcd)
 {
