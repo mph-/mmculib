@@ -1,4 +1,4 @@
-/** @file   draw.c
+/** @file   mdraw.c
     @author M. P. Hayes, UCECE
     @date   16 February 2008
     @brief  Simple drawing routines for GLCD.
