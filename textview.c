@@ -34,7 +34,7 @@ textview_clear (textview_t this)
     this->row = 0;
     this->col = 0;
 
-    textview_redraw (this);
+    glcd_clear (this->data);
 }
 
 
