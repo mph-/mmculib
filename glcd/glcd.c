@@ -203,6 +203,7 @@ glcd_init (glcd_obj_t *obj, const glcd_cfg_t *cfg)
     glcd->spi = spi_init (&spi_cfg);
 
 #ifdef GLCD_RESET_BIT
+    port_pin_configure_output (GLCD_RESET_PORT, GLCD_RESET_BIT);
     port_pin_set_high (GLCD_RESET_PORT, GLCD_RESET_BIT);
     port_pin_set_low (GLCD_RESET_PORT, GLCD_RESET_BIT);
     /* Minimum reset pulse is 900 ns.  */
