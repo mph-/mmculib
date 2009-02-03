@@ -1,0 +1,6 @@
+PULSER_DIR = $(DRIVER_DIR)/pulser
+
+VPATH += $(PULSER_DIR)
+SRC += pulser.c
+
+INCLUDES += -I$(PULSER_DIR)
