@@ -206,8 +206,9 @@ glcd_init (glcd_obj_t *obj, const glcd_cfg_t *cfg)
     port_pin_config_output (GLCD_RESET_PORT, GLCD_RESET_BIT);
     port_pin_set_high (GLCD_RESET_PORT, GLCD_RESET_BIT);
     port_pin_set_low (GLCD_RESET_PORT, GLCD_RESET_BIT);
-    /* Minimum reset pulse is 900 ns.  */
-    DELAY_US (2);
+    /* Minimum reset pulse is 900 ns but for some reason
+       the signal is slow (probably because of 47 k series resistor.  */
+    DELAY_US (5);
     port_pin_set_high (GLCD_RESET_PORT, GLCD_RESET_BIT);
 #endif
 
