@@ -11,7 +11,7 @@
 
 
 typedef void (* textview_pixel_set_t) (void *data, uint8_t col, uint8_t row,
-                                        uint8_t val);
+                                       uint8_t val);
 
 typedef void (* textview_update_t) (void *data);
 

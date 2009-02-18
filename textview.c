@@ -1,7 +1,8 @@
 /** @file   textview.c
     @author M. P. Hayes, UCECE
     @date   16 February 2008
-    @brief  Simple text viewing routines for GLCD.
+    @brief  Simple text viewing routines for GLCD.  This module implements
+            a scrolling character display.
 */
 
 #include "textview.h"
