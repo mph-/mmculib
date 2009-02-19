@@ -49,11 +49,11 @@ menu_show (void)
 
 /* Display a new menu, saving previous menu to return to later.  */
 bool
-menu_display (menu_t *menu, int index)
+menu_display (menu_t *menu)
 {
     menu->parent = menu_data.current;
     menu_data.current = menu;
-    menu->index = index;
+    menu->index = 0;
     menu->pointer = 0;
     menu_show ();
     return 0;
@@ -73,9 +73,9 @@ menu_quit (void)
 }
 
 
-/* Select an item in a menu.  */
+/* Go to an item in a menu.  */
 void 
-menu_select (int index)
+menu_goto (int index)
 {
     if (index > menu_data.current->size)
         index = menu_data.current->size - 1;
@@ -89,7 +89,7 @@ menu_select (int index)
 
 /* Perform action for current menu item.  */
 void 
-menu_do (void)
+menu_select (void)
 {
     if (!menu_data.current->items[menu_data.current->index].action
         || menu_data.current->items[menu_data.current->index].action ())
@@ -97,7 +97,7 @@ menu_do (void)
 }
 
 
-/* Select next menu item.  */
+/* Go to next menu item.  */
 void 
 menu_next (void)
 {
@@ -118,7 +118,7 @@ menu_next (void)
 }
 
 
-/* Select previous menu item.  */
+/* Go to previous menu item.  */
 void 
 menu_prev (void)
 {

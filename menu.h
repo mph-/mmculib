@@ -1,5 +1,13 @@
+/** @file   menu.h
+    @author M. P. Hayes, UCECE
+    @date   19 February 2009
+    @brief  Menu support.
+*/
+
+#ifndef MENU_H
+#define MENU_H
+
 #include "config.h"
-#include <stdio.h>
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(ARRAY) (sizeof(ARRAY) / sizeof (ARRAY[0]))
@@ -29,29 +37,32 @@ typedef struct menu_struct
 } menu_t;
 
 
-typedef int menu_iter_t;
-
-
+/* Move to previous menu item.  */
 extern void
 menu_prev (void);
 
 
+/* Move to next menu item.  */
 extern void
 menu_next (void);
 
 
+/* Go to selected menu item.  */
+extern void 
+menu_goto (int index);
+
+
+/* Select current menu item.  */
 extern void
-menu_do (void);
+menu_select (void);
 
 
+/* Quit current menu and return to parent menu.  */
 extern void
 menu_quit (void);
 
 
-extern void 
-menu_select (int index);
-
-
+/* Display a new menu.  */
 extern bool
 menu_display (menu_t *menu);
 
@@ -61,3 +72,4 @@ menu_init (menu_t *menu, int index, int rows,
            void (*display)(const char *title, int row,
                            const char *item_name, bool highlight));
 
+#endif
