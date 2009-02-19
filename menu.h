@@ -67,6 +67,25 @@ extern bool
 menu_display (menu_t *menu);
 
 
+/* Display current menu.  */
+extern void
+menu_show (void);
+
+
+/* Get current index for menu; useful for saving menu options.  */
+static inline uint8_t
+menu_index_get (menu_t *menu)
+{
+    return menu->index;
+}
+
+
+/* Set current index for menu and execute action; useful for restoring
+   menu options.  */
+extern void
+menu_index_set (menu_t *menu, uint8_t index);
+
+
 extern void 
 menu_init (menu_t *menu, int index, int rows,
            void (*display)(const char *title, int row,

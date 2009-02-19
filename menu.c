@@ -53,8 +53,6 @@ menu_display (menu_t *menu)
 {
     menu->parent = menu_data.current;
     menu_data.current = menu;
-    menu->index = 0;
-    menu->pointer = 0;
     menu_show ();
     return 0;
 }
@@ -66,7 +64,11 @@ menu_quit (void)
 {
     /* Can't exit main menu.  */
     if (!menu_data.current->parent)
+    {
+        /* Redraw.  */
+        menu_show ();
         return;
+    }
 
     menu_data.current = menu_data.current->parent;
     menu_show ();
@@ -83,7 +85,23 @@ menu_goto (int index)
         index = 0;
 
     menu_data.current->index = index;
+    menu_data.current->pointer = min (index, menu_data.rows);
     menu_show ();
+}
+
+
+void
+menu_index_set (menu_t *menu, uint8_t index)
+{
+    /* Handle bogus values.  */
+    if (index >= menu->size)
+        index = 0;
+
+    menu->index = index;
+    menu->pointer = min (index, menu_data.rows);
+
+    if (menu->items[menu->index].action)
+        menu->items[menu->index].action ();
 }
 
 
@@ -154,5 +172,4 @@ menu_init (menu_t *menu, int index, int rows,
     menu_data.style = MENU_STYLE_SCROLL;
     menu_data.display = display;
     menu->index = index;
-    menu_show ();
 }
