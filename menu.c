@@ -162,6 +162,13 @@ void menu_style_set (menu_style_t style)
 }
 
 
+menu_t *
+menu_current_get (void)
+{
+    return menu_data.current;
+}
+
+
 void 
 menu_init (menu_t *menu, int index, int rows,
            void (*display)(const char *title, int row,

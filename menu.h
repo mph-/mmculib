@@ -80,10 +80,28 @@ menu_index_get (menu_t *menu)
 }
 
 
+static inline const char *
+menu_title_get (menu_t *menu)
+{
+    return menu->title;
+}
+
+
+static inline const char *
+menu_item_name_get (menu_t *menu, int item)
+{
+    return menu->items[item].name;
+}
+
+
 /* Set current index for menu and execute action; useful for restoring
    menu options.  */
 extern void
 menu_index_set (menu_t *menu, uint8_t index);
+
+
+extern menu_t *
+menu_current_get (void);
 
 
 extern void 
