@@ -57,6 +57,10 @@ extern void
 flashheap_stats (flashheap_t heap, flashheap_stats_t *pstats);
 
 
+extern bool
+flashheap_erase (flashheap_t heap);
+
+
 extern flashheap_t
 flashheap_init (flashheap_addr_t offset,
                 flashheap_size_t size,

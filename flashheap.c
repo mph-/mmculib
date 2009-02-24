@@ -195,18 +195,30 @@ flashheap_stats (flashheap_t heap, flashheap_stats_t *pstats)
 }
 
 
+bool
+flashheap_erase (flashheap_t heap)
+{
+    flashheap_packet_t packet;
+
+    /* Create one large empty packet.  */
+    packet.size = -(heap->size - sizeof (packet));
+
+    if (heap->write (heap->dev, heap->offset, &packet,
+                     sizeof (packet)) != sizeof (packet))
+        return 0;
+
+    return 1;
+}
+
+
 flashheap_t
 flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
                 void *dev, flashheap_read_t read,
                 flashheap_write_t write)
 {
-    flashheap_packet_t packet;
     flashheap_t heap;
 
     /* Note offset cannot be zero.  */
-
-    /* Create one large empty packet.  */
-    packet.size = -(size - sizeof (packet));
 
     heap = &heap_data;
     heap->dev = dev;
@@ -214,10 +226,6 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
     heap->write = write;
     heap->offset = offset;
     heap->size = size;
-
-    if (heap->write (dev, offset, &packet,
-                     sizeof (packet)) != sizeof (packet))
-        return 0;
 
     return heap;
 }
