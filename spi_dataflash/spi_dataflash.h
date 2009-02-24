@@ -53,7 +53,7 @@ typedef int32_t spi_dataflash_ret_t;
 
 extern spi_dataflash_ret_t
 spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                    uint8_t *buffer, spi_dataflash_size_t len);
+                    void *buffer, spi_dataflash_size_t len);
 
 
 extern spi_dataflash_ret_t
