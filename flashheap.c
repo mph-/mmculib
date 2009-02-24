@@ -26,6 +26,16 @@ typedef bool
 
 static flashheap_dev_t heap_data;
 
+
+static bool
+flashheap_packet_read (flashheap_t heap, flashheap_addr_t addr, 
+                       flashheap_packet_t *ppacket)
+{
+    return heap->read (heap->dev, addr, ppacket, sizeof (*ppacket))
+        == sizeof (*ppacket);
+}
+
+
 bool
 flashheap_free (flashheap_t heap, void *ptr)
 {
@@ -45,8 +55,7 @@ flashheap_free (flashheap_t heap, void *ptr)
     /* Linear search through heap looking for desired packet.  */
     while (addr < heap->offset + heap->size)
     {
-        if (heap->read (heap->dev, addr, &packet,
-                        sizeof (packet)) != sizeof (packet))
+        if (!flashheap_packet_read (heap, addr, &packet))
             return 0;
 
         if (addr == desired)
@@ -66,8 +75,7 @@ flashheap_free (flashheap_t heap, void *ptr)
     packet.size = -packet.size;
 
     next_addr = addr + abs (packet.size) + sizeof (packet);
-    if (heap->read (heap->dev, next_addr, &next_packet,
-                    sizeof (next_packet)) != sizeof (next_packet))
+    if (!flashheap_packet_read (heap, next_addr, &next_packet))
         return 0;
     
     if (prev_packet.size < 0 && next_packet.size < 0)
@@ -107,8 +115,7 @@ flashheap_alloc (flashheap_t heap, flashheap_size_t size)
 
     while (addr < heap->offset + heap->size)
     {
-        if (heap->read (heap->dev, addr, &packet,
-                        sizeof (packet)) != sizeof (packet))
+        if (!flashheap_packet_read (heap, addr, &packet))
             return 0;
         
         if (packet.size < 0 && size <= -packet.size)
@@ -154,8 +161,7 @@ flashheap_walk (flashheap_t heap, flashheap_addr_t addr,
     for (; addr < heap->offset + heap->size;
          addr += abs (packet.size) + sizeof (packet))
     {
-        if (heap->read (heap->dev, addr, &packet,
-                        sizeof (packet)) != sizeof (packet))
+        if (!flashheap_packet_read (heap, addr, &packet))
             return 0;
 
         if (callback (addr, &packet, arg))
@@ -177,7 +183,7 @@ flashheap_alloc_p (flashheap_addr_t addr, flashheap_packet_t *ppacket,
 
 
 void *
-flashheap_first_alloc (flashheap_t heap)
+flashheap_alloc_first (flashheap_t heap)
 {
     flashheap_addr_t addr;
 
@@ -189,15 +195,14 @@ flashheap_first_alloc (flashheap_t heap)
 
 
 void *
-flashheap_next_alloc (flashheap_t heap, void *ptr)
+flashheap_alloc_next (flashheap_t heap, void *ptr)
 {
     flashheap_addr_t addr;
     flashheap_packet_t packet;
 
     addr = (flashheap_addr_t) ptr;
     
-    if (heap->read (heap->dev, addr, &packet,
-                    sizeof (packet)) != sizeof (packet))
+    if (!flashheap_packet_read (heap, addr, &packet))
         return 0;
 
     addr += abs (packet.size);
@@ -209,8 +214,26 @@ flashheap_next_alloc (flashheap_t heap, void *ptr)
 }
 
 
+flashheap_size_t
+flashheap_alloc_size (flashheap_t heap, void *ptr)
+{
+    flashheap_packet_t packet;
+    flashheap_addr_t addr;
+
+    addr = (flashheap_addr_t) ptr;
+    
+    if (!flashheap_packet_read (heap, addr, &packet))
+        return 0;
+    
+    if (packet.size < 0)
+        return 0;
+    
+    return packet.size;
+}
+
+
 static bool
-flashheap_stats_helper (flashheap_addr_t addr __UNUSED__,
+flashheap_stats_helper (flashheap_addr_t addr,
                         flashheap_packet_t *ppacket, 
                         void *arg)
 {

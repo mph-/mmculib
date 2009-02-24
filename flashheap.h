@@ -54,12 +54,15 @@ flashheap_alloc (flashheap_t heap, flashheap_size_t size);
 
 
 extern void *
-flashheap_first_alloc (flashheap_t heap);
+flashheap_alloc_first (flashheap_t heap);
 
 
 extern void *
-flashheap_next_alloc (flashheap_t heap, void *ptr);
+flashheap_alloc_next (flashheap_t heap, void *ptr);
 
+
+extern flashheap_size_t
+flashheap_alloc_size (flashheap_t heap, void *ptr);
 
 extern void
 flashheap_stats (flashheap_t heap, flashheap_stats_t *pstats);
