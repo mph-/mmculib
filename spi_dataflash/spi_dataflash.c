@@ -129,6 +129,28 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 }
 
 
+/** Read from dataflash using a scatter approach to a vector of
+    descriptors.  */
+spi_dataflash_ret_t
+spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
+                     iovec_t *iov, iovec_count_t iov_count)
+{
+    int i;
+    iovec_size_t size;
+
+    size = 0;
+    for (i = 0; i < iov_count; i++)
+    {
+        /* FIXME for error handling.  */
+        spi_dataflash_read (dev, addr, iov[i].data, iov[i].len);
+        size += iov[i].len;
+        addr += iov[i].len;
+    }
+    return size;
+}
+
+
+
 /** Write to dataflash using a gather approach from a vector of
     descriptors.  The idea is to coalesce writes to ther dataflash
     to minimise the number of erase operations.  */

@@ -33,8 +33,12 @@ static bool
 flashheap_packet_read (flashheap_t heap, flashheap_addr_t addr, 
                        flashheap_packet_t *ppacket)
 {
-    return heap->read (heap->dev, addr, ppacket, sizeof (*ppacket))
-        == sizeof (*ppacket);
+    iovec_t iov;
+
+    iov.data = ppacket;
+    iov.len = sizeof (*ppacket);
+
+    return heap->readv (heap->dev, addr, &iov, 1) == sizeof (*ppacket);
 }
 
 
@@ -63,7 +67,7 @@ flashheap_free (flashheap_t heap, void *ptr)
     flashheap_addr_t addr;
     flashheap_addr_t desired;
 
-    desired = (flashheap_addr_t)ptr;
+    desired = (flashheap_addr_t)ptr - sizeof (packet);
     prev_addr = 0;
     addr = heap->offset;
     prev_packet.size = 0;
@@ -120,12 +124,15 @@ flashheap_free (flashheap_t heap, void *ptr)
 }
 
 
+/** This allocates a packet and writes data at the same time.  If
+    iov[0].data is NULL then only a packet is allocated.  */
 void *
 flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 {
     flashheap_packet_t packet;
     flashheap_addr_t addr;
     iovec_size_t size;
+    iovec_t iov2[2];
     int i;
 
     addr = heap->offset;
@@ -134,6 +141,8 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
     size = 0;
     for (i = 0; i < iov_count; i++)
         size += iov[i].len;
+
+    /* What about allocating a zero sized packet?  */
 
     while (addr < heap->offset + heap->size)
     {
@@ -160,11 +169,29 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
             
             packet.size = size;
             
+            iov2[0].data = &packet;
+            iov2[0].len = sizeof (packet);
+            if (iov[0].data)
+            {
+                iov2[1] = iov[0];
+                /*  Write the packet header and first lot of data.  */
+                heap->writev (heap->dev, addr, iov2, 2);
+
+                /* Write other lots of data if required.  */
+                if (iov_count > 1)
+                    heap->writev (heap->dev, addr, iov + 1, iov_count - 1);
+            }
+            else
+            {
+                /* Just write the packet header.  */
+                heap->writev (heap->dev, addr, iov2, 1);
+            }
+
             if (!flashheap_packet_write (heap, addr, &packet))
                 return 0;
 
             heap->last = addr;
-            return (void *)addr;
+            return (void *)addr + sizeof (packet);
         }
         /* Skip to start of next packet.  */
         addr += abs (packet.size) + sizeof (packet);
@@ -317,7 +344,7 @@ flashheap_alloc (flashheap_t heap, flashheap_size_t size)
 
 flashheap_t
 flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
-                void *dev, flashheap_read_t read,
+                void *dev, flashheap_readv_t readv,
                 flashheap_writev_t writev)
 {
     flashheap_t heap;
@@ -326,7 +353,7 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
 
     heap = &heap_data;
     heap->dev = dev;
-    heap->read = read;
+    heap->readv = readv;
     heap->writev = writev;
     heap->offset = offset;
     heap->size = size;

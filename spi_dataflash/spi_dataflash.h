@@ -66,6 +66,13 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                       iovec_t *iov, iovec_count_t iov_count);
 
 
+/** Read from dataflash using a scatter approach to a vector of
+    descriptors.  */
+extern spi_dataflash_ret_t
+spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
+                     iovec_t *iov, iovec_count_t iov_count);
+
+
 extern spi_dataflash_ret_t
 spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                      const void *buffer, spi_dataflash_size_t len);

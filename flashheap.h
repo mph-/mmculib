@@ -15,7 +15,7 @@ typedef int32_t flashheap_size_t;
 typedef int32_t flashheap_addr_t;
 
 typedef flashheap_size_t
-(*flashheap_read_t)(void *dev, flashheap_addr_t addr,
+(*flashheap_readv_t)(void *dev, flashheap_addr_t addr,
                     void *buffer, flashheap_size_t len);
 
 
@@ -29,7 +29,7 @@ typedef struct
     flashheap_size_t size;
     flashheap_addr_t last;
     void *dev;
-    flashheap_read_t read;
+    flashheap_readv_t readv;
     flashheap_writev_t writev;
 } flashheap_dev_t;
 
@@ -65,6 +65,7 @@ flashheap_alloc_next (flashheap_t heap, void *ptr);
 extern flashheap_size_t
 flashheap_alloc_size (flashheap_t heap, void *ptr);
 
+
 extern void
 flashheap_stats (flashheap_t heap, flashheap_stats_t *pstats);
 
@@ -73,10 +74,22 @@ extern bool
 flashheap_erase (flashheap_t heap);
 
 
+/** This is the principle function; it allocates a packet in flash,
+    writes a vector of data, and returns a pointer to the first byte
+    of the data or NULL for failure.  */
+extern void *
+flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count);
+
+
+extern void *
+flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
+                 iovec_count_t iov_count);
+
+
 extern flashheap_t
 flashheap_init (flashheap_addr_t offset,
                 flashheap_size_t size,
-                void *dev, flashheap_read_t read,
+                void *dev, flashheap_readv_t readv,
                 flashheap_writev_t writev);
 
 #endif
