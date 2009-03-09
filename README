@@ -104,7 +104,7 @@ foo_write (foo_t dev, foo_addr_t addr, const void *buffer, foo_size_t len);
 
 
 extern foo_ret_t
-foo_writev (foo_t dev, foo_addr_t addr, foo_iovec_t *iov, int iov_count);
+foo_writev (foo_t dev, foo_addr_t addr, iovec_t *iov, iovec_count_t iov_count);
 
 
 

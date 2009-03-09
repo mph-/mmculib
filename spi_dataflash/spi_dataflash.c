@@ -134,7 +134,7 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     to minimise the number of erase operations.  */
 spi_dataflash_ret_t
 spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                      spi_dataflash_iovec_t *iov, int iov_count)
+                      iovec_t *iov, iov_count_t iov_count)
 {
     spi_dataflash_page_t page;
     spi_dataflash_offset_t offset;
@@ -266,7 +266,7 @@ spi_dataflash_ret_t
 spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                      const void *buffer, spi_dataflash_size_t len)
 {
-    spi_dataflash_iovec_t iov;
+    iovec_t iov;
 
     iov.data = buffer;
     iov.len = len;

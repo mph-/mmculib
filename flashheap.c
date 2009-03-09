@@ -38,6 +38,20 @@ flashheap_packet_read (flashheap_t heap, flashheap_addr_t addr,
 }
 
 
+
+static bool
+flashheap_packet_write (flashheap_t heap, flashheap_addr_t addr, 
+                        flashheap_packet_t *ppacket)
+{
+    iovec_t iov;
+
+    iov.data = ppacket;
+    iov.len = sizeof (*ppacket);
+
+    return heap->writev (heap->dev, addr, &iov, 1) == sizeof (*ppacket);
+}
+
+
 bool
 flashheap_free (flashheap_t heap, void *ptr)
 {
@@ -99,8 +113,7 @@ flashheap_free (flashheap_t heap, void *ptr)
         addr = prev_addr;
     }
 
-    if (heap->write (heap->dev, addr, &packet,
-                     sizeof (packet)) != sizeof (packet))
+    if (!flashheap_packet_write (heap, addr, &packet))
         return 0;
 
     return 1;
@@ -108,12 +121,19 @@ flashheap_free (flashheap_t heap, void *ptr)
 
 
 void *
-flashheap_alloc (flashheap_t heap, flashheap_size_t size)
+flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 {
     flashheap_packet_t packet;
     flashheap_addr_t addr;
+    iovec_size_t size;
+    int i;
 
     addr = heap->offset;
+
+    /* Determine total number of bytes to write.  */
+    size = 0;
+    for (i = 0; i < iov_count; i++)
+        size += iov[i].len;
 
     while (addr < heap->offset + heap->size)
     {
@@ -122,24 +142,26 @@ flashheap_alloc (flashheap_t heap, flashheap_size_t size)
         
         if (packet.size < 0 && size <= -packet.size)
         {
-            /* Have a free packet so need to split.  */
+            /* Have found a free packet.  */
             if (size != -packet.size)
             {
                 flashheap_packet_t new_packet;
                 flashheap_addr_t new_addr;
 
+                /* The packet is bigger than required so create
+                   a new empty packet.  */
+
                 new_addr = addr + sizeof (packet) + size;
                 new_packet.size = -(-packet.size - size - sizeof (packet));
 
-                if (heap->write (heap->dev, new_addr, &new_packet,
-                                 sizeof (new_packet)) != sizeof (new_packet))
+                if (!flashheap_packet_write (heap, new_addr, &new_packet))
                     return 0;
             }
-
+            
             packet.size = size;
-            if (heap->write (heap->dev, addr, &packet,
-                             sizeof (packet)) != sizeof (packet))
-                return 0;            
+            
+            if (!flashheap_packet_write (heap, addr, &packet))
+                return 0;
 
             heap->last = addr;
             return (void *)addr;
@@ -278,18 +300,25 @@ flashheap_erase (flashheap_t heap)
     /* Create one large empty packet.  */
     packet.size = -(heap->size - sizeof (packet));
 
-    if (heap->write (heap->dev, heap->offset, &packet,
-                     sizeof (packet)) != sizeof (packet))
-        return 0;
+    return flashheap_packet_write (heap, heap->offset, &packet);
+}
 
-    return 1;
+
+void *
+flashheap_alloc (flashheap_t heap, flashheap_size_t size)
+{
+    iovec_t iov;
+
+    iov.data = NULL;
+    iov.len = size;
+    return flashheap_writev (heap, &iov, 1);
 }
 
 
 flashheap_t
 flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
                 void *dev, flashheap_read_t read,
-                flashheap_write_t write)
+                flashheap_writev_t writev)
 {
     flashheap_t heap;
 
@@ -298,7 +327,7 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
     heap = &heap_data;
     heap->dev = dev;
     heap->read = read;
-    heap->write = write;
+    heap->writev = writev;
     heap->offset = offset;
     heap->size = size;
 

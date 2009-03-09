@@ -9,6 +9,7 @@
 #define FLASHHEAP_H
 
 #include "config.h"
+#include "iovec.h"
 
 typedef int32_t flashheap_size_t;
 typedef int32_t flashheap_addr_t;
@@ -19,8 +20,8 @@ typedef flashheap_size_t
 
 
 typedef flashheap_size_t 
-(*flashheap_write_t)(void *dev, flashheap_addr_t addr,
-                     const void *buffer, flashheap_size_t len);
+(*flashheap_writev_t)(void *dev, flashheap_addr_t addr,
+                      iovec_t *iov, iovec_count_t iovcount);
 
 typedef struct
 {
@@ -29,7 +30,7 @@ typedef struct
     flashheap_addr_t last;
     void *dev;
     flashheap_read_t read;
-    flashheap_write_t write;
+    flashheap_writev_t writev;
 } flashheap_dev_t;
 
 
@@ -76,6 +77,6 @@ extern flashheap_t
 flashheap_init (flashheap_addr_t offset,
                 flashheap_size_t size,
                 void *dev, flashheap_read_t read,
-                flashheap_write_t write);
+                flashheap_writev_t writev);
 
 #endif

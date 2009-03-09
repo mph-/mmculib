@@ -10,6 +10,7 @@
 
 
 #include "config.h"
+#include "iovec.h"
 #include "port.h"
 #include "spi.h"
 
@@ -51,12 +52,6 @@ typedef uint32_t spi_dataflash_addr_t;
 typedef uint32_t spi_dataflash_size_t;
 typedef int32_t spi_dataflash_ret_t;
 
-typedef struct spi_dataflash_iovec
-{
-    void *data;
-    spi_dataflash_size_t len;
-} spi_dataflash_iovec_t;
-
 
 extern spi_dataflash_ret_t
 spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
@@ -68,7 +63,7 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     to minimise the number of erase operations.  */
 extern spi_dataflash_ret_t
 spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                      spi_dataflash_iovec_t *iov, int iov_count);
+                      iovec_t *iov, iovec_count_t iov_count);
 
 
 extern spi_dataflash_ret_t
