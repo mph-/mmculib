@@ -1,9 +1,9 @@
-/** @file flashheap.h
- *  @author Michael Hayes
- *  @date 23 February 2009
- * 
- *  @brief Routines to implement a heap in a dataflash memory.
- */
+/** @file   flashheap.h
+    @author Michael Hayes
+    @date   23 February 2009
+    @brief  Routines to implement a heap in a dataflash memory
+            with wear-levelling.
+*/
  
 #ifndef FLASHHEAP_H
 #define FLASHHEAP_H

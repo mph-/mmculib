@@ -1,15 +1,17 @@
-/** @file flashheap.c
- *  @author Michael Hayes
- *  @date 23 February 2009
- * 
- *  @brief Routines to implement a heap in a dataflash memory.
- */
+/** @file   flashheap.c
+    @author Michael Hayes
+    @date   23 February 2009
+    @brief  Routines to implement a heap in a dataflash memory
+            with wear-levelling.
+*/
 
 #include <flashheap.h>
 #include <stdlib.h>
 
 /* The goals of this code is to implement a heap within flash memory
-   and to minimise writes.  */
+   and to minimise writes.  Some flash devices have a more robust first block
+   but we don't assume this.
+*/
 
 
 typedef struct
@@ -201,6 +203,9 @@ flashheap_alloc_next (flashheap_t heap, void *ptr)
     flashheap_packet_t packet;
 
     addr = (flashheap_addr_t) ptr;
+
+    if (!addr)
+        return flashheap_alloc_first (heap);
     
     if (!flashheap_packet_read (heap, addr, &packet))
         return 0;

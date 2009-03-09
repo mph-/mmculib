@@ -84,3 +84,27 @@ uint16toa.c		16-bit unsigned integer -> ASCII
 uint16toa.h
 uint8toa.c		8-bit unsigned integer -> ASCII
 uint8toa.h
+
+
+Device driver API guidelines:
+
+Each driver should support the following block read/write functions
+where the addr parameter is optional.  Note the buffer is type void *
+so that any object can be read/written without casting.  Len is the
+transfer size in bytes.  The return value is the actual number of bytes
+read or written.  Dev is a handle created by foo_init.
+
+
+extern foo_ret_t
+foo_read (foo_t dev, foo_addr_t addr, void *buffer, foo_size_t len);
+
+
+extern foo_ret_t
+foo_write (foo_t dev, foo_addr_t addr, const void *buffer, foo_size_t len);
+
+
+extern foo_ret_t
+foo_writev (foo_t dev, foo_addr_t addr, foo_iovec_t *iov, int iov_count);
+
+
+

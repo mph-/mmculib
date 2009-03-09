@@ -51,14 +51,30 @@ typedef uint32_t spi_dataflash_addr_t;
 typedef uint32_t spi_dataflash_size_t;
 typedef int32_t spi_dataflash_ret_t;
 
+typedef struct spi_dataflash_iovec
+{
+    void *data;
+    spi_dataflash_size_t len;
+} spi_dataflash_iovec_t;
+
+
 extern spi_dataflash_ret_t
 spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                     void *buffer, spi_dataflash_size_t len);
 
 
+/** Write to dataflash using a gather approach from a vector of
+    descriptors.  The idea is to coalesce writes to the dataflash
+    to minimise the number of erase operations.  */
+extern spi_dataflash_ret_t
+spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
+                      spi_dataflash_iovec_t *iov, int iov_count);
+
+
 extern spi_dataflash_ret_t
 spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                      const void *buffer, spi_dataflash_size_t len);
+
 
 extern spi_dataflash_t
 spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg);

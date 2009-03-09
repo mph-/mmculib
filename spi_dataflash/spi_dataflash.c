@@ -7,12 +7,13 @@
 /* The AT45DB041D uses SPI modes 0 and 3.  The page size is
    configurable 256/264 bytes.  Parts are usually shipped with the
    page size set to 264 bytes but can be reconfigured to 256 bytes.
-   Reconfiguring can only be done once.  All program operations are in
-   terms of pages.  A page, block (2 KB), sector (64 KB), or entire
-   chip can be erased.  A sector is 256 pages while a block is 8
-   pages.  It has two internal SRAM buffers that can be used for
-   holding a page each so that external memory is not required when
-   programming.
+   The additional 8 bytes are usually used for error detection and
+   correction.  Reconfiguring can only be done once.  All program
+   operations are in terms of pages.  A page, block (2 KB), sector (64
+   KB), or entire chip can be erased.  A sector is 256 pages while a
+   block is 8 pages.  It has two internal SRAM buffers that can be
+   used for holding a page each so that external memory is not
+   required when programming.
 
    The AT45DB041B does not have the newer READ_CONT_SLOW and READ_CONT_FAST
    commands.
@@ -128,9 +129,12 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 }
 
 
+/** Write to dataflash using a gather approach from a vector of
+    descriptors.  The idea is to coalesce writes to ther dataflash
+    to minimise the number of erase operations.  */
 spi_dataflash_ret_t
-spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                     const void *buffer, spi_dataflash_size_t len)
+spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
+                      spi_dataflash_iovec_t *iov, int iov_count)
 {
     spi_dataflash_page_t page;
     spi_dataflash_offset_t offset;
@@ -138,6 +142,15 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     spi_dataflash_size_t bytes_written;
     const uint8_t *data;
     uint16_t page_size;
+    spi_dataflash_size_t len;
+    spi_dataflash_size_t vlen;
+    int iovnum;
+    int i;
+
+    /* Determine total number of bytes to write.  */
+    len = 0;
+    for (i = 0; i < iov_count; i++)
+        len += iov[i].len;
 
     if (!len)
         return 0;
@@ -156,11 +169,13 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     else
         writelen = len;
     
-    data = buffer;
+    iovnum = 0;
+    vlen = 0;
     bytes_written = 0;
     while (bytes_written < len) 
     {
         spi_dataflash_offset_t bytes_left;
+        spi_dataflash_size_t wlen;
         uint8_t command[4];
 
         addr = page << dev->page_bits;
@@ -188,7 +203,26 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
         spi_write (dev->spi, command, 4, 0);
 
-        spi_write (dev->spi, data, writelen, 1);
+        wlen = writeln;
+        while (wlen)
+        {
+            spi_dataflash_size_t slen;
+
+            if (!vlen)
+            {
+                data = iov[iovnum].data;
+                vlen = iov[iovnum].len;
+                iovnum++;
+            }
+
+            slen = writelen;
+            if (slen > vlen)
+                slen = vlen;
+            
+            spi_write (dev->spi, data, slen, 1);
+            wlen -= slen;
+            vlen -= slen;
+        }
 
         if (!spi_dataflash_ready_wait (dev))
             return bytes_written;
@@ -225,6 +259,19 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         port_pins_set_low (dev->cfg->wp.port, dev->cfg->wp.bitmask);
 
     return bytes_written;
+}
+
+
+spi_dataflash_ret_t
+spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
+                     const void *buffer, spi_dataflash_size_t len)
+{
+    spi_dataflash_iovec_t iov;
+
+    iov.data = buffer;
+    iov.len = len;
+    
+    return spi_dataflash_writev (dev, addr, &iov, 1);
 }
 
 
