@@ -202,6 +202,20 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 }
 
 
+flashheap_size_t
+flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
+                 iovec_count_t iov_count)
+{
+    flashheap_addr_t addr;
+
+    addr = (flashheap_addr_t)ptr - sizeof (packet);
+
+    /* FIXME, check that have valid pointer.  */
+
+    return heap->readv (heap->dev, addr, iov, iov_count);
+}
+
+
 /* Iterate over packets starting at addr.  Stop if callback returns true.  */
 static bool
 flashheap_walk (flashheap_t heap, flashheap_addr_t addr, 

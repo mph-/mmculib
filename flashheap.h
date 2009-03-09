@@ -81,7 +81,7 @@ extern void *
 flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count);
 
 
-extern void *
+extern flashheap_size_t
 flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
                  iovec_count_t iov_count);
 
