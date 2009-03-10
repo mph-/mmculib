@@ -16,6 +16,14 @@
 
 typedef struct
 {
+    flashheap_addr_t prev;
+    flashheap_addr_t this;
+    flashheap_addr_t stop;
+} flashheap_scan_t;
+
+
+typedef struct
+{
     flashheap_size_t size;
 } flashheap_packet_t;
 
@@ -42,7 +50,6 @@ flashheap_packet_read (flashheap_t heap, flashheap_addr_t addr,
 }
 
 
-
 static bool
 flashheap_packet_write (flashheap_t heap, flashheap_addr_t addr, 
                         flashheap_packet_t *ppacket)
@@ -67,6 +74,9 @@ flashheap_free (flashheap_t heap, void *ptr)
     flashheap_addr_t addr;
     flashheap_addr_t desired;
 
+    if (!ptr)
+        return 0;
+
     desired = (flashheap_addr_t)ptr - sizeof (packet);
     prev_addr = 0;
     addr = heap->offset;
@@ -90,8 +100,13 @@ flashheap_free (flashheap_t heap, void *ptr)
     if (addr != desired)
         return 0;
 
+    /* Can't free a packet twice.  */
     if (packet.size < 0)
         return 0;
+
+    heap->prev_alloc = prev_addr;
+    heap->last_alloc = 0;
+
     packet.size = -packet.size;
 
     next_addr = addr + abs (packet.size) + sizeof (packet);
@@ -142,8 +157,14 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
     for (i = 0; i < iov_count; i++)
         size += iov[i].len;
 
-    /* What about allocating a zero sized packet?  */
+    /* What about allocating a zero sized packet?  malloc either
+       returns NULL or a valid pointer that can be passed to free.
+       Let's return NULL.  */
+    if (!size)
+        return 0;
 
+    /* How do we do wear levelling?  We need to keep track
+       of where we got to but we lose this info on reset.  */
     while (addr < heap->offset + heap->size)
     {
         if (!flashheap_packet_read (heap, addr, &packet))
@@ -159,7 +180,6 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 
                 /* The packet is bigger than required so create
                    a new empty packet.  */
-
                 new_addr = addr + sizeof (packet) + size;
                 new_packet.size = -(-packet.size - size - sizeof (packet));
 
@@ -190,7 +210,8 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
             if (!flashheap_packet_write (heap, addr, &packet))
                 return 0;
 
-            heap->last = addr;
+            heap->prev_alloc = heap->last_alloc;
+            heap->last_alloc = addr;
             return (void *)addr + sizeof (packet);
         }
         /* Skip to start of next packet.  */
@@ -208,7 +229,7 @@ flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
 {
     flashheap_addr_t addr;
 
-    addr = (flashheap_addr_t)ptr - sizeof (packet);
+    addr = (flashheap_addr_t)ptr - sizeof (flashheap_packet_t);
 
     /* FIXME, check that have valid pointer.  */
 
@@ -224,7 +245,7 @@ flashheap_walk (flashheap_t heap, flashheap_addr_t addr,
     flashheap_packet_t packet;
 
     for (; addr < heap->offset + heap->size;
-         addr += abs (packet.size) + sizeof (packet))
+         addr += abs (packet.size) + sizeof (flashheap_packet_t))
     {
         if (!flashheap_packet_read (heap, addr, &packet))
             return 0;
@@ -248,7 +269,7 @@ flashheap_alloc_p (flashheap_addr_t addr, flashheap_packet_t *ppacket,
 
 
 void *
-flashheap_alloc_first (flashheap_t heap)
+flashheap_first (flashheap_t heap)
 {
     flashheap_addr_t addr;
 
@@ -259,20 +280,56 @@ flashheap_alloc_first (flashheap_t heap)
 }
 
 
+static bool
+flashheap_scan_helper (flashheap_addr_t addr,
+                       flashheap_packet_t *ppacket, 
+                       void *arg)
+{
+    flashheap_scan_t *pscan = arg;
+
+    if (ppacket->size >= 0)
+    {
+        pscan->prev = pscan->this;
+        pscan->this = addr;
+    }
+    return addr == pscan->stop;
+}
+
+
 void *
-flashheap_alloc_next (flashheap_t heap, void *ptr)
+flashheap_prev (flashheap_t heap, void *ptr)
+{
+    flashheap_addr_t addr;
+    flashheap_scan_t scan;
+
+    if (!ptr)
+        return flashheap_first (heap);
+
+    addr = (flashheap_addr_t)ptr - sizeof (flashheap_packet_t);
+
+    scan.this = 0;
+    scan.prev = 0;
+    scan.stop = addr;
+    flashheap_walk (heap, heap->offset, flashheap_scan_helper, &scan);
+
+    return (void *)(scan.prev + sizeof (flashheap_packet_t));
+}
+
+
+void *
+flashheap_next (flashheap_t heap, void *ptr)
 {
     flashheap_addr_t addr;
     flashheap_packet_t packet;
 
-    addr = (flashheap_addr_t) ptr;
+    if (!ptr)
+        return flashheap_first (heap);
 
-    if (!addr)
-        return flashheap_alloc_first (heap);
-    
+    addr = (flashheap_addr_t)ptr - sizeof (packet);
+
     if (!flashheap_packet_read (heap, addr, &packet))
         return 0;
-
+    
     addr += abs (packet.size);
 
     if (flashheap_walk (heap, addr, flashheap_alloc_p, &addr))
@@ -283,7 +340,7 @@ flashheap_alloc_next (flashheap_t heap, void *ptr)
 
 
 flashheap_size_t
-flashheap_alloc_size (flashheap_t heap, void *ptr)
+flashheap_size_get (flashheap_t heap, void *ptr)
 {
     flashheap_packet_t packet;
     flashheap_addr_t addr;
@@ -337,6 +394,10 @@ bool
 flashheap_erase (flashheap_t heap)
 {
     flashheap_packet_t packet;
+    
+    /* For wear levelling we could create two empty packets with the
+       position of the second (starting) packet moving circularly in
+       increments throughout the memory.  */
 
     /* Create one large empty packet.  */
     packet.size = -(heap->size - sizeof (packet));
@@ -362,6 +423,7 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
                 flashheap_writev_t writev)
 {
     flashheap_t heap;
+    flashheap_scan_t scan;
 
     /* Note offset cannot be zero.  */
 
@@ -371,6 +433,11 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
     heap->writev = writev;
     heap->offset = offset;
     heap->size = size;
+
+    scan.this = 0;
+    scan.prev = 0;
+    scan.stop = 0;
+    flashheap_walk (heap, heap->offset, flashheap_scan_helper, &scan);
 
     return heap;
 }

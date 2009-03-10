@@ -27,7 +27,8 @@ typedef struct
 {
     flashheap_addr_t offset;
     flashheap_size_t size;
-    flashheap_addr_t last;
+    flashheap_addr_t last_alloc;
+    flashheap_addr_t prev_alloc;
     void *dev;
     flashheap_readv_t readv;
     flashheap_writev_t writev;
@@ -55,15 +56,19 @@ flashheap_alloc (flashheap_t heap, flashheap_size_t size);
 
 
 extern void *
-flashheap_alloc_first (flashheap_t heap);
+flashheap_first (flashheap_t heap);
 
 
 extern void *
-flashheap_alloc_next (flashheap_t heap, void *ptr);
+flashheap_next (flashheap_t heap, void *ptr);
+
+
+extern void *
+flashheap_prev (flashheap_t heap, void *ptr);
 
 
 extern flashheap_size_t
-flashheap_alloc_size (flashheap_t heap, void *ptr);
+flashheap_size_get (flashheap_t heap, void *ptr);
 
 
 extern void
