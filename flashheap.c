@@ -16,14 +16,6 @@
 
 typedef struct
 {
-    flashheap_addr_t prev;
-    flashheap_addr_t this;
-    flashheap_addr_t stop;
-} flashheap_scan_t;
-
-
-typedef struct
-{
     flashheap_size_t size;
 } flashheap_packet_t;
 
@@ -104,9 +96,6 @@ flashheap_free (flashheap_t heap, void *ptr)
     if (packet.size < 0)
         return 0;
 
-    heap->prev_alloc = prev_addr;
-    heap->last_alloc = 0;
-
     packet.size = -packet.size;
 
     next_addr = addr + abs (packet.size) + sizeof (packet);
@@ -147,7 +136,7 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
     flashheap_packet_t packet;
     flashheap_addr_t addr;
     iovec_size_t size;
-    iovec_t iov2[2];
+    iovec_t iov2[4];
     int i;
 
     addr = heap->offset;
@@ -193,13 +182,15 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
             iov2[0].len = sizeof (packet);
             if (iov[0].data)
             {
-                iov2[1] = iov[0];
+                for (i = 0; i < iov_count && i < ARRAY_SIZE (iov2) - 1; i++)
+                    iov2[i + 1] = iov[i];
+
                 /*  Write the packet header and first lot of data.  */
-                heap->writev (heap->dev, addr, iov2, 2);
+                heap->writev (heap->dev, addr, iov2, i + 1);
 
                 /* Write other lots of data if required.  */
-                if (iov_count > 1)
-                    heap->writev (heap->dev, addr, iov + 1, iov_count - 1);
+                if (iov_count >= ARRAY_SIZE (iov2) - 1)
+                    heap->writev (heap->dev, addr, iov + i - 1, iov_count - i + 1);
             }
             else
             {
@@ -210,8 +201,6 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
             if (!flashheap_packet_write (heap, addr, &packet))
                 return 0;
 
-            heap->prev_alloc = heap->last_alloc;
-            heap->last_alloc = addr;
             return (void *)addr + sizeof (packet);
         }
         /* Skip to start of next packet.  */
@@ -229,7 +218,7 @@ flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
 {
     flashheap_addr_t addr;
 
-    addr = (flashheap_addr_t)ptr - sizeof (flashheap_packet_t);
+    addr = (flashheap_addr_t)ptr;
 
     /* FIXME, check that have valid pointer.  */
 
@@ -253,88 +242,6 @@ flashheap_walk (flashheap_t heap, flashheap_addr_t addr,
         if (callback (addr, &packet, arg))
             return 1;
     }
-    return 0;
-}
-
-
-static bool
-flashheap_alloc_p (flashheap_addr_t addr, flashheap_packet_t *ppacket, 
-                   void *arg)
-{
-    flashheap_addr_t *paddr = arg;
-
-    *paddr = addr;
-    return ppacket->size >= 0;
-}
-
-
-void *
-flashheap_first (flashheap_t heap)
-{
-    flashheap_addr_t addr;
-
-    if (flashheap_walk (heap, heap->offset, flashheap_alloc_p, &addr))
-        return (void *)addr;
-        
-    return 0;
-}
-
-
-static bool
-flashheap_scan_helper (flashheap_addr_t addr,
-                       flashheap_packet_t *ppacket, 
-                       void *arg)
-{
-    flashheap_scan_t *pscan = arg;
-
-    if (ppacket->size >= 0)
-    {
-        pscan->prev = pscan->this;
-        pscan->this = addr;
-    }
-    return addr == pscan->stop;
-}
-
-
-void *
-flashheap_prev (flashheap_t heap, void *ptr)
-{
-    flashheap_addr_t addr;
-    flashheap_scan_t scan;
-
-    if (!ptr)
-        return flashheap_first (heap);
-
-    addr = (flashheap_addr_t)ptr - sizeof (flashheap_packet_t);
-
-    scan.this = 0;
-    scan.prev = 0;
-    scan.stop = addr;
-    flashheap_walk (heap, heap->offset, flashheap_scan_helper, &scan);
-
-    return (void *)(scan.prev + sizeof (flashheap_packet_t));
-}
-
-
-void *
-flashheap_next (flashheap_t heap, void *ptr)
-{
-    flashheap_addr_t addr;
-    flashheap_packet_t packet;
-
-    if (!ptr)
-        return flashheap_first (heap);
-
-    addr = (flashheap_addr_t)ptr - sizeof (packet);
-
-    if (!flashheap_packet_read (heap, addr, &packet))
-        return 0;
-    
-    addr += abs (packet.size);
-
-    if (flashheap_walk (heap, addr, flashheap_alloc_p, &addr))
-        return (void *)addr;
-
     return 0;
 }
 
@@ -423,7 +330,6 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
                 flashheap_writev_t writev)
 {
     flashheap_t heap;
-    flashheap_scan_t scan;
 
     /* Note offset cannot be zero.  */
 
@@ -433,11 +339,6 @@ flashheap_init (flashheap_addr_t offset, flashheap_size_t size,
     heap->writev = writev;
     heap->offset = offset;
     heap->size = size;
-
-    scan.this = 0;
-    scan.prev = 0;
-    scan.stop = 0;
-    flashheap_walk (heap, heap->offset, flashheap_scan_helper, &scan);
 
     return heap;
 }

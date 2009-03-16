@@ -135,7 +135,7 @@ spi_dataflash_ret_t
 spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                      iovec_t *iov, iovec_count_t iov_count)
 {
-    int i;
+    unsigned int i;
     iovec_size_t size;
 
     size = 0;
@@ -156,7 +156,7 @@ spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     to minimise the number of erase operations.  */
 spi_dataflash_ret_t
 spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                      iovec_t *iov, iov_count_t iov_count)
+                      iovec_t *iov, iovec_count_t iov_count)
 {
     spi_dataflash_page_t page;
     spi_dataflash_offset_t offset;
@@ -167,7 +167,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     spi_dataflash_size_t len;
     spi_dataflash_size_t vlen;
     int iovnum;
-    int i;
+    unsigned int i;
 
     /* Determine total number of bytes to write.  */
     len = 0;
@@ -191,6 +191,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     else
         writelen = len;
     
+    data = 0;
     iovnum = 0;
     vlen = 0;
     bytes_written = 0;
@@ -225,7 +226,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
         spi_write (dev->spi, command, 4, 0);
 
-        wlen = writeln;
+        wlen = writelen;
         while (wlen)
         {
             spi_dataflash_size_t slen;
@@ -290,7 +291,7 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 {
     iovec_t iov;
 
-    iov.data = buffer;
+    iov.data = (void *)buffer;
     iov.len = len;
     
     return spi_dataflash_writev (dev, addr, &iov, 1);

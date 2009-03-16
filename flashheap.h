@@ -16,7 +16,7 @@ typedef int32_t flashheap_addr_t;
 
 typedef flashheap_size_t
 (*flashheap_readv_t)(void *dev, flashheap_addr_t addr,
-                    void *buffer, flashheap_size_t len);
+                     iovec_t *iov, iovec_count_t iovcount);
 
 
 typedef flashheap_size_t 
@@ -25,11 +25,9 @@ typedef flashheap_size_t
 
 typedef struct
 {
-    flashheap_addr_t offset;
-    flashheap_size_t size;
-    flashheap_addr_t last_alloc;
-    flashheap_addr_t prev_alloc;
-    void *dev;
+    flashheap_addr_t offset;    /* Address of first byte of heap.  */
+    flashheap_size_t size;      /* Number of bytes in heap.  */
+    void *dev;                  /* Handle for readv/writev routines.  */
     flashheap_readv_t readv;
     flashheap_writev_t writev;
 } flashheap_dev_t;
@@ -53,18 +51,6 @@ flashheap_free (flashheap_t heap, void *ptr);
 
 extern void *
 flashheap_alloc (flashheap_t heap, flashheap_size_t size);
-
-
-extern void *
-flashheap_first (flashheap_t heap);
-
-
-extern void *
-flashheap_next (flashheap_t heap, void *ptr);
-
-
-extern void *
-flashheap_prev (flashheap_t heap, void *ptr);
 
 
 extern flashheap_size_t
