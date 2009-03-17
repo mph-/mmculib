@@ -242,7 +242,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
             if (slen > vlen)
                 slen = vlen;
             
-            spi_write (dev->spi, data, slen, 1);
+            spi_write (dev->spi, data, slen, wlen == slen);
             data += slen;
             wlen -= slen;
             vlen -= slen;
