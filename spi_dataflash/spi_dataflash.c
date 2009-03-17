@@ -243,6 +243,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                 slen = vlen;
             
             spi_write (dev->spi, data, slen, 1);
+            data += slen;
             wlen -= slen;
             vlen -= slen;
         }
@@ -267,7 +268,6 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         
         page++;
         offset = 0;
-        data += writelen;
         bytes_written += writelen;
 
         bytes_left = len - writelen;
