@@ -100,6 +100,7 @@ menu_index_set (menu_t *menu, uint8_t index)
     menu->index = index;
     menu->pointer = min (index, menu_data.rows);
 
+    menu_data.current->index = index;
     if (menu->items[menu->index].action)
         menu->items[menu->index].action ();
 }
