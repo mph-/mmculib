@@ -238,7 +238,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
                 iovnum++;
             }
 
-            slen = writelen;
+            slen = wlen;
             if (slen > vlen)
                 slen = vlen;
             

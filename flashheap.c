@@ -135,13 +135,13 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 {
     flashheap_packet_t packet;
     flashheap_addr_t addr;
-    iovec_size_t size;
+    int size;
     iovec_t iov2[4];
-    int i;
+    unsigned int i;
 
     addr = heap->offset;
 
-    /* Determine total number of bytes to write.  */
+    /* Determine total number of data bytes to write.  */
     size = 0;
     for (i = 0; i < iov_count; i++)
         size += iov[i].len;
@@ -252,7 +252,7 @@ flashheap_size_get (flashheap_t heap, void *ptr)
     flashheap_packet_t packet;
     flashheap_addr_t addr;
 
-    addr = (flashheap_addr_t) ptr;
+    addr = (flashheap_addr_t) ptr - sizeof (packet);
     
     if (!flashheap_packet_read (heap, addr, &packet))
         return 0;
@@ -265,7 +265,7 @@ flashheap_size_get (flashheap_t heap, void *ptr)
 
 
 static bool
-flashheap_stats_helper (flashheap_addr_t addr,
+flashheap_stats_helper (flashheap_addr_t addr __UNUSED__,
                         flashheap_packet_t *ppacket, 
                         void *arg)
 {
