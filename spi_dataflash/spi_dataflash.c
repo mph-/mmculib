@@ -25,7 +25,7 @@
 */
 
 
-typedef uint8_t spi_dataflash_offset_t;
+typedef uint16_t spi_dataflash_offset_t;
 typedef uint16_t spi_dataflash_page_t;
 
 
@@ -160,23 +160,23 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 {
     spi_dataflash_page_t page;
     spi_dataflash_offset_t offset;
-    spi_dataflash_offset_t writelen;
-    spi_dataflash_size_t bytes_written;
+    spi_dataflash_size_t writelen;
+    spi_dataflash_size_t written_bytes;
     const uint8_t *data;
     uint16_t page_size;
-    spi_dataflash_size_t len;
+    spi_dataflash_size_t total_bytes;
     spi_dataflash_size_t vlen;
     int iovnum;
     unsigned int i;
 
     /* Determine total number of bytes to write.  */
-    len = 0;
+    total_bytes = 0;
     for (i = 0; i < iov_count; i++)
-        len += iov[i].len;
+        total_bytes += iov[i].len;
 
-    if (!len)
+    if (!total_bytes)
         return 0;
-    if (addr + len > dev->size)
+    if (addr + total_bytes > dev->size)
         return -1;
 
     if (dev->cfg->wp.port)
@@ -186,18 +186,18 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     page = addr / page_size;
     offset = addr % page_size;
 
-    if (offset + len > page_size)
+    if (offset + total_bytes > page_size)
         writelen = page_size - offset;
     else
-        writelen = len;
+        writelen = total_bytes;
     
     data = 0;
     iovnum = 0;
     vlen = 0;
-    bytes_written = 0;
-    while (bytes_written < len) 
+    written_bytes = 0;
+    while (written_bytes < total_bytes) 
     {
-        spi_dataflash_offset_t bytes_left;
+        spi_dataflash_offset_t remaining_bytes;
         spi_dataflash_size_t wlen;
         uint8_t command[4];
 
@@ -249,7 +249,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         }
 
         if (!spi_dataflash_ready_wait (dev))
-            return bytes_written;
+            return written_bytes;
 
         addr = page << dev->page_bits;
         command[0] = SPI_DATAFLASH_OP_COMPARE_BUFFER1;
@@ -268,20 +268,20 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         
         page++;
         offset = 0;
-        bytes_written += writelen;
+        written_bytes += writelen;
 
-        bytes_left = len - writelen;
+        remaining_bytes = total_bytes - writelen;
         
-        if (bytes_left > page_size)
+        if (remaining_bytes > page_size)
             writelen = page_size;
         else
-            writelen = bytes_left;
+            writelen = remaining_bytes;
     }
 
     if (dev->cfg->wp.port)
         port_pins_set_low (dev->cfg->wp.port, dev->cfg->wp.bitmask);
 
-    return bytes_written;
+    return written_bytes;
 }
 
 
