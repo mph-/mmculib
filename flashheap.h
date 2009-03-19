@@ -77,6 +77,10 @@ flashheap_readv (flashheap_t heap, void *ptr, iovec_t *iov,
                  iovec_count_t iov_count);
 
 
+extern void
+flashheap_debug (flashheap_t heap);
+
+
 extern flashheap_t
 flashheap_init (flashheap_addr_t offset,
                 flashheap_size_t size,

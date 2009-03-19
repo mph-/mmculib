@@ -150,7 +150,6 @@ spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 }
 
 
-
 /** Write to dataflash using a gather approach from a vector of
     descriptors.  The idea is to coalesce writes to ther dataflash
     to minimise the number of erase operations.  */
@@ -166,7 +165,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     uint16_t page_size;
     spi_dataflash_size_t total_bytes;
     spi_dataflash_size_t vlen;
-    int iovnum;
+    int iov_num;
     unsigned int i;
 
     /* Determine total number of bytes to write.  */
@@ -192,7 +191,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         writelen = total_bytes;
     
     data = 0;
-    iovnum = 0;
+    iov_num = 0;
     vlen = 0;
     written_bytes = 0;
     while (written_bytes < total_bytes) 
@@ -233,9 +232,9 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
             if (!vlen)
             {
-                data = iov[iovnum].data;
-                vlen = iov[iovnum].len;
-                iovnum++;
+                data = iov[iov_num].data;
+                vlen = iov[iov_num].len;
+                iov_num++;
             }
 
             slen = wlen;
@@ -270,7 +269,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
         offset = 0;
         written_bytes += writelen;
 
-        remaining_bytes = total_bytes - writelen;
+        remaining_bytes = total_bytes - written_bytes;
         
         if (remaining_bytes > page_size)
             writelen = page_size;

@@ -8,6 +8,8 @@
 #include <flashheap.h>
 #include <stdlib.h>
 
+#include <stdio.h>
+
 /* The goals of this code is to implement a heap within flash memory
    and to minimise writes.  Some flash devices have a more robust first block
    but we don't assume this.
@@ -190,16 +192,14 @@ flashheap_writev (flashheap_t heap, iovec_t *iov, iovec_count_t iov_count)
 
                 /* Write other lots of data if required.  */
                 if (iov_count >= ARRAY_SIZE (iov2) - 1)
-                    heap->writev (heap->dev, addr, iov + i - 1, iov_count - i + 1);
+                    heap->writev (heap->dev, addr, iov + i - 1,
+                                  iov_count - i + 1);
             }
             else
             {
                 /* Just write the packet header.  */
                 heap->writev (heap->dev, addr, iov2, 1);
             }
-
-            if (!flashheap_packet_write (heap, addr, &packet))
-                return 0;
 
             return (void *)addr + sizeof (packet);
         }
@@ -294,6 +294,23 @@ flashheap_stats (flashheap_t heap, flashheap_stats_t *pstats)
     pstats->free_bytes = 0;
 
     flashheap_walk (heap, heap->offset, flashheap_stats_helper, pstats);
+}
+
+
+static bool
+flashheap_debug_helper (flashheap_addr_t addr,
+                        flashheap_packet_t *ppacket, 
+                        void *arg __UNUSED__)
+{
+    printf ("%d: %d\n", (int)addr, (int)ppacket->size);
+    return 0;
+}
+
+
+void
+flashheap_debug (flashheap_t heap)
+{
+    flashheap_walk (heap, heap->offset, flashheap_debug_helper, NULL);
 }
 
 
