@@ -11,8 +11,8 @@
 piezo_t
 piezo_init (const piezo_cfg_t *cfg)
 {
-    /* Configure port as output.  */
-    port_pins_config_output (cfg->port, cfg->bitmask);
+    /* Configure pio as output.  */
+    pio_config_output (cfg->pio);
 
     return cfg;
 }

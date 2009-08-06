@@ -23,11 +23,14 @@
 
 /* The following macros must be defined:
 
-   GLCD_SPI_CHANNEL if the SPI controller supports multiple channels
-   otherwise GLCD_CS_PORT and GLCD_CS_BIT.
+   GLCD_SPI_CHANNEL if the SPI controller supports multiple channels,
+   GLCD_CS to specify the PIO controlling the CS signal,
+   GLCD_RS to specify the PIO controlling the RS signal.
 
-   GLCD_RS_PORT and GLCD_RS_BIT to specify the port controlling the RS signal.
+   The following macros are optional:
 
+   GLCD_RESET to specify the PIO if the reset signal is connected.
+   GLCD_BACKLIGHT to specify the PIO if the backlight is connected.
 */
 
 enum {
@@ -76,14 +79,14 @@ enum {
 static inline void
 glcd_command_mode (void)
 {
-    port_pin_set_low (GLCD_RS_PORT, GLCD_RS_BIT);
+    pio_set_low (GLCD_RS);
 }
 
 
 static inline void
 glcd_data_mode (void)
 {
-    port_pin_set_high (GLCD_RS_PORT, GLCD_RS_BIT);
+    pio_set_high (GLCD_RS);
 }
 
 
@@ -97,9 +100,9 @@ glcd_send (glcd_t glcd, char ch)
 void
 glcd_backlight_enable (glcd_t glcd __UNUSED__)
 {
-#ifdef GLCD_BACKLIGHT_PORT
-    port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
-    port_pin_set_high (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+#ifdef GLCD_BACKLIGHT
+    pio_config_output (GLCD_BACKLIGHT);
+    pio_set_high (GLCD_BACKLIGHT);
 #endif
 }
 
@@ -107,9 +110,9 @@ glcd_backlight_enable (glcd_t glcd __UNUSED__)
 void
 glcd_backlight_disable (glcd_t glcd __UNUSED__)
 {
-#ifdef GLCD_BACKLIGHT_PORT
-    port_pin_config_output (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
-    port_pin_set_low (GLCD_BACKLIGHT_PORT, GLCD_BACKLIGHT_BIT);
+#ifdef GLCD_BACKLIGHT
+    pio_config_output (GLCD_BACKLIGHT);
+    pio_set_low (GLCD_BACKLIGHT);
 #endif
 }
 
@@ -118,7 +121,7 @@ static void
 glcd_config (glcd_t glcd)
 {
     /* Configure the RS pin as an output.  */
-    port_pin_config_output (GLCD_RS_PORT, GLCD_RS_BIT);
+    pio_config_output (GLCD_RS);
     
     /* Enter command mode.  */
     glcd_command_mode ();
@@ -190,26 +193,26 @@ glcd_contrast_set (glcd_t glcd __UNUSED__, uint8_t contrast)
 
 
 glcd_t
-glcd_init (glcd_obj_t *obj, const glcd_cfg_t *cfg)
+glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
 {
     glcd_t glcd;
     const spi_cfg_t spi_cfg = SPI_CFG (GLCD_SPI_CHANNEL, 
                                        GLCD_SPI_DIVISOR,
-                                       GLCD_CS_PORT, GLCD_CS_BIT);
+                                       GLCD_CS);
 
-    glcd = obj;
+    glcd = dev;
     glcd->cfg = cfg;
 
     glcd->spi = spi_init (&spi_cfg);
 
-#ifdef GLCD_RESET_BIT
-    port_pin_config_output (GLCD_RESET_PORT, GLCD_RESET_BIT);
-    port_pin_set_high (GLCD_RESET_PORT, GLCD_RESET_BIT);
-    port_pin_set_low (GLCD_RESET_PORT, GLCD_RESET_BIT);
+#ifdef GLCD_RESET
+    pio_config_output (GLCD_RESET);
+    pio_set_high (GLCD_RESET);
+    pio_set_low (GLCD_RESET);
     /* Minimum reset pulse is 900 ns but for some reason
        the signal is slow (probably because of 47 k series resistor.  */
     DELAY_US (5);
-    port_pin_set_high (GLCD_RESET_PORT, GLCD_RESET_BIT);
+    pio_set_high (GLCD_RESET);
 #endif
 
     glcd_config (glcd);
@@ -320,12 +323,12 @@ glcd_shutdown (glcd_t glcd)
 {
     spi_shutdown (glcd->spi);
 
-    port_pin_config_output (GLCD_CS_PORT, GLCD_CS_BIT);
+    pio_config_output (GLCD_CS);
 
-    port_pin_set_low (GLCD_CS_PORT, GLCD_CS_BIT);
-    port_pin_set_low (GLCD_RS_PORT, GLCD_RS_BIT);
+    pio_set_low (GLCD_CS);
+    pio_set_low (GLCD_RS);
 
 #ifdef GLCD_RESET_BIT
-    port_pin_set_low (GLCD_RESET_PORT, GLCD_RESET_BIT);
+    pio_set_low (GLCD_RESET);
 #endif
 }

@@ -7,8 +7,21 @@
 #define GLCD_H
 
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
+
+
+/* The following macros must be defined:
+
+   GLCD_SPI_CHANNEL if the SPI controller supports multiple channels,
+   GLCD_CS to specify the PIO controlling the CS signal,
+   GLCD_RS to specify the PIO controlling the RS signal.
+
+   The following macros are optional:
+
+   GLCD_RESET to specify the PIO if the reset signal is connected.
+   GLCD_BACKLIGHT to specify the PIO if the backlight is connected.
+*/
 
 #define GLCD_WIDTH 128
 #define GLCD_HEIGHT 64
@@ -40,8 +53,8 @@ typedef struct
 } glcd_private_t;
 
 
-typedef glcd_private_t glcd_obj_t;
-typedef glcd_obj_t *glcd_t;
+typedef glcd_private_t glcd_dev_t;
+typedef glcd_dev_t *glcd_t;
 
 
 extern void 
@@ -73,10 +86,10 @@ glcd_backlight_disable (glcd_t glcd);
    passed to the other glcd_xxx routines to denote the GLCD to
    operate on.  */
 extern glcd_t
-glcd_init (glcd_obj_t *obj, const glcd_cfg_t *cfg);
+glcd_init (glcd_dev_t *obj, const glcd_cfg_t *cfg);
 
 
 extern void
-glcd_shutdown (glcd_obj_t *obj);
+glcd_shutdown (glcd_dev_t *obj);
 
 #endif

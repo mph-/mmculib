@@ -10,7 +10,7 @@
 
 
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 
 
 
@@ -21,14 +21,13 @@ enum {BUTTON_DEBOUNCE_MS = 50};
 
 #define BUTTON_POLL_COUNT(POLL_RATE) ((POLL_RATE) / BUTTON_DEBOUNCE_RATE)
 
-#define BUTTON_CFG(PORT, PORTBIT) {(PORT), BIT (PORTBIT)}
+#define BUTTON_CFG(PIO) {PIO}
 
 
 /* Button configuration structure.  */
 typedef struct
 {
-    port_t port;
-    port_mask_t bitmask;
+    pio_t pio;
 } button_cfg_t;
 
 
@@ -164,7 +163,7 @@ button_hold_released_p (button_t button, uint8_t hold_count)
 static inline bool
 button_pressed_p (button_t button)
 {
-    /* When a button is pushed it pulls the port line low.  */
-    return !port_pins_read (button->cfg->port, button->cfg->bitmask);
+    /* When a button is pushed it pulls the pio line low.  */
+    return !pio_read (button->cfg->pio);
 }
 #endif

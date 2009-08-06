@@ -9,16 +9,15 @@
 
 #include "config.h"
 #include "delay.h"
-#include "port.h"
+#include "pio.h"
 
 
-#define PIEZO_CFG(PORT, PORTBIT) {(PORT), BIT (PORTBIT)}
+#define PIEZO_CFG(PORT) {PORT}
 
 
 typedef struct
 {
-    port_t port;
-    port_mask_t bitmask;
+    pio_t pio;
 } piezo_cfg_t;
 
 
@@ -28,7 +27,7 @@ typedef piezo_obj_t *piezo_t;
 
 
 /* CFG is points to configuration data specified by PIEZO_CFG to
-   define the port the PIEZO is connected to.  The returned handle is
+   define the pio the PIEZO is connected to.  The returned handle is
    passed to the other piezo_xxx routines to denote the PIEZO to
    operate on.  */
 extern piezo_t
@@ -40,7 +39,7 @@ piezo_init (const piezo_cfg_t *cfg);
 static inline void
 piezo_set (piezo_t piezo, uint8_t val)
 {
-    port_pins_set (piezo->port, piezo->bitmask, val);
+    pio_set (piezo->pio, val);
 }
         
 #endif

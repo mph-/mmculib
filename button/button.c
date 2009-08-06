@@ -34,8 +34,8 @@ button_init (button_obj_t *obj, const button_cfg_t *cfg)
     button->count = 0;
     button->hold_count = 0;
 
-    /* Configure port for input and enable internal pullup resistor.  */
-    port_pins_config_pullup (cfg->port, cfg->bitmask);
+    /* Configure pio for input and enable internal pullup resistor.  */
+    pio_config_pullup (cfg->pio);
 
     return button;
 }
