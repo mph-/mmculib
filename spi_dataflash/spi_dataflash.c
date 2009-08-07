@@ -1,6 +1,6 @@
 #include "config.h"
 #include "delay.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
 #include "spi_dataflash.h"
 
@@ -178,8 +178,8 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     if (addr + total_bytes > dev->size)
         return -1;
 
-    if (dev->cfg->wp.port)
-        port_pins_set_high (dev->cfg->wp.port, dev->cfg->wp.bitmask);
+    if (dev->cfg->wp.pio)
+        pio_set_high (dev->cfg->wp);
 
     page_size = dev->cfg->page_size;
     page = addr / page_size;
@@ -277,8 +277,8 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
             writelen = remaining_bytes;
     }
 
-    if (dev->cfg->wp.port)
-        port_pins_set_low (dev->cfg->wp.port, dev->cfg->wp.bitmask);
+    if (dev->cfg->wp.pio)
+        pio_set_low (dev->cfg->wp.pio);
 
     return written_bytes;
 }
@@ -325,10 +325,10 @@ spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg)
     /* Ensure chip select isn't negated too soon.  */
     spi_cs_negate_delay_set (dev->spi, 16);    
 
-    if (cfg->wp.port)
+    if (cfg->wp.pio)
     {
-        port_pins_config_output (cfg->wp.port, cfg->wp.bitmask);
-        port_pins_set_low (cfg->wp.port, cfg->wp.bitmask);
+        pio_config_output (cfg->wp.pio);
+        pio_set_low (cfg->wp.pio);
     }
 
     spi_dataflash_status_read (dev);
