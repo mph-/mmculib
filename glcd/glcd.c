@@ -79,14 +79,14 @@ enum {
 static inline void
 glcd_command_mode (void)
 {
-    pio_set_low (GLCD_RS);
+    pio_output_low (GLCD_RS);
 }
 
 
 static inline void
 glcd_data_mode (void)
 {
-    pio_set_high (GLCD_RS);
+    pio_output_high (GLCD_RS);
 }
 
 
@@ -102,7 +102,7 @@ glcd_backlight_enable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT
     pio_config_output (GLCD_BACKLIGHT);
-    pio_set_high (GLCD_BACKLIGHT);
+    pio_output_high (GLCD_BACKLIGHT);
 #endif
 }
 
@@ -112,7 +112,7 @@ glcd_backlight_disable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT
     pio_config_output (GLCD_BACKLIGHT);
-    pio_set_low (GLCD_BACKLIGHT);
+    pio_output_low (GLCD_BACKLIGHT);
 #endif
 }
 
@@ -207,12 +207,12 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
 
 #ifdef GLCD_RESET
     pio_config_output (GLCD_RESET);
-    pio_set_high (GLCD_RESET);
-    pio_set_low (GLCD_RESET);
+    pio_output_high (GLCD_RESET);
+    pio_output_low (GLCD_RESET);
     /* Minimum reset pulse is 900 ns but for some reason
        the signal is slow (probably because of 47 k series resistor.  */
     DELAY_US (5);
-    pio_set_high (GLCD_RESET);
+    pio_output_high (GLCD_RESET);
 #endif
 
     glcd_config (glcd);
@@ -325,10 +325,10 @@ glcd_shutdown (glcd_t glcd)
 
     pio_config_output (GLCD_CS);
 
-    pio_set_low (GLCD_CS);
-    pio_set_low (GLCD_RS);
+    pio_output_low (GLCD_CS);
+    pio_output_low (GLCD_RS);
 
 #ifdef GLCD_RESET_BIT
-    pio_set_low (GLCD_RESET);
+    pio_output_low (GLCD_RESET);
 #endif
 }

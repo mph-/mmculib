@@ -12,8 +12,7 @@
 #include "pio.h"
 
 
-#define PIEZO_CFG(PORT) {PORT}
-
+#define PIEZO_CFG(PIO) {PIO}
 
 typedef struct
 {
@@ -39,7 +38,7 @@ piezo_init (const piezo_cfg_t *cfg);
 static inline void
 piezo_set (piezo_t piezo, uint8_t val)
 {
-    pio_set (piezo->pio, val);
+    pio_output (piezo->pio, val);
 }
         
 #endif

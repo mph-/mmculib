@@ -164,6 +164,6 @@ static inline bool
 button_pressed_p (button_t button)
 {
     /* When a button is pushed it pulls the pio line low.  */
-    return !pio_read (button->cfg->pio);
+    return !pio_input (button->cfg->pio);
 }
 #endif
