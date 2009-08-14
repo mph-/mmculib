@@ -35,7 +35,7 @@ button_init (button_obj_t *obj, const button_cfg_t *cfg)
     button->hold_count = 0;
 
     /* Configure pio for input and enable internal pullup resistor.  */
-    pio_config_pullup (cfg->pio);
+    pio_config_set (cfg->pio, PIO_PULLUP);
 
     return button;
 }

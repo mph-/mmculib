@@ -38,7 +38,7 @@ piezo_init (const piezo_cfg_t *cfg);
 static inline void
 piezo_set (piezo_t piezo, uint8_t val)
 {
-    pio_output (piezo->pio, val);
+    pio_output_set (piezo->pio, val);
 }
         
 #endif
