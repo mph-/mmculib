@@ -8,27 +8,7 @@
 #define FONT_H
 
 #include "config.h"
-
-
-typedef const uint8_t font_elt_t;
-
-/** Font structure.  */
-typedef const struct
-{
-    /* Flags for future options.  */
-    uint8_t flags;
-    /* Width of font char.  */
-    uint8_t width;
-    /* Height of font char.  */
-    uint8_t height;
-    /* Index of first entry in font.  */
-    uint8_t offset;
-    /* Number of font entries in table.  */
-    uint8_t size;
-    /* Font data entries.  */
-    font_elt_t data[];
-} font_t;
-
+#include "fontdef.h"
 
 /* We could have multiple font entries concatenated in memory with
    different offsets/sizes to allow fonts with holes to save

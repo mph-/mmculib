@@ -18,12 +18,13 @@ font_display (char ch, font_t *font,
               void *data)
 {
     int8_t index;
-    font_elt_t *font_elt;
+    font_data_t *char_data;
     uint8_t i;
     uint8_t j;
     uint8_t k;
-    uint8_t bytes_elt;
-    uint8_t font_byte;
+    uint8_t bytes_per_char;
+    uint8_t char_byte;
+    uint8_t pixels_per_byte;
     
     /* Point to font entry.  */
     index = ch - font->offset;
@@ -31,25 +32,28 @@ font_display (char ch, font_t *font,
     if (index < 0 || index >= font->size)
         return 0;
 
-    bytes_elt = (font->width * font->height + 8 - 1) >> 3;
+    bytes_per_char = (font->width * font->height + 8 - 1) >> 3;
 
-    font_elt = &font->data[index * bytes_elt];
+    pixels_per_byte = 8;
+    /* If bit 0 of font->flags not set need to rotate font.  */
+
+    char_data = &font->data[index * bytes_per_char];
 
     /* Iterate over all pixels.  */
     k = 0;
-    font_byte = *font_elt++;
+    char_byte = *char_data++;
     
     for (j = 0; j < font->height; j++)
     {
         for (i = 0; i < font->width; i++)
         {
-            display (data, font, i, j, (font_byte & 1) != 0);
-            font_byte >>= 1;
+            display (data, font, i, j, (char_byte & 1) != 0);
+            char_byte >>= 1;
             k++;
-            if (k >= 8)
+            if (k >= pixels_per_byte)
             {
                 k = 0;
-                font_byte = *font_elt++;
+                char_byte = *char_data++;
             }
         }
     }
