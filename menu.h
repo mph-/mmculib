@@ -62,9 +62,14 @@ extern void
 menu_quit (void);
 
 
-/* Display a new menu.  */
+/* Display a new menu with prompt at last position.  */
 extern bool
 menu_display (menu_t *menu);
+
+
+/* Display a new menu with prompt at top.  */
+extern bool
+menu_display_top (menu_t *menu);
 
 
 /* Display current menu.  */
