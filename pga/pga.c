@@ -67,8 +67,9 @@ pga_channel_set (pga_t pga, pga_channel_t channel)
 void
 pga_shutdown (pga_t pga)
 {
-    /* Send command to PGA.  */
+    /* Send shutdown command to PGA.  */
     pga_send_command (pga, PGA_INSN_SHUTDOWN, 0);  
+    spi_shutdown (pga->spi);
 }
 
 

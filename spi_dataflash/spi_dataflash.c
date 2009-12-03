@@ -345,6 +345,7 @@ spi_dataflash_shutdown (spi_dataflash_t dev)
     command[0] = SPI_DATAFLASH_OP_POWERDOWN;
 
     spi_write (dev->spi, command, sizeof (command), 1);
+    spi_shutdown (dev->spi);
 }
 
 
