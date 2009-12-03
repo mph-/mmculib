@@ -11,6 +11,7 @@ typedef struct
 {
     menu_t *current;
     uint8_t rows;
+    uint8_t preview;
     menu_style_t style;
     void (*display)(const char *title, int row, 
                     const char *item_name, bool highlight);
@@ -60,6 +61,19 @@ menu_display (menu_t *menu)
 }
 
 
+/* Display a new menu with prompt at top.  */
+bool
+menu_display_top (menu_t *menu)
+{
+    menu->parent = menu_data.current;
+    menu_data.current = menu;
+    menu_data.current->index = 0;
+    menu_data.current->pointer = 0;
+    menu_show ();
+    return 0;
+}
+
+
 /* Quit the current menu and return to parent menu.  */
 void 
 menu_quit (void)
@@ -92,6 +106,7 @@ menu_goto (int index)
 }
 
 
+/* Set menu index and call action if appropriate.  */
 void
 menu_index_set (menu_t *menu, uint8_t index)
 {
