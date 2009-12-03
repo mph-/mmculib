@@ -4,6 +4,8 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+//#define MENU_WRAP
+
 
 typedef struct
 {
@@ -122,15 +124,20 @@ menu_next (void)
 {
     if (menu_data.current->index >= menu_data.current->size - 1)
     {
+        /* Reached bottom of menu.  */
+#ifdef MENU_WRAP
+        /* Wrap back to top of menu.  */
         menu_data.current->index = 0;
         menu_data.current->pointer = 0;
+#endif
     }
     else
     {
         menu_data.current->index++;
+
+        if (menu_data.current->pointer < menu_data.rows - menu_data.preview - 1
+            || menu_data.current->index > menu_data.current->size - menu_data.preview - 1)
         menu_data.current->pointer++;
-        if (menu_data.current->pointer >= min (menu_data.rows, menu_data.current->size))
-            menu_data.current->pointer = min (menu_data.rows, menu_data.current->size) - 1;
     }
 
     menu_show ();
@@ -143,13 +150,19 @@ menu_prev (void)
 {
     if (menu_data.current->index == 0)
     {
+        /* Reached top of menu.  */
+#ifdef MENU_WRAP
+        /* Wrap back to bottom of menu.  */
         menu_data.current->index = menu_data.current->size - 1;
-        menu_data.current->pointer = min (menu_data.rows, menu_data.current->size) - 1;
+        menu_data.current->pointer = min (menu_data.rows, 
+                                          menu_data.current->size) - 1;
+#endif
     }
     else
     {
         menu_data.current->index--;
-        if (menu_data.current->pointer)
+        if (menu_data.current->pointer > menu_data.preview 
+            || menu_data.current->index < menu_data.preview)
             menu_data.current->pointer--;
     }
 
@@ -177,6 +190,13 @@ menu_init (menu_t *menu, int index, int rows,
 {
     menu_data.current = menu;
     menu_data.rows = rows;
+    /* Preview controls how many menu rows are displayed before the
+       prompt at the top of the screen or after the prompt at the
+       bottom of the screen.   */
+    if (rows > 2)
+        menu_data.preview = 1;
+    else
+        menu_data.preview = 0;
     menu_data.style = MENU_STYLE_SCROLL;
     menu_data.display = display;
     menu->index = index;
