@@ -40,7 +40,7 @@ glcd_text (glcd_t glcd, font_t *font, uint8_t col, uint8_t row, const char *str)
         for (i = 0; i <= font->width; i++)
             display_pixel (&info, font, i, font->height, 0);
 
-        glcd_update (glcd);
         info.col += font->width + 1;
     }
+    glcd_update (glcd);
 }

@@ -81,4 +81,8 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 extern spi_dataflash_t
 spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg);
 
+
+extern void
+spi_dataflash_shutdown (spi_dataflash_t dev);
+
 #endif
