@@ -1,5 +1,9 @@
 #include "menu.h"
 
+/* This supports only a single menu instance to reduce programming clutter.  
+   It is designed for simple LCD displays.  */
+
+
 #ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
@@ -25,28 +29,30 @@ menu_show (void)
 {
     /* Probably need a callback here.  */
     int i;
-    uint8_t top;
     menu_t *menu = menu_data.current;
 
-    if (menu_data.style == MENU_STYLE_ROTATE)
-    {
-        /* Rotate mode with pointer not moving  */
-        menu->pointer = 0;
-    }
-
-    top = menu->index - menu->pointer;
     for (i = 0; i < menu_data.rows; i++)
     {
         uint8_t item;
 
-        if (i >= menu->size)
+        // item = (top + i) % menu->size;
+        item = menu->top + i;
+        if (item >= menu->size)
             break;
 
-        item = (top + i) % menu->size;
-
         menu_data.display (menu->title, i, menu->items[item].name,
-                           i == menu->pointer);
+                           item == menu->index);
     }
+}
+
+
+void
+menu_top_best (menu_t *menu)
+{
+    if (menu->index <= menu_data.preview)
+        menu->top = 0;
+    else
+        menu->top = menu->index - menu_data.preview;
 }
 
 
@@ -56,6 +62,7 @@ menu_display (menu_t *menu)
 {
     menu->parent = menu_data.current;
     menu_data.current = menu;
+    menu_top_best (menu_data.current);
     menu_show ();
     return 0;
 }
@@ -68,7 +75,7 @@ menu_display_top (menu_t *menu)
     menu->parent = menu_data.current;
     menu_data.current = menu;
     menu_data.current->index = 0;
-    menu_data.current->pointer = 0;
+    menu_top_best (menu_data.current);
     menu_show ();
     return 0;
 }
@@ -101,7 +108,7 @@ menu_goto (int index)
         index = 0;
 
     menu_data.current->index = index;
-    menu_data.current->pointer = min (index, menu_data.rows);
+    menu_top_best (menu_data.current);
     menu_show ();
 }
 
@@ -110,16 +117,23 @@ menu_goto (int index)
 void
 menu_index_set (menu_t *menu, uint8_t index)
 {
+    menu_t *save;
+
     /* Handle bogus values.  */
     if (index >= menu->size)
         index = 0;
 
+    /* Need to set current menu so action can find out which menu
+       is active.  */
+    save = menu_data.current;
+    menu_data.current = menu;
     menu->index = index;
-    menu->pointer = min (index, menu_data.rows);
+    menu_top_best (menu);
 
-    menu_data.current->index = index;
     if (menu->items[menu->index].action)
         menu->items[menu->index].action ();
+
+    menu_data.current = save;
 }
 
 
@@ -143,16 +157,18 @@ menu_next (void)
 #ifdef MENU_WRAP
         /* Wrap back to top of menu.  */
         menu_data.current->index = 0;
-        menu_data.current->pointer = 0;
 #endif
     }
     else
     {
-        menu_data.current->index++;
+        int spare = menu_data.current->size 
+            - (menu_data.current->top + menu_data.rows);
 
-        if (menu_data.current->pointer < menu_data.rows - menu_data.preview - 1
-            || menu_data.current->index > menu_data.current->size - menu_data.preview - 1)
-        menu_data.current->pointer++;
+        menu_data.current->index++;
+        if (menu_data.current->index >= menu_data.rows 
+            + menu_data.current->top - menu_data.preview
+            && spare > 0)
+            menu_data.current->top++;
     }
 
     menu_show ();
@@ -169,16 +185,16 @@ menu_prev (void)
 #ifdef MENU_WRAP
         /* Wrap back to bottom of menu.  */
         menu_data.current->index = menu_data.current->size - 1;
-        menu_data.current->pointer = min (menu_data.rows, 
-                                          menu_data.current->size) - 1;
 #endif
     }
     else
     {
+        int spare = menu_data.current->top; 
+
         menu_data.current->index--;
-        if (menu_data.current->pointer > menu_data.preview 
-            || menu_data.current->index < menu_data.preview)
-            menu_data.current->pointer--;
+        if (spare > 0 && menu_data.current->index - menu_data.current->top
+            < menu_data.preview)
+            menu_data.current->top--;
     }
 
     menu_show ();
@@ -199,11 +215,10 @@ menu_current_get (void)
 
 
 void 
-menu_init (menu_t *menu, int index, int rows,
+menu_init (int rows,
            void (*display)(const char *title, int row,
                            const char *item_name, bool highlight))
 {
-    menu_data.current = menu;
     menu_data.rows = rows;
     /* Preview controls how many menu rows are displayed before the
        prompt at the top of the screen or after the prompt at the
@@ -214,5 +229,4 @@ menu_init (menu_t *menu, int index, int rows,
         menu_data.preview = 0;
     menu_data.style = MENU_STYLE_SCROLL;
     menu_data.display = display;
-    menu->index = index;
 }

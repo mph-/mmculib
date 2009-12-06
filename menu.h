@@ -32,7 +32,7 @@ typedef struct menu_struct
     menu_item_t *items;
     uint8_t size;
     uint8_t index;
-    uint8_t pointer;
+    uint8_t top;
     struct menu_struct *parent;
 } menu_t;
 
@@ -110,7 +110,7 @@ menu_current_get (void);
 
 
 extern void 
-menu_init (menu_t *menu, int index, int rows,
+menu_init (int rows,
            void (*display)(const char *title, int row,
                            const char *item_name, bool highlight));
 
