@@ -31,16 +31,19 @@ dialog_display (dialog_t *dialog, const char *string)
     cols = 0;
     for (i = 0; string[i]; i++)
     {
-        cols++;
-        if (cols >= dialog_data.cols)
-        {
-            rows++;
-            cols = 0;
-        }
         if (string[i] == '\n')
         {
             rows++;
             cols = 0;
+        }
+        else
+        {
+            cols++;
+            if (cols > dialog_data.cols)
+            {
+                rows++;
+                cols = 0;
+            }
         }
     }
     dialog_data.display (0, string);
