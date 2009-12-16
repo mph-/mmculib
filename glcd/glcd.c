@@ -328,7 +328,7 @@ glcd_shutdown (glcd_t glcd)
     pio_output_low (GLCD_CS);
     pio_output_low (GLCD_RS);
 
-#ifdef GLCD_RESET_BIT
+#ifdef GLCD_RESET
     pio_output_low (GLCD_RESET);
 #endif
 }
