@@ -45,6 +45,8 @@ typedef enum {PGA_GAIN_1 = 0,
 
 #define PGA_GAINS {1, 2, 4, 5, 8, 10, 16, 32}
 
+#define PGA_GAIN_MAX 32
+
 
 typedef spi_cfg_t pga_cfg_t;
 
