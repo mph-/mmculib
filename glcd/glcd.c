@@ -259,27 +259,22 @@ glcd_pixel_set (glcd_t glcd, uint16_t x, uint16_t y, uint8_t val)
 static void 
 glcd_update_page (glcd_t glcd, uint8_t page)
 {
-    uint8_t col;
+    uint8_t commands[3];
 
     glcd_command_mode ();
 
     /* Move to start of selected page.  */
-    glcd_send (glcd, GLCD_CMD_PAGE_ADDRESS_SET | page);
-    /* Without the following delay, the bottom page of the
-       display is often selected instead of the top page.  */
-    DELAY_US (1);
-
-    glcd_send (glcd, GLCD_CMD_COL_ADDRESS_MSB_SET | 0);
-    glcd_send (glcd, GLCD_CMD_COL_ADDRESS_LSB_SET | 0);
+    commands[0] = GLCD_CMD_PAGE_ADDRESS_SET | page;
+    commands[1] = GLCD_CMD_COL_ADDRESS_MSB_SET | 0;
+    commands[2] = GLCD_CMD_COL_ADDRESS_LSB_SET | 0;
+    spi_write (glcd->spi, commands, sizeof (commands), 1);
 
     DELAY_US (1);
 
+    /* Write page.  */
     glcd_data_mode ();            
-
-    for (col = 0; col < GLCD_WIDTH; col++)
-    {
-        glcd_send (glcd, glcd->screen[page * GLCD_WIDTH + col]);
-    }
+    spi_write (glcd->spi, &glcd->screen[page * GLCD_WIDTH],
+               GLCD_WIDTH, 1);
 
     glcd->modified &= ~BIT (page);
 }
