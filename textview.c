@@ -17,6 +17,10 @@ enum {TEXTVIEW_FLAG_WRAP = BIT (0)};
 void
 textview_goto (textview_t this, uint8_t col, uint8_t row)
 {
+    if (row >= this->rows)
+        row = this->rows - 1;
+    if (col >= this->cols)
+        col = this->cols - 1;
     this->row = row;
     this->col = col;
 }
@@ -66,8 +70,8 @@ textview_init (textview_obj_t *obj,
 }
 
 
-/* This implements a jumpy scroll; perhaps should add a smooth scroll.  */
-void
+/* This implements a jumpy scroll; perhaps should add a smooth scroll?  */
+static void
 textview_scroll (textview_t this)
 {
     uint8_t row;

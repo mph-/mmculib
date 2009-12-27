@@ -108,6 +108,6 @@ mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t val)
     uint8_t x;
 
     mdraw_move (this, 0, data[0]);
-    for (x = 0; x < size; x++)
+    for (x = 1; x < size; x++)
         mdraw_line (this, x, data[x], val);
 }
