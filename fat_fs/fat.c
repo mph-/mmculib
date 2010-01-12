@@ -840,7 +840,8 @@ fat_long_name_p (const char *name)
  * 
  */
 static bool
-fat_search (fat_fs_t *fat_fs, const char *name, fatffdata_t *ff)
+fat_search (fat_fs_t *fat_fs, uint32_t dir_cluster, 
+            const char *name, fatffdata_t *ff)
 {
     fat_de_iter_t de_iter;
     fatdirentry_t *de;
@@ -858,7 +859,7 @@ fat_search (fat_fs_t *fat_fs, const char *name, fatffdata_t *ff)
     ff->islong = fat_long_name_p (name);
 
     // Iterate over direntry in current directory.
-    for (de = fat_de_first (fat_fs, fat_fs->current_dir_cluster, &de_iter);
+    for (de = fat_de_first (fat_fs, dir_cluster, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
         if (fat_de_free_p (de))
@@ -922,58 +923,24 @@ fat_search (fat_fs_t *fat_fs, const char *name, fatffdata_t *ff)
 }
 
 
-static fat_t *
-fat_find (fat_t *fat, const char *filename)
+uint32_t
+fat_dir_find (fat_fs_t *fat_fs, uint32_t dir_cluster, 
+              const char *pathname, fatffdata_t *ff)
 {
-    fatffdata_t ff;
-
-    if (!fat_search (fat->fs, filename, &ff))
-        return NULL;
-
-    TRACE_INFO (FAT, "FAT:found existing file\n");
-
-    // NASTY !!!! TODO
-//      fat->diroffset = (((char*)&ff->ff_de) - ((char*)fat_fs->sector_buffer)) / sizeof (fatdirentry_t);
-//      fat->dirsector = sector_in_buffer;
-    
-    fat->start_cluster = ((uint32_t)ff.de.cluster_high << 16)
-        | (ff.de.cluster_low);
-    fat->cluster = fat->start_cluster;
-    fat->foffset = 0; 
-    fat->file_size = ff.de.file_size;
-    fat->dir_sector = ff.dir_sector;
-    fat->dir_offset = ff.dir_offset;
-    return fat;
-}
-
-
-/**
- * Change directory
- * 
- * name may be a path like /joe/ben/moses
- * 
- * \param name Directory or path name
- * \return Current directory cluster
- *  
- */
-int
-fat_chdir (fat_fs_t *fat_fs, const char *name)
-{
-    fatffdata_t ff;
     char *p, *q;
     char tmp[32];
 
-    if (name == NULL)
-        return 1;
+    if (pathname == NULL)
+        return 0;
 
-    p = (char *) name;
+    p = (char *) pathname;
 
-    // if first char is /, go to root
+    // If first char is /, go to root
     if (*p == '/')
     {
-        TRACE_INFO (FAT, "FAT:_chdir: changing to root\n");
+        TRACE_INFO (FAT, "FAT:dir_find: changing to root\n");
        
-        fat_fs->current_dir_cluster = fat_fs->root_dir_cluster;
+        dir_cluster = fat_fs->root_dir_cluster;
         p++;
     }
     
@@ -987,29 +954,94 @@ fat_chdir (fat_fs_t *fat_fs, const char *name)
             p++;
         if (*tmp)
         {
-            TRACE_INFO (FAT, "FAT:_chdir: changing to %s\n", tmp);
+            TRACE_INFO (FAT, "FAT:dir_find: searching %s\n", tmp);
 
-            if (!fat_search (fat_fs, tmp, &ff))
+            if (!fat_search (fat_fs, dir_cluster, tmp, ff))
             {
-                TRACE_ERROR (FAT, "FAT:_chdir %s not found\n", tmp);
-                return (uint32_t) -1;                           // fail
+                TRACE_ERROR (FAT, "FAT:dir_find %s not found\n", tmp);
+                return 0;
             }
 
-            if ((ff.de.attributes & ATTR_DIRECTORY) != ATTR_DIRECTORY)    // if this is not a directory
+            if ((ff->de.attributes & ATTR_DIRECTORY) != ATTR_DIRECTORY)
             {
-                TRACE_ERROR (FAT, "FAT:_chdir %s not a directory\n", tmp);
-                return (uint32_t) -1;           // fail     TODO, this is not necessarily a fault
+                TRACE_ERROR (FAT, "FAT:dir_find %s not a directory\n", tmp);
+                return dir_cluster;
             }
 
-            // set new directory as active
-            
-            fat_fs->current_dir_cluster = ff.de.cluster_high;
-            fat_fs->current_dir_cluster <<= 16;
-            fat_fs->current_dir_cluster |= ff.de.cluster_low;
+            dir_cluster = (ff->de.cluster_high << 16) | ff->de.cluster_low;
         }
     }
-    TRACE_INFO (FAT, "FAT:_chdir: all done\n");
-    return fat_fs->current_dir_cluster;
+    return dir_cluster;
+}
+
+
+/**
+ * Change directory
+ *
+ * \param pathname Directory or path name
+ * \return 0 for success -1 for failure
+ *  
+ */
+int
+fat_chdir (fat_fs_t *fat_fs, const char *pathname)
+{
+    fatffdata_t ff;
+    uint32_t dir_cluster;
+
+    dir_cluster = fat_dir_find (fat_fs, fat_fs->current_dir_cluster,
+                                pathname, &ff);
+    if (!dir_cluster)
+    {
+        errno = ENOENT;
+        return -1;
+
+    }
+    
+    if ((ff.de.attributes & ATTR_DIRECTORY) != ATTR_DIRECTORY)
+    {
+        errno = ENOTDIR;
+        return -1;
+    }
+
+    fat_fs->current_dir_cluster = dir_cluster;
+    return 0;
+}
+
+
+static fat_t *
+fat_find (fat_t *fat, const char *pathname)
+{
+    fatffdata_t ff;
+    const char *filename;
+    uint32_t dir_cluster;
+
+    dir_cluster = fat->fs->current_dir_cluster;
+
+    // If pathname has a path component change to required directory
+    if (strchr (pathname, '/'))
+    {
+        dir_cluster = fat_dir_find (fat->fs, dir_cluster, pathname, &ff);
+        if (!dir_cluster)
+            return NULL;
+    }
+
+    filename = pathname;
+    while (strchr (filename, '/') != 0)
+        filename = strchr (filename, '/') + 1;
+
+    if (!fat_search (fat->fs, dir_cluster, filename, &ff))
+        return NULL;
+
+    TRACE_INFO (FAT, "FAT:found existing file\n");
+
+    fat->start_cluster = ((uint32_t)ff.de.cluster_high << 16)
+        | (ff.de.cluster_low);
+    fat->cluster = fat->start_cluster;
+    fat->foffset = 0; 
+    fat->file_size = ff.de.file_size;
+    fat->dir_sector = ff.dir_sector;
+    fat->dir_offset = ff.dir_offset;
+    return fat;
 }
 
 
@@ -1070,18 +1102,18 @@ fat_close (fat_t *fat)
  * \return Number of bytes successful read.
  * 
  */
-int
-fat_read (fat_t *fat, char *buffer, int len)
+ssize_t
+fat_read (fat_t *fat, char *buffer, size_t len)
 {
     uint16_t nbytes;
     uint32_t sector;
     uint16_t dcount;
     uint16_t loffset;
 
-    TRACE_INFO (FAT, "FAT:fat_read %d\n", len);
+    TRACE_INFO (FAT, "FAT:fat_read %u\n", (unsigned int)len);
     
     // Limit max read to size of file
-    if (len > (fat->file_size - fat->foffset))
+    if ((uint32_t)len > (fat->file_size - fat->foffset))
         len = fat->file_size - fat->foffset;
     
     dcount = len;
@@ -1124,7 +1156,7 @@ fat_read (fat_t *fat, char *buffer, int len)
                 break;
         }
     }
-    TRACE_INFO (FAT, "FAT:fat_read return %d\n", len - dcount);
+    TRACE_INFO (FAT, "FAT:fat_read return %u\n", (unsigned int)len - dcount);
     return len - dcount;
 }
 
@@ -1138,13 +1170,14 @@ fat_read (fat_t *fat, char *buffer, int len)
  * \return New position within file
  * 
  */
-uint32_t
-fat_lseek (fat_t *fat, long offset, uint8_t origin)
+off_t
+fat_lseek (fat_t *fat, off_t offset, int dir)
 {
-    long fpos = 0, npos, t, cluster_new;
+    off_t fpos = 0, npos, t;
+    uint32_t cluster_new;
 
     // Setup position to seek from
-    switch (origin)
+    switch (dir)
     {
     case SEEK_SET : fpos = 0; break;
     case SEEK_CUR : fpos = fat->foffset; break;
@@ -1155,12 +1188,12 @@ fat_lseek (fat_t *fat, long offset, uint8_t origin)
     npos = fpos + offset;
     if (npos < 0)
         npos = 0;
-    if (npos > fat->file_size)
+    if ((uint32_t)npos > fat->file_size)
         npos = fat->file_size;
 
     // Now set the new position
     t = npos;
-    fat->foffset = t;            // real offset
+    fat->foffset = t;
 
     // Calculate how many clusters from start cluster
     t = npos / fat->fs->bytes_per_cluster;
@@ -1600,7 +1633,7 @@ fat_dir_add (fat_fs_t *fat_fs, const char *filename,
     TRACE_INFO (FAT, "FAT:fat_dir_add for %s\n", filename);
 
     // Iterate over direntry in current directory looking for a free slot.
-    for (de = fat_de_first (fat_fs, fat_fs->current_dir_cluster, &de_iter);
+    for (de = fat_de_first (fat_fs, cluster_dir, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
         if (!fat_de_free_p (de))
@@ -1639,14 +1672,28 @@ fat_dir_add (fat_fs_t *fat_fs, const char *filename,
              
 
 fat_t *
-fat_create (fat_t *fat, const char *filename, uint32_t size)
+fat_create (fat_t *fat, const char *pathname, uint32_t size)
 {
     fat_fs_t *fat_fs;
+    const char *filename;
+    uint32_t dir_cluster;
+    fatffdata_t ff;
 
     fat_fs = fat->fs;
     
-    // Should split path into filename and directory.  For now
-    // assume all files in root dir.
+    dir_cluster = fat_fs->current_dir_cluster;
+
+    // If pathname has a path component change to required directory
+    if (strchr (pathname, '/'))
+    {
+        dir_cluster = fat_dir_find (fat_fs, dir_cluster, pathname, &ff);
+        if (!dir_cluster)
+            return NULL;
+    }
+
+    filename = pathname;
+    while (strchr (filename, '/') != 0)
+        filename = strchr (filename, '/') + 1;
 
     // Create the file space for the file
     fat->file_size = size;
@@ -1658,8 +1705,8 @@ fat_create (fat_t *fat, const char *filename, uint32_t size)
     if (!fat->start_cluster)
         return NULL;
 
-    // Add file to root directory
-    if (!fat_dir_add (fat_fs, filename, fat_fs->root_dir_cluster, 
+    // Add file to directory
+    if (!fat_dir_add (fat_fs, filename, dir_cluster, 
                       fat->start_cluster, fat->file_size))
         return NULL;
 
@@ -1692,22 +1739,14 @@ fat_create (fat_t *fat, const char *filename, uint32_t size)
  *
  * \return File handle 
  */
-fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode)
+fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
 {
     fat_t *fat = 0;
-    const char *p;
 
-    TRACE_INFO (FAT, "FAT:fat_open %s\n", name);
+    TRACE_INFO (FAT, "FAT:fat_open %s\n", pathname);
 
-    if (!name || !*name)
+    if (!pathname || !*pathname)
         return 0;
-
-    if (strchr (name, '/'))       // if the name has a path component
-        fat_chdir (fat_fs, name); // follow the path  
-
-    p = name;
-    while (strchr (p, '/') != 0) // if the name has an initial path component
-        p = strchr (p, '/') + 1;   // step past it
 
     // Alloc for file spec
     fat = malloc (sizeof (*fat));
@@ -1720,7 +1759,7 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode)
     fat->mode = mode;
     fat->fs = fat_fs;
 
-    if (fat_find (fat, p))
+    if (fat_find (fat, pathname))
     {
         if (mode & O_TRUNC)
             fat->foffset = 0;
@@ -1731,7 +1770,7 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode)
 
     if (mode & O_CREAT)
     {
-        if (fat_create (fat, p, 0))
+        if (fat_create (fat, pathname, 0))
         {
             if (mode & O_TRUNC)
                 fat->foffset = 0;
@@ -1739,11 +1778,11 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode)
                 fat->foffset = fat->file_size;        
             return fat;
         }
-        TRACE_INFO (FAT, "FAT:file not created: %s\n", name);
+        TRACE_INFO (FAT, "FAT:file not created: %s\n", pathname);
     }
     else
     {
-        TRACE_INFO (FAT, "FAT:file not found: %s\n", name);
+        TRACE_INFO (FAT, "FAT:file not found: %s\n", pathname);
     }
 
     free (fat);
@@ -1751,15 +1790,15 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode)
 }
 
 
-int
-fat_write (fat_t *fat, const char *buffer, int len)
+ssize_t
+fat_write (fat_t *fat, const char *buffer, size_t len)
 {
     uint16_t nbytes;
     uint32_t sector;
     uint16_t dcount;
     uint16_t loffset;
 
-    TRACE_INFO (FAT, "FAT:fat_write %d\n", len);
+    TRACE_INFO (FAT, "FAT:fat_write %u\n", (unsigned int)len);
 
     if (! ((fat->mode & O_RDWR) || (fat->mode & O_WRONLY)))
     {
@@ -1812,7 +1851,7 @@ fat_write (fat_t *fat, const char *buffer, int len)
     fat_size_set (fat, fat->file_size);
     fat_sector_cache_flush (fat->fs);
 
-    TRACE_INFO (FAT, "FAT:fat_write return %d\n", len - dcount);
+    TRACE_INFO (FAT, "FAT:fat_write return %u\n", (unsigned int)len - dcount);
     return len - dcount;
 }
 
@@ -1820,6 +1859,7 @@ fat_write (fat_t *fat, const char *buffer, int len)
 int
 fat_unlink (const char *pathname)
 {
-    // TODO
+
+
     return -1;
 }

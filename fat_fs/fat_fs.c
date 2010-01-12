@@ -20,10 +20,13 @@ static sys_fs_t fat_fs =
 };
 
 
-void fat_fs_init (msd_t *msd)
+bool fat_fs_init (msd_t *msd)
 {
     void *arg;
 
     arg = fat_init (msd);
+    if (!arg)
+        return 0;
     sys_fs_register (&fat_fs, arg);
+    return 1;
 }

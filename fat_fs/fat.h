@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "msd.h"
+#include <unistd.h>
 
 typedef struct fat_fs_struct fat_fs_t;
 
@@ -18,11 +19,11 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode);
 
 int fat_close (fat_t *fat);
 
-int fat_read (fat_t *fat, char *buffer, int len);
+ssize_t fat_read (fat_t *fat, char *buffer, size_t len);
 
-int fat_write (fat_t *fat, const char *buffer, int len);
+ssize_t fat_write (fat_t *fat, const char *buffer, size_t len);
 
-long fat_lseek (fat_t *fat, long offset, int dir);
+long fat_lseek (fat_t *fat, off_t offset, int dir);
 
 int fat_chdir (fat_fs_t *fat_fs, const char *name);
 
