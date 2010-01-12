@@ -29,7 +29,7 @@ dataflash_msd_write (void *dev, msd_addr_t addr, const void *buffer,
 
 
 static msd_status_t
-dataflash_msd_status_get (void *dev)
+dataflash_msd_status_get (void *dev __unused__)
 {
     return MSD_STATUS_READY;
 }

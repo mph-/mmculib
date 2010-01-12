@@ -28,6 +28,17 @@
 #include "usb_bot.h"
 
 
+/** Set flag(s) in a register */
+#define SET(register, flags)        ((register) = (register) | (flags))
+/** Clear flag(s) in a register */
+#define CLEAR(register, flags)      ((register) &= ~(flags))
+
+/** Poll the status of flags in a register */
+#define ISSET(register, flags)      (((register) & (flags)) == (flags))
+/** Poll the status of flags in a register */
+#define ISCLEARED(register, flags)  (((register) & (flags)) == 0)
+
+
 //! \brief  Possible states of the MSD driver
 typedef enum
 {
