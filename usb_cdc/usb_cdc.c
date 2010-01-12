@@ -1,0 +1,264 @@
+#include "config.h"
+#include "usb_cdc.h"
+#include "pio.h"
+
+
+/* CDC communication device class. 
+
+   Using sudo modprobe usbserial vendor=0x03EB product=0x6124
+   will create a tty device such as /dev/ttyUSB0
+*/
+
+
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+static const char cfgDescriptor[] = 
+{
+    /* ============== CONFIGURATION 1 =========== */
+    /* Configuration 1 descriptor */
+    0x09,   // CbLength
+    0x02,   // CbDescriptorType
+    0x43,   // CwTotalLength 2 EP + Control
+    0x00,
+    0x02,   // CbNumInterfaces
+    0x01,   // CbConfigurationValue
+    0x00,   // CiConfiguration
+    0xC0,   // CbmAttributes 0xA0
+    USB_CURRENT_MA / 2,   // CMaxPower
+    
+    /* Communication Class Interface Descriptor Requirement */
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoints
+    0x02, // bInterfaceClass
+    0x02, // bInterfaceSubclass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    
+    /* Header Functional Descriptor */
+    0x05, // bFunction Length
+    0x24, // bDescriptor type: CS_INTERFACE
+    0x00, // bDescriptor subtype: Header Func Desc
+    0x10, // bcdCDC:1.1
+    0x01,
+    
+    /* ACM Functional Descriptor */
+    0x04, // bFunctionLength
+    0x24, // bDescriptor Type: CS_INTERFACE
+    0x02, // bDescriptor Subtype: ACM Func Desc
+    0x00, // bmCapabilities
+    
+    /* Union Functional Descriptor */
+    0x05, // bFunctionLength
+    0x24, // bDescriptorType: CS_INTERFACE
+    0x06, // bDescriptor Subtype: Union Func Desc
+    0x00, // bMasterInterface: Communication Class Interface
+    0x01, // bSlaveInterface0: Data Class Interface
+    
+    /* Call Management Functional Descriptor */
+    0x05, // bFunctionLength
+    0x24, // bDescriptor Type: CS_INTERFACE
+    0x01, // bDescriptor Subtype: Call Management Func Desc
+    0x00, // bmCapabilities: D1 + D0
+    0x01, // bDataInterface: Data Class Interface 1
+    
+    /* Endpoint 1 descriptor */
+    0x07,   // bLength
+    0x05,   // bDescriptorType
+    0x83,   // bEndpointAddress, Endpoint 03 - IN
+    0x03,   // bmAttributes      INT
+    0x08,   // wMaxPacketSize
+    0x00,
+    0xFF,   // bInterval
+    
+    /* Data Class Interface Descriptor Requirement */
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x01, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x02, // bNumEndpoints
+    0x0A, // bInterfaceClass
+    0x00, // bInterfaceSubclass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    
+    /* First alternate setting */
+    /* Endpoint 1 descriptor */
+    0x07,   // bLength
+    0x05,   // bDescriptorType
+    0x01,   // bEndpointAddress, Endpoint 01 - OUT
+    0x02,   // bmAttributes      BULK
+    USB_EP_OUT_SIZE,   // wMaxPacketSize
+    0x00,
+    0x00,   // bInterval
+    
+    /* Endpoint 2 descriptor */
+    0x07,   // bLength
+    0x05,   // bDescriptorType
+    0x82,   // bEndpointAddress, Endpoint 02 - IN
+    0x02,   // bmAttributes      BULK
+    USB_EP_IN_SIZE,   // wMaxPacketSize
+    0x00,
+    0x00    // bInterval
+};
+
+
+/* CDC Class Specific Request Code */
+#define GET_LINE_CODING               0x21A1
+#define SET_CONTROL_LINE_STATE        0x2221
+
+
+typedef struct 
+{
+    unsigned int dwDTERRate;
+    char bCharFormat;
+    char bParityType;
+    char bDataBits;
+} USB_CDC_LINE_CODING;
+
+
+USB_CDC_LINE_CODING line_coding =
+{
+    115200, // baudrate
+    0,      // 1 Stop Bit
+    0,      // None Parity
+    8
+};     // 8 Data bits
+
+
+static usb_cdc_dev_t usb_cdc_dev;
+
+
+static bool
+usb_cdc_request_callback (usb_t usb, uint16_t request, uint16_t value, 
+                          uint16_t index __UNUSED__, uint16_t length)
+{
+    switch (request)
+    {
+    case GET_LINE_CODING:
+        usb_control_write (usb, &line_coding,
+                           MIN (sizeof (line_coding), length));
+        return 1;
+        break;
+
+    case SET_CONTROL_LINE_STATE:
+        usb->connection = value;
+        usb_control_write_zlp (usb);
+        break;
+
+    default:
+        break;
+    }
+    return 0;
+}
+
+
+usb_cdc_size_t
+usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, usb_cdc_size_t length)
+{
+    return usb_read (usb_cdc->usb, buffer, length);
+}
+
+
+bool
+usb_cdc_read_ready_p (usb_cdc_t usb_cdc)
+{
+    return usb_read_ready_p (usb_cdc->usb);
+}
+
+
+usb_cdc_size_t
+usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, usb_cdc_size_t length)
+{
+    return usb_write (usb_cdc->usb, buffer, length);
+}
+
+
+bool
+usb_cdc_configured_p (usb_cdc_t usb_cdc)
+{
+    return usb_configured_p (usb_cdc->usb);
+}
+
+
+void
+usb_cdc_connect (usb_cdc_t usb_cdc)
+{
+    usb_connect (usb_cdc->usb);
+}
+
+
+void
+usb_cdc_shutdown (void)
+{
+    AT91PS_UDP pUDP = AT91C_BASE_UDP;
+
+    /* The USB_CDC transceiver is enabled by default.  */
+
+    /* Enable System Peripheral USB_CDC Clock.  */
+    AT91C_BASE_PMC->PMC_PCER = BIT (AT91C_ID_UDP);
+
+    /* Disable transceiver.  */
+    pUDP->UDP_TXVC = 0x100;
+
+    /* Disable System Peripheral USB_CDC Clock.  */
+    AT91C_BASE_PMC->PMC_PCDR = BIT (AT91C_ID_UDP);
+}
+
+
+static const usb_cfg_t usb_cdc_cfg =
+{
+    .cfg_descriptor = cfgDescriptor,
+    .cfg_descriptor_size = sizeof (cfgDescriptor),
+    .request_callback = usb_cdc_request_callback
+};
+
+
+usb_cdc_t
+usb_cdc_init (void)
+{
+    usb_cdc_t usb_cdc = &usb_cdc_dev;
+
+    usb_cdc->usb = usb_init (&usb_cdc_cfg);
+
+    return usb_cdc;
+}
+
+
+
+/** Read character.  This blocks until the character can be read.  */
+int8_t
+usb_cdc_getc (usb_cdc_t usb_cdc)
+{
+    uint8_t ch;
+
+    usb_cdc_read (usb_cdc, &ch, sizeof (ch));
+    return ch;
+}
+
+
+/** Write character.  This blocks until the character can be
+    written.  */
+int8_t
+usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
+{
+    if (ch == '\n')
+        usb_cdc_putc (usb_cdc, '\r');    
+
+    usb_cdc_write (usb_cdc, &ch, sizeof (ch));
+    return ch;
+}
+
+
+/** Write string.  This blocks until the string is buffered.  */
+int8_t
+usb_cdc_puts (usb_cdc_t usb_cdc, const char *str)
+{
+    while (*str)
+        usb_cdc_putc (usb_cdc, *str++);
+    return 1;
+}
