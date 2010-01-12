@@ -144,7 +144,11 @@ textview_putc_1 (textview_t this, char ch)
         if (this->col >= this->cols)
         {
             if (this->flags & TEXTVIEW_FLAG_WRAP)
+            {
                 textview_putc_1 (this, '\n');
+                if (this->row >= this->rows)
+                    textview_scroll (this);
+            }
             else
                 break;
         }
