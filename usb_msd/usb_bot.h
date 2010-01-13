@@ -26,15 +26,16 @@
 
 #include "config.h"
 #include "usb_msd_defs.h"
+#include "usb.h"
 
 //! \brief  Address of Bulk OUT endpoint
-#define USB_BOT_EPT_BULK_OUT    1
+#define USB_BOT_EPT_BULK_OUT    UDP_EP_OUT
 
 //! \brief  Address of Bulk IN endpoint
-#define USB_BOT_EPT_BULK_IN     2
+#define USB_BOT_EPT_BULK_IN     UDP_EP_IN
 
-#define USB_BOT_IN_EP_SIZE      64  //!< Bulk IN enpoint size
-#define USB_BOT_OUT_EP_SIZE     64  //!< Bulk OUT endpoint size
+#define USB_BOT_IN_EP_SIZE      UDP_EP_OUT_SIZE
+#define USB_BOT_OUT_EP_SIZE     UDP_EP_IN_SIZE
 
 
 typedef enum
@@ -92,7 +93,7 @@ bool usb_bot_awake_p (void);
 
 bool usb_bot_update (void);
 
-bool usb_bot_init (uint8_t num);
+bool usb_bot_init (uint8_t num, const usb_descriptors_t *descriptors);
 
 usb_bot_status_t
 usb_bot_write (const void *buffer, uint16_t size, void *pTransfer);

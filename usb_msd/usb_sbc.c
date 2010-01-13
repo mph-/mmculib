@@ -456,7 +456,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_mode_sense6 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;

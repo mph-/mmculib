@@ -1389,7 +1389,7 @@ fat_init (msd_t *msd)
 
 
 static void
-fat_cluster_next_set (fat_fs_t *fat_fs, uint32_t cluster)
+fat_cluster_next_set (fat_fs_t *fat_fs __unused__, uint32_t cluster __unused__)
 {
 #if 0
     /* Need to read/write fsinfo.  */
@@ -1400,8 +1400,9 @@ fat_cluster_next_set (fat_fs_t *fat_fs, uint32_t cluster)
 }
 
 
+#if 0
 static uint32_t
-fat_cluster_next_get (fat_fs_t *fat_fs)
+fat_cluster_next_get (fat_fs_t *fat_fs __unused__)
 {
 #if 0
     /* Need to read/write fsinfo.  */
@@ -1410,6 +1411,7 @@ fat_cluster_next_get (fat_fs_t *fat_fs)
 #endif
     return CLUST_EOFE;
 }
+#endif
 
 
 /* Find a free cluster by checking each chain in the FAT.  */
@@ -1493,17 +1495,14 @@ fat_allocate_free_space (fat_fs_t *fat_fs, uint32_t cluster_start,
     return cluster_start;
 }
 
-
-//-----------------------------------------------------------------------------
-// fat_cluster_chain_free: Follow a chain marking each element as free
-//-----------------------------------------------------------------------------
-
+#if 0
 static void
 fat_cluster_chain_free (fat_fs_t *fat_fs, uint32_t cluster_start)
 {
     uint32_t cluster_last;
     uint32_t cluster;
 	
+    // Follow a chain marking each element as free
     for (cluster = cluster_start; cluster !=0 && !fat_cluster_last_p (cluster);)
     {
         cluster_last = cluster;
@@ -1547,6 +1546,7 @@ fat_cluster_chain_append (fat_fs_t *fat_fs, uint32_t cluster_start,
 }
 
 
+
 static uint8_t
 fat_checksum_calc (const char *filename)
 {
@@ -1559,6 +1559,7 @@ fat_checksum_calc (const char *filename)
 
     return checksum;
 }
+#endif
 
 
 static uint8_t 
@@ -1857,7 +1858,7 @@ fat_write (fat_t *fat, const char *buffer, size_t len)
 
 
 int
-fat_unlink (const char *pathname)
+fat_unlink (const char *pathname __unused__)
 {
 
 

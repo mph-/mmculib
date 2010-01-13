@@ -239,7 +239,7 @@ usb_msd_update (void)
         if (usb_bot_awake_p ())
         {
             sbc_reset ();
-            usb_bot_init (sbc_lun_num_get ());
+            usb_bot_init (sbc_lun_num_get (), &sDescriptors);
             state = USB_MSD_STATE_COMMAND_READ;
         }
         break;

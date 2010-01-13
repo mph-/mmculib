@@ -25,21 +25,6 @@
 #define USB_STD_H_
 
 /**
- * \name USB descriptor identifier
- * 
- */
-//@{
-#define USB_DEVICE_DESCRIPTOR                       0x01
-#define USB_CONFIGURATION_DESCRIPTOR                0x02
-#define USB_STRING_DESCRIPTOR                       0x03
-#define USB_INTERFACE_DESCRIPTOR                    0x04
-#define USB_ENDPOINT_DESCRIPTOR                     0x05
-#define USB_DEVICE_QUALIFIER_DESCRIPTOR             0x06
-#define USB_OTHER_SPEED_CONFIGURATION_DESCRIPTOR    0x07
-#define USB_INTERFACE_POWER_DESCRIPTOR              0x08
-//@}
-
-/**
  * \name USB standard request identifier
  * 
  */
@@ -101,7 +86,5 @@ typedef struct
 
 } __attribute__ ( (packed)) s_usb_request;
 
-
-void usb_std_req_handler (s_usb_request *pSetup);
 
 #endif /*USB_STD_H_*/

@@ -134,19 +134,24 @@ static usb_cdc_dev_t usb_cdc_dev;
 
 
 static bool
-usb_cdc_request_callback (usb_t usb, uint16_t request, uint16_t value, 
-                          uint16_t index __UNUSED__, uint16_t length)
+usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 {
-    switch (request)
+    switch ((setup->request << 8) | setup->type)
     {
+    case SET_LINE_CODING:
+        usb_control_gobble (usb);
+
+        usb_control_write_zlp (usb);
+        break;
+
     case GET_LINE_CODING:
         usb_control_write (usb, &line_coding,
-                           MIN (sizeof (line_coding), length));
+                           MIN (sizeof (line_coding), setup->length));
         return 1;
         break;
 
     case SET_CONTROL_LINE_STATE:
-        usb->connection = value;
+        usb->connection = setup->value;
         usb_control_write_zlp (usb);
         break;
 
@@ -214,7 +219,7 @@ static const usb_cfg_t usb_cdc_cfg =
 {
     .cfg_descriptor = cfgDescriptor,
     .cfg_descriptor_size = sizeof (cfgDescriptor),
-    .request_callback = usb_cdc_request_callback
+    .request_handler = usb_cdc_request_handler
 };
 
 

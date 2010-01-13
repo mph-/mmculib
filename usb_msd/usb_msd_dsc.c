@@ -21,7 +21,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.\n
  * 
  */
-#include "usb_drv.h"
 #include "usb_msd_defs.h"
 #include "usb_bot.h"
 #include "usb_dsc.h"
@@ -56,7 +55,7 @@ static const S_usb_device_descriptor sDeviceDescriptor =
     0x00,                            // Class is specified in the interface descriptor.
     0x00,                            // Subclass is specified in the interface descriptor.
     0x00,                            // Protocol is specified in the interface descriptor.
-    EP0_BUFF_SIZE,                   // Maximum packet size for endpoint zero
+    UDP_EP_CONTROL_SIZE,             // Maximum packet size for endpoint zero
     USB_VENDOR_ID,                   // Vendor ID
     USB_PRODUCT_ID,                  // Product ID
     USB_RELEASE_ID,                  // Device release number
@@ -67,7 +66,7 @@ static const S_usb_device_descriptor sDeviceDescriptor =
 };
 
 //! Configuration descriptor
-static const S_bot_configuration_descriptor sConfigurationDescriptor = 
+const S_bot_configuration_descriptor sConfigurationDescriptor = 
 {
     // Configuration Descriptor
     {
@@ -122,7 +121,7 @@ static const S_usb_device_qualifier_descriptor sDeviceQualifierDescriptor =
    MSD_INTF,                            //!< Class code
    MSD_INTF_SUBCLASS,                   //!< Sub-class code
    MSD_PROTOCOL,                        //!< Protocol code
-   EP0_BUFF_SIZE,                       //!< Control endpoint 0 max. packet size
+   UDP_EP_CONTROL_SIZE,                 //!< Control endpoint 0 max. packet size
    1,                                   //!< Number of possible configurations
    0                                    //!< Reserved for future use, must be 0
 };

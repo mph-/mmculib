@@ -24,6 +24,7 @@
 #ifndef USB_MSD_DEFS_H_
 #define USB_MSD_DEFS_H_
 
+#include "config.h"
 
 //! MSD Interface Class Code
 #define MSD_INTF            0x08

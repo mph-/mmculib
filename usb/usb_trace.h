@@ -39,20 +39,6 @@
 #endif
 
 
-#ifndef TRACE_USB_DRV_ERROR
-#define TRACE_USB_DRV_ERROR(...)
-#endif
-
-
-#ifndef TRACE_USB_DRV_INFO
-#define TRACE_USB_DRV_INFO(...)
-#endif
-
-
-#ifndef TRACE_USB_DRV_DEBUG
-#define TRACE_USB_DRV_DEBUG(...)
-#endif
-
 
 #ifndef TRACE_SBC_ERROR
 #define TRACE_SBC_ERROR(...)
