@@ -5,7 +5,8 @@
 /* This module is mostly a wrapper for the device dependent UDP.
    It also handles setup and configuration requests. 
 
-   This module must be completely device independent.
+   This module must be completely device independent.  The udp module
+   handles all the device dependent stuff.
  */
 
 
@@ -58,27 +59,24 @@
 #define LOW_BYTE(v) ((v) & 0xff)
 #endif
 
-static const char devDescriptor[] =
+// Descriptors
+//! Device descriptor
+static const usb_dsc_dev_t devDescriptor =
 {
-    /* Device descriptor */
-    0x12,   // bLength
-    0x01,   // bDescriptorType
-    0x10,   // bcdUSBL
-    0x01,   //
-    0x00,   // bDeviceClass (use class specified by interface)
-    0x00,   // bDeviceSubclass
-    0x00,   // bDeviceProtocol
-    0x08,   // bMaxPacketSize0
-    LOW_BYTE (USB_VENDOR_ID),    // idVendorL
-    HIGH_BYTE (USB_VENDOR_ID),   //
-    LOW_BYTE (USB_PRODUCT_ID),   // idProductL
-    HIGH_BYTE (USB_PRODUCT_ID),  //
-    LOW_BYTE (USB_RELEASE_ID),   // bcdDeviceL
-    HIGH_BYTE (USB_RELEASE_ID),  //
-    0x00,   // iManufacturer
-    0x00,   // iProduct
-    0x00,   // SerialNumber
-    0x01    // bNumConfigs
+    sizeof(usb_dsc_dev_t), // Size of this descriptor in bytes
+    USB_DEVICE_DESCRIPTOR,           // DEVICE Descriptor Type
+    0x0200,                          // USB specification 2.0 in BCD
+    0x00,                            // Class is specified in the interface descriptor.
+    0x00,                            // Subclass is specified in the interface descriptor.
+    0x00,                            // Protocol is specified in the interface descriptor.
+    UDP_EP_CONTROL_SIZE,             // Maximum packet size for endpoint zero
+    USB_VENDOR_ID,                   // Vendor ID
+    USB_PRODUCT_ID,                  // Product ID
+    USB_RELEASE_ID,                  // Device release number
+    0x00,                            // Index 1: manufacturer string
+    0x00,                            // Index 2: product string
+    0x00,                            // Index 3: serial number string
+    0x01                             // One possible configurations
 };
 
 
@@ -107,38 +105,39 @@ usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
     switch (HIGH_BYTE (setup->value)) 
     {
     case USB_DEVICE_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:Dev\n");
+        TRACE_DEBUG (USB, "USB:Dev\n");
         usb_control_write (usb, usb->dev_descriptor, 
-                           MIN (usb->descriptors->pDevice->bLength, 
+                           MIN (usb->dev_descriptor->bLength, 
                                 setup->length));    
         break;
         
     case USB_CONFIGURATION_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:Cfg\n");
-        usb_control_write (usb, usb->descriptors->pConfiguration, 
-                           MIN (usb->descriptors->pConfiguration->wTotalLength, 
+        TRACE_DEBUG (USB, "USB:Cfg\n");
+        usb_control_write (usb, usb->descriptors->config, 
+                           MIN (usb->descriptors->config->wTotalLength, 
                                 setup->length));
         break;
         
     case USB_STRING_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:Str%d\n", LOW_BYTE (setup->value));
-        usb_control_write (usb, usb->descriptors->pStrings[LOW_BYTE (setup->value)], 
-                           MIN (*(usb->descriptors->pStrings[LOW_BYTE (setup->value)]),
+        TRACE_DEBUG (USB, "USB:Str%d\n", LOW_BYTE (setup->value));
+        usb_control_write (usb, usb->descriptors->strings[LOW_BYTE (setup->value)], 
+                           MIN (*(usb->descriptors->strings[LOW_BYTE (setup->value)]),
                                 setup->length));    
         break;
         
-#ifdef USB_HIGHSPEED
     case USB_DEVICE_QUALIFIER_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:Qua\n");
+        TRACE_DEBUG (USB, "USB:Qua\n");
+#ifdef USB_HIGHSPEED
         usb_control_write (usb, usb->descriptors->pQualifier, 
                            MIN (usb->descriptors->pQualifier->bLength, 
                                 setup->length));
-        break;
+#else
+        usb_control_stall (usb);
 #endif
+        break;
         
     default:
-        TRACE_INFO (USB, "USB:Unknown GetDescriptor 0x%02X\n", 
-                    setup->request );
+        TRACE_ERROR (USB, "USB:Unknown gdesc 0x%02X\n", setup->request);
         /* Send stall for unsupported descriptor requests.  */
         usb_control_stall (usb);
     }
@@ -155,14 +154,14 @@ void
 usb_std_request_handler (usb_t usb, udp_setup_t *setup)
 {
     uint16_t temp;
-    const S_usb_configuration_descriptor *cfg_desc;
+    const usb_dsc_cfg_t *cfg_desc;
     
     // Handle supported standard device request see Table 9-3 in USB
     // specification Rev 2.0
     switch (setup->request)
     {
     case USB_GET_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:gDesc\n");
+        TRACE_INFO (USB, "USB:gDesc 0x%02x\n", setup->request);
         usb_std_get_descriptor (usb, setup);
         break;       
 
@@ -180,7 +179,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
 
     case USB_GET_CONFIGURATION:
         TRACE_INFO (USB, "USB:gCfg\n");
-        cfg_desc = usb->descriptors->pConfiguration;
+        cfg_desc = usb->descriptors->config;
         usb_control_write (usb, cfg_desc, cfg_desc->bLength);
         break;
 
@@ -231,7 +230,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         case USB_RECIPIENT_DEVICE:
             TRACE_INFO (USB, "USB:Dev\n");
             temp = 0; // status: No remote wakeup, bus powered
-            usb_control_write (usb, &temp, 2);
+            usb_control_write (usb, &temp, sizeof (temp));
             break;
             
         case USB_RECIPIENT_ENDPOINT:
@@ -240,7 +239,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
             temp = (uint16_t) usb_halt (usb, LOW_BYTE (setup->index), 
                                         USB_GET_STATUS);
             // Return the endpoint status
-            usb_control_write (usb, &temp, 2);                        
+            usb_control_write (usb, &temp, sizeof (temp));                        
             break;
             
         default:
@@ -335,7 +334,7 @@ usb_read_async (usb_t usb, void *buffer,
 static void
 usb_request_handler (usb_t usb, udp_setup_t *setup)
 {
-    /* Pass request to BOT or CDC handler first.  */
+    /* Pass request to other handlers such as BOT or CDC first.  */
     if (!usb->request_handler 
         || !usb->request_handler (usb, setup))
         usb_std_request_handler (usb, setup);
@@ -381,7 +380,7 @@ usb_t usb_init (const usb_descriptors_t *descriptors,
 
     usb->descriptors = descriptors;
     usb->request_handler = request_handler;
-    usb->dev_descriptor = devDescriptor;
+    usb->dev_descriptor = &devDescriptor;
 
     return usb;
 }

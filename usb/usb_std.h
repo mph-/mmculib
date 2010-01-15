@@ -1,26 +1,3 @@
-/**
- * \file usb_std.h
- * Header: USB standard request handler
- * 
- * USB standard request handler functions
- * 
- * AT91SAM7S-128 USB Mass Storage Device with SD Card by Michael Wolf\n
- * Copyright (C) 2008 Michael Wolf\n\n
- * 
- * This program is free software: you can redistribute it and/or modify\n
- * it under the terms of the GNU General Public License as published by\n
- * the Free Software Foundation, either version 3 of the License, or\n
- * any later version.\n\n
- * 
- * This program is distributed in the hope that it will be useful,\n
- * but WITHOUT ANY WARRANTY; without even the implied warranty of\n
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n
- * GNU General Public License for more details.\n\n
- * 
- * You should have received a copy of the GNU General Public License\n
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.\n
- * 
- */
 #ifndef USB_STD_H_
 #define USB_STD_H_
 
@@ -71,20 +48,6 @@
 
 //! \brief Defines a vendor request
 #define USB_VENDOR_REQUEST                  0x02
-
-/**
- * Structure for data include in USB requests
- * 
- */
-typedef struct
-{
-    unsigned char   bmRequestType:8;    //!< Characteristics of the request
-    unsigned char   bRequest:8;         //!< Particular request
-    unsigned short  wValue:16;          //!< Request-specific parameter
-    unsigned short  wIndex:16;          //!< Request-specific parameter
-    unsigned short  wLength:16;         //!< Length of data for the data phase
-
-} __attribute__ ( (packed)) s_usb_request;
 
 
 #endif /*USB_STD_H_*/

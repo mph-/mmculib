@@ -6,7 +6,7 @@
 #include "usb_dsc.h"
 #include "usb_std.h"
 
-typedef S_std_descriptors usb_descriptors_t;
+typedef usb_dsc_t usb_descriptors_t;
 
 
 // FIXME, these need a direct correspondence with udp_status_t
@@ -28,7 +28,7 @@ typedef enum
 typedef struct usb_dev_struct
 {
     udp_t udp;
-    const char *dev_descriptor;
+    const usb_dsc_dev_t *dev_descriptor;
     const usb_descriptors_t *descriptors;
     udp_request_handler_t request_handler;
 } usb_dev_t;
