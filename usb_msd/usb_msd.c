@@ -21,6 +21,7 @@
 typedef enum 
 {
     USB_MSD_STATE_INIT,
+    USB_MSD_STATE_USB_WAIT,
     USB_MSD_STATE_COMMAND_READ,
     USB_MSD_STATE_PREPROCESS,
     USB_MSD_STATE_PROCESS,
@@ -28,6 +29,27 @@ typedef enum
 } usb_msd_state_t;
 
 
+#ifndef USB_VENDOR_ID
+#define USB_VENDOR_ID 0x03EB
+#endif
+
+
+#ifndef USB_PRODUCT_ID
+#define USB_PRODUCT_ID 0x6202
+#endif
+
+
+#ifndef USB_RELEASE_ID
+#define USB_RELEASE_ID 0x110
+#endif
+
+
+#ifndef USB_CURRENT_MA
+#define USB_CURRENT_MA 100
+#endif
+
+
+extern const usb_dsc_t sDescriptors;
 
 /**
  * Pre-processes a command by checking the differences between the
@@ -239,17 +261,24 @@ usb_msd_update (void)
         if (usb_bot_awake_p ())
         {
             sbc_reset ();
-            usb_bot_init (sbc_lun_num_get (), &sDescriptors);
-            state = USB_MSD_STATE_COMMAND_READ;
+            usb_bot_reset ();
+            
+            state = USB_MSD_STATE_USB_WAIT;
         }
         break;
 
-    case USB_MSD_STATE_COMMAND_READ:
-        /* Check for loss of USB connection.  */
+    case USB_MSD_STATE_USB_WAIT:
+        /* Wait for USB device to be enumerated.  */
         if (!usb_bot_awake_p ())
             state = USB_MSD_STATE_INIT;
+        else if (usb_bot_configured_p ())
+            state = USB_MSD_STATE_COMMAND_READ;
+        break;
 
-        if (usb_bot_command_get (&CommandState))
+    case USB_MSD_STATE_COMMAND_READ:
+        if (!usb_bot_awake_p ())
+            state = USB_MSD_STATE_INIT;
+        else if (usb_bot_command_get (&CommandState))
             state = USB_MSD_STATE_PREPROCESS;
         break;
 
@@ -280,5 +309,10 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
 
     for (i = 0; i < num_luns; i++)
         sbc_lun_init (luns[i]);
+
+    usb_bot_init (num_luns, &sDescriptors);
+
+    usb_msd_update ();
+
     return true;
 };
