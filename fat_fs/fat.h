@@ -23,10 +23,10 @@ ssize_t fat_read (fat_t *fat, char *buffer, size_t len);
 
 ssize_t fat_write (fat_t *fat, const char *buffer, size_t len);
 
-long fat_lseek (fat_t *fat, off_t offset, int dir);
+long fat_lseek (fat_t *fat, off_t offset, int whence);
 
 int fat_chdir (fat_fs_t *fat_fs, const char *name);
 
-int fat_unlink (const char *pathname);
+int fat_unlink (fat_fs_t *fat_fs, const char *pathname);
 
 #endif /*FAT_H_*/
