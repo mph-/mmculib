@@ -13,6 +13,14 @@
 #endif
 
 
+#ifndef SPI_DATAFLASH_SECTOR_SIZE
+/* The actual page is 264 but defining as 256 is more efficient
+   when using the flash as a mass storage device since blocks
+   are usually multiples of 256 bytes.  */
+#define SPI_DATAFLASH_SECTOR_SIZE 256
+#endif
+
+
 static msd_size_t
 dataflash_msd_read (void *dev, msd_addr_t addr, void *buffer, msd_size_t size)
 {
@@ -41,21 +49,22 @@ static msd_t dataflash_msd =
     .read = dataflash_msd_read,
     .write = dataflash_msd_write,
     .status_get = dataflash_msd_status_get,
-    .media_bytes = SPI_DATAFLASH_PAGE_SIZE * SPI_DATAFLASH_PAGES,
-    .block_bytes = SPI_DATAFLASH_PAGE_SIZE,
-    .flags.removable = 0,
+    .media_bytes = SPI_DATAFLASH_SECTOR_SIZE * SPI_DATAFLASH_PAGES,
+    .block_bytes = SPI_DATAFLASH_SECTOR_SIZE,
+    .flags = {.removable = 0, .reserved = 0},
     .name = "DATAFLASH_MSD"
 };
 
 
 static const spi_dataflash_cfg_t dataflash_cfg =
 {
-    .spi.channel = SPI_DATAFLASH_SPI_CHANNEL,
-    .spi.clock_divisor =  F_CPU / 20e6 + 1,
-    .spi.cs = SPI_DATAFLASH_CS,
+    .spi = {.channel = SPI_DATAFLASH_SPI_CHANNEL,
+            .clock_divisor =  F_CPU / 20e6 + 1,
+            .cs = SPI_DATAFLASH_CS},
     .wp = SPI_DATAFLASH_WP,
     .pages = SPI_DATAFLASH_PAGES,
     .page_size = SPI_DATAFLASH_PAGE_SIZE,
+    .sector_size = SPI_DATAFLASH_SECTOR_SIZE
 };
 
 

@@ -8,12 +8,14 @@
    configurable 256/264 bytes.  Parts are usually shipped with the
    page size set to 264 bytes but can be reconfigured to 256 bytes.
    The additional 8 bytes are usually used for error detection and
-   correction.  Reconfiguring can only be done once.  All program
-   operations are in terms of pages.  A page, block (2 KB), sector (64
-   KB), or entire chip can be erased.  A sector is 256 pages while a
-   block is 8 pages.  It has two internal SRAM buffers that can be
-   used for holding a page each so that external memory is not
-   required when programming.
+   correction.  Reconfiguring can only be done once and is only
+   necessary for special applications.  You are better off just
+   ignoring the additional 8 bytes at the end of each page.  All
+   program operations are in terms of pages.  A page, block (2 KB),
+   sector (64 KB), or entire chip can be erased.  A sector is 256
+   pages while a block is 8 pages.  It has two internal SRAM buffers
+   that can be used for holding a page each so that external memory is
+   not required when programming.
 
    The AT45DB041B does not have the newer READ_CONT_SLOW and READ_CONT_FAST
    commands.
@@ -100,32 +102,64 @@ spi_dataflash_ready_wait (spi_dataflash_t dev)
 
 spi_dataflash_ret_t
 spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
-                    void *buffer, spi_dataflash_size_t len)
+                    void *buffer, spi_dataflash_size_t total_bytes)
 {
     uint8_t command[8];
-    uint16_t page_size;
+    uint16_t sector_size;
+    spi_dataflash_offset_t offset;
+    spi_dataflash_size_t readlen;
+    spi_dataflash_size_t read_bytes;
+    spi_dataflash_page_t page;
+    uint8_t *data;
 
-    if (!len)
+    if (!total_bytes)
         return 0;
-    if (addr + len > dev->size)
+    if (addr + total_bytes > dev->size)
         return -1;
 
-    page_size = dev->cfg->page_size;
+    data = buffer;
 
-    /* Remap address into page address + offset.  */
-    addr = ((addr / page_size) << dev->page_bits)
-        + addr % page_size;
+    sector_size = dev->cfg->sector_size;
+    page = addr / sector_size;
+    offset = addr % sector_size;
 
-    /* Set up for continuous memory read.  */
-    command[0] = SPI_DATAFLASH_OP_READ_CONT;
-    command[1] = (addr >> 16) & 0xff;
-    command[2] = (addr >> 8) & 0xff;
-    command[3] = addr & 0xff;
-    /* The next 4 bytes are dummy don't care bytes.  */
+    if (offset + total_bytes > sector_size)
+        readlen = sector_size - offset;
+    else
+        readlen = total_bytes;
 
-    spi_write (dev->spi, command, sizeof (command), 0);
+    read_bytes = 0;
+    while (read_bytes < total_bytes) 
+    {
+        spi_dataflash_offset_t remaining_bytes;
 
-    return spi_read (dev->spi, buffer, len, 1);
+        /* Remap address into page address + offset.  */
+        addr = (page << dev->page_bits) + offset;        
+
+        /* Set up for continuous memory read.  */
+        command[0] = SPI_DATAFLASH_OP_READ_CONT;
+        command[1] = (addr >> 16) & 0xff;
+        command[2] = (addr >> 8) & 0xff;
+        command[3] = addr & 0xff;
+        /* The next 4 bytes are dummy don't care bytes.  */
+
+        spi_write (dev->spi, command, sizeof (command), 0);
+
+        spi_read (dev->spi, data, readlen, 1);
+        data += readlen;
+
+        page++;
+        offset = 0;
+        read_bytes += readlen;
+
+        remaining_bytes = total_bytes - read_bytes;
+        
+        if (remaining_bytes > sector_size)
+            readlen = sector_size;
+        else
+            readlen = remaining_bytes;
+    }
+    return total_bytes;
 }
 
 
@@ -162,7 +196,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     spi_dataflash_size_t writelen;
     spi_dataflash_size_t written_bytes;
     const uint8_t *data;
-    uint16_t page_size;
+    uint16_t sector_size;
     spi_dataflash_size_t total_bytes;
     spi_dataflash_size_t vlen;
     int iov_num;
@@ -181,12 +215,12 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     if (dev->cfg->wp.port)
         pio_output_high (dev->cfg->wp);
 
-    page_size = dev->cfg->page_size;
-    page = addr / page_size;
-    offset = addr % page_size;
+    sector_size = dev->cfg->sector_size;
+    page = addr / sector_size;
+    offset = addr % sector_size;
 
-    if (offset + total_bytes > page_size)
-        writelen = page_size - offset;
+    if (offset + total_bytes > sector_size)
+        writelen = sector_size - offset;
     else
         writelen = total_bytes;
     
@@ -204,7 +238,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
         /* If not programming a full page then need to read
            partial buffer.  */
-        if (writelen != page_size) 
+        if (writelen != sector_size) 
         {
             command[0] = SPI_DATAFLASH_OP_TRANSFER_BUFFER1;
             command[1] = (addr >> 16) & 0xff;
@@ -271,8 +305,8 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
         remaining_bytes = total_bytes - written_bytes;
         
-        if (remaining_bytes > page_size)
-            writelen = page_size;
+        if (remaining_bytes > sector_size)
+            writelen = sector_size;
         else
             writelen = remaining_bytes;
     }
@@ -315,7 +349,14 @@ spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg)
         dev->page_bits++;
     }
 
-    dev->size = cfg->pages * cfg->page_size;
+    /* A sector is smaller than equal to the size of the page.
+       Usually a sector is a power of 2; the additional bytes in the
+       page can be used for a checksum.  */
+
+    if (cfg->sector_size > cfg->page_size)
+        return 0;
+
+    dev->size = cfg->pages * cfg->sector_size;
 
     dev->spi = spi_init (&cfg->spi);
     spi_mode_set (dev->spi, SPI_MODE_0);

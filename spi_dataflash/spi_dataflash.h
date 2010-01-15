@@ -21,10 +21,8 @@ typedef struct
     pio_t wp;
     uint16_t pages;
     uint16_t page_size;
+    uint16_t sector_size;
 } spi_dataflash_cfg_t;    
-
-#define SPI_DATAFLASH_CFG(CHANNEL, DIVISOR, CS_PIO, WP_PIO, PAGES, PAGE_SIZE) \
-    {{(CHANNEL), (DIVISOR), CS_PIO}, WP_PIO, PAGES, PAGE_SIZE}
 
 
 typedef struct
