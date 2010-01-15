@@ -19,9 +19,9 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode);
 
 int fat_close (fat_t *fat);
 
-ssize_t fat_read (fat_t *fat, char *buffer, size_t len);
+ssize_t fat_read (fat_t *fat, void *buffer, size_t len);
 
-ssize_t fat_write (fat_t *fat, const char *buffer, size_t len);
+ssize_t fat_write (fat_t *fat, const void *buffer, size_t len);
 
 long fat_lseek (fat_t *fat, off_t offset, int whence);
 

@@ -37,6 +37,7 @@
 /* The maximum length of a filename.  */
 #define FAT_MAXLEN 256
 
+#define FAT_SECTOR_SIZE 512
 
 /* Size of a winentry.  */
 #define WIN_CHARS 13
@@ -230,7 +231,7 @@ struct bootsector710
     // 26
     struct extboot  bsExt;                  //!< Bootsector Extension 
 
-    char            bsBootCode[418];        //!< Pad so structure is 512b 
+    char            bsBootCode[418];        //!< Pad so structure is 512
     uint8_t         bsBootSectSig2;         //!< 2 & 3 are only defined for FAT32? 
     uint8_t         bsBootSectSig3;         //!< 2 & 3 are only defined for FAT32?
     uint8_t         bsBootSectSig0;         //!< 2 & 3 are only defined for FAT32?
@@ -329,7 +330,7 @@ struct fat_struct
 {
     fat_fs_t        *fs;
     int             mode;           //!< file mode
-    uint32_t        foffset;        //!< file offset
+    uint32_t        file_offset;        //!< file offset
     uint32_t        file_size;      //!< max offset used and/or filesize when reading
     uint32_t        start_cluster;   //!< starting cluster of file
     uint32_t        cluster;        //!< current cluster 
@@ -384,7 +385,7 @@ struct fat_fs_struct
     uint16_t    bytes_per_sector;       //!< Number of bytes per sector
     uint16_t    bytes_per_cluster;      //!< Number of bytes per cluster
     uint32_t    sector;                  //!< Cached sector
-    uint8_t     sector_buffer[512];
+    uint8_t     sector_buffer[FAT_SECTOR_SIZE];
     bool        dirty;
 };
 
@@ -490,7 +491,7 @@ fat_partial_sector_write (fat_fs_t *fat_fs, fat_sector_t sector,
  * 
  */
 static uint32_t
-fat_cluster2sector (fat_fs_t *fat_fs, uint32_t cluster)
+fat_sector_calc (fat_fs_t *fat_fs, uint32_t cluster)
 {
     // If this is a cluster request for the rootdir, point to it
     if (cluster == 0)
@@ -713,7 +714,7 @@ static fatdirentry_t *
 fat_de_first (fat_fs_t *fat_fs, uint32_t cluster, fat_de_iter_t *de_iter)
 {
     de_iter->cluster = cluster;
-    de_iter->sector = fat_cluster2sector (fat_fs, cluster);
+    de_iter->sector = fat_sector_calc (fat_fs, cluster);
     de_iter->sectors = fat_dir_sectors (fat_fs, cluster);    
 
     fat_sector_cache_read (fat_fs, de_iter->sector);
@@ -762,7 +763,7 @@ fat_de_next (fat_de_iter_t *de_iter)
                 return NULL;
             }
 
-            de_iter->sector = fat_cluster2sector (de_iter->fs,
+            de_iter->sector = fat_sector_calc (de_iter->fs,
                                                   de_iter->cluster);
         }
 
@@ -1027,7 +1028,7 @@ fat_find (fat_t *fat, const char *pathname, fat_ff_t *ff)
 
     fat->start_cluster = ff->cluster;
     fat->cluster = fat->start_cluster;
-    fat->foffset = 0; 
+    fat->file_offset = 0; 
     fat->file_size = ff->de.file_size;
     fat->dir_sector = ff->dir_sector;
     fat->dir_offset = ff->dir_offset;
@@ -1091,50 +1092,50 @@ fat_close (fat_t *fat)
  * 
  */
 ssize_t
-fat_read (fat_t *fat, char *buffer, size_t len)
+fat_read (fat_t *fat, void *buffer, size_t len)
 {
     uint16_t nbytes;
     uint32_t sector;
-    uint16_t dcount;
-    uint16_t loffset;
+    uint16_t bytes_left;
+    uint16_t offset;
+    uint8_t *data;
 
     TRACE_INFO (FAT, "FAT:read %u\n", (unsigned int)len);
     
     // Limit max read to size of file
-    if ((uint32_t)len > (fat->file_size - fat->foffset))
-        len = fat->file_size - fat->foffset;
+    if ((uint32_t)len > (fat->file_size - fat->file_offset))
+        len = fat->file_size - fat->file_offset;
     
-    dcount = len;
-    while (dcount)
+    data = buffer;
+    bytes_left = len;
+    while (bytes_left)
     {
-        // Local offset within a sector 
-        loffset = fat->foffset % fat->fs->bytes_per_sector;
-        // Get the start sector
-        sector = fat_cluster2sector (fat->fs, fat->cluster);
+        offset = fat->file_offset % fat->fs->bytes_per_sector;
+        sector = fat_sector_calc (fat->fs, fat->cluster);
 
         // Add local sector within a cluster 
-        sector += (fat->foffset % fat->fs->bytes_per_cluster) 
+        sector += (fat->file_offset % fat->fs->bytes_per_cluster) 
             / fat->fs->bytes_per_sector;
 
         // Limit to max one sector
-        nbytes = dcount < fat->fs->bytes_per_sector
-            ? dcount : fat->fs->bytes_per_sector;
+        nbytes = bytes_left < fat->fs->bytes_per_sector
+            ? bytes_left : fat->fs->bytes_per_sector;
 
         // Limit to remaining bytes in a sector
-        if (nbytes > (fat->fs->bytes_per_sector - loffset))
-            nbytes = fat->fs->bytes_per_sector - loffset;
+        if (nbytes > (fat->fs->bytes_per_sector - offset))
+            nbytes = fat->fs->bytes_per_sector - offset;
 
         // Read the data
-        fat_partial_sector_read (fat->fs, sector, loffset, buffer, nbytes);
+        nbytes 
+            = fat_partial_sector_read (fat->fs, sector, offset, data, nbytes);
 
-        // Bump buffer pointer
-        buffer += nbytes;
+        data += nbytes;
 
-        fat->foffset += nbytes;
-        dcount -= nbytes;
+        fat->file_offset += nbytes;
+        bytes_left -= nbytes;
 
         // Cluster boundary
-        if (fat->foffset % fat->fs->bytes_per_cluster == 0)
+        if (fat->file_offset % fat->fs->bytes_per_cluster == 0)
         {
             // Need to get a new cluster so follow FAT chain
             fat->cluster = fat_cluster_next (fat->fs, fat->cluster);
@@ -1144,8 +1145,8 @@ fat_read (fat_t *fat, char *buffer, size_t len)
                 break;
         }
     }
-    TRACE_INFO (FAT, "FAT:read return %u\n", (unsigned int)len - dcount);
-    return len - dcount;
+    TRACE_INFO (FAT, "FAT:read return %u\n", (unsigned int)len - bytes_left);
+    return len - bytes_left;
 }
 
 
@@ -1168,7 +1169,7 @@ fat_lseek (fat_t *fat, off_t offset, int whence)
     switch (whence)
     {
     case SEEK_SET : fpos = 0; break;
-    case SEEK_CUR : fpos = fat->foffset; break;
+    case SEEK_CUR : fpos = fat->file_offset; break;
     case SEEK_END : fpos = fat->file_size; break;
     }
     
@@ -1181,7 +1182,7 @@ fat_lseek (fat_t *fat, off_t offset, int whence)
 
     // Now set the new position
     t = npos;
-    fat->foffset = t;
+    fat->file_offset = t;
 
     // Calculate how many clusters from start cluster
     t = npos / fat->fs->bytes_per_cluster;
@@ -1194,19 +1195,10 @@ fat_lseek (fat_t *fat, off_t offset, int whence)
     {
         cluster_new = fat_cluster_next (fat->fs, fat->cluster);
 
-
-        //  TODO: is this really needed ?
-        
-        // this is a special kludge for handling seeking to the last byte+1 
-        // in a file. This will return cluster 0, as we're on the end of the chain
-        // typically happens when searching before writing to a file that ends on
-        // a cluster bonudary (like the directory)
-        //
-        // as a temp fix, we just keep the last cluster in the file (which is actually
-        // the one with the terminator tag).
-        //
-        if (cluster_new != 0)
+        if (!fat_cluster_last_p (cluster_new))
             fat->cluster = cluster_new;
+        else
+            break;
     }
 
     return npos; 
@@ -1249,7 +1241,7 @@ fat_init (msd_t *msd)
     TRACE_INFO (FAT, "FAT:init\n");
 
     // Read first sector on device.  
-    fat_fs->bytes_per_sector = 512;
+    fat_fs->bytes_per_sector = FAT_SECTOR_SIZE;
     fat_sector_cache_read (fat_fs, 0);
 
     // Check for a jump instruction marking start of MBR
@@ -1404,10 +1396,14 @@ fat_cluster_next_get (fat_fs_t *fat_fs __unused__)
 
 /* Find a free cluster by checking each chain in the FAT.  */
 uint32_t
-fat_cluster_free_next (fat_fs_t *fat_fs, uint32_t cluster_start)
+fat_cluster_free_find (fat_fs_t *fat_fs, uint32_t cluster_start)
 {
     uint32_t cluster_next;
     uint32_t cluster;
+
+    // TODO, should we update the free cluster count in fsinfo?
+    // Set the new free cluster hint to unknown
+    fat_cluster_next_set (fat_fs, CLUST_EOFE);
 
     for (cluster = cluster_start; cluster < fat_fs->num_clusters; cluster++)
     {
@@ -1420,64 +1416,59 @@ fat_cluster_free_next (fat_fs_t *fat_fs, uint32_t cluster_start)
 
 
 static uint32_t
-fat_grow (fat_fs_t *fat_fs, uint32_t cluster_start)
+fat_cluster_chain_append (fat_fs_t *fat_fs, uint32_t cluster_start,
+                          uint32_t cluster_new)
 {
-    uint32_t cluster_next;
+    if (!fat_cluster_last_p (fat_entry_get (fat_fs, cluster_start)))
+        TRACE_ERROR (FAT, "FAT:bad chain\n");
 
-    // MPH, should we update the free cluster count in fsinfo?
+    fat_entry_set (fat_fs, cluster_start, cluster_new);
+    fat_entry_set (fat_fs, cluster_new, CLUST_EOFE);
 
-    // Set the next free cluster hint to unknown
-    fat_cluster_next_set (fat_fs, CLUST_EOFE);
-
-    cluster_next = fat_cluster_free_next (fat_fs, 2);
-    if (!cluster_next)
-        return 0;
-
-    // Point last to this
-    fat_entry_set (fat_fs, cluster_start, cluster_next);
-		
-    // Point this to end of file
-    fat_entry_set (fat_fs, cluster_next, CLUST_EOFE);
-
-    return cluster_next;
+    return cluster_new;
 }
 
 
 static uint32_t
-fat_allocate_free_space (fat_fs_t *fat_fs, uint32_t cluster_start,
-                         uint32_t size)
+fat_clusters_allocate (fat_fs_t *fat_fs, uint32_t cluster_start, uint32_t size)
 {
-    uint32_t cluster_num;
+    uint32_t num;
     uint32_t cluster_next;
+    uint32_t cluster_new;
 
     if (!size)
         return 0;
 
-    cluster_num = (size + fat_fs->bytes_per_cluster - 1) 
-        / fat_fs->bytes_per_cluster;
+    num = (size + fat_fs->bytes_per_cluster - 1) / fat_fs->bytes_per_cluster;
 
     if (!cluster_start)
     {
-        cluster_next = fat_cluster_free_next (fat_fs, 2);
-        if (!cluster_next)
+        cluster_new = fat_cluster_free_find (fat_fs, 2);
+        if (!cluster_new)
             return 0;
 
-        if (cluster_num == 1)
+        if (num == 1)
         {
-            fat_entry_set (fat_fs, cluster_next, CLUST_EOFE);
-            return cluster_next;
+            fat_entry_set (fat_fs, cluster_new, CLUST_EOFE);
+            return cluster_new;
         }
+        cluster_next = cluster_new;
     }
     else
         cluster_next = cluster_start;
 
-    while (cluster_num)
+    while (num)
     {
-        cluster_next = fat_grow (fat_fs, cluster_next);
+        cluster_new = fat_cluster_free_find (fat_fs, 2);
+        if (!cluster_new)
+            return 0;
+
+        cluster_next = fat_cluster_chain_append (fat_fs, cluster_next,
+                                                 cluster_new);
         if (!cluster_next)
             return 0;
 
-        cluster_num--;
+        num--;
     }
 
     return cluster_start;
@@ -1490,11 +1481,11 @@ fat_cluster_chain_free (fat_fs_t *fat_fs, uint32_t cluster_start)
     uint32_t cluster;
 	
     // Follow a chain marking each element as free
-    for (cluster = cluster_start; cluster !=0 && !fat_cluster_last_p (cluster);)
+    for (cluster = cluster_start; 
+         cluster != 0 && !fat_cluster_last_p (cluster);)
     {
         cluster_last = cluster;
 
-        // Find next link
         cluster = fat_cluster_next (fat_fs, cluster);
 
         // Clear last link
@@ -1504,37 +1495,6 @@ fat_cluster_chain_free (fat_fs_t *fat_fs, uint32_t cluster_start)
 
 
 #if 0
-static bool
-fat_cluster_chain_append (fat_fs_t *fat_fs, uint32_t cluster_start, 
-                          uint32_t cluster_new)
-{
-    uint32_t cluster_last;
-    uint32_t cluster;
-
-    if (fat_cluster_last_p (cluster_start))
-        return false;
-
-    for (cluster = cluster_start; !fat_cluster_last_p (cluster);)
-    {
-        cluster_last = cluster;
-        cluster = fat_cluster_next (fat_fs, cluster);
-
-        /* Ooops, found a free cluster on the chain?  */
-        if (!cluster)
-            return false;
-    }
-
-    // Add link in for new cluster
-    fat_entry_set (fat_fs, cluster_last, cluster_new);
-
-    // Mark new cluster as end of chain
-    fat_entry_set (fat_fs, cluster_new, CLUST_EOFE);
-
-    return true;
-}
-
-
-
 static uint8_t
 fat_checksum_calc (const char *filename)
 {
@@ -1685,10 +1645,11 @@ fat_create (fat_t *fat, const char *pathname, uint32_t size, fat_ff_t *ff)
 
     // Create the file space for the file
     fat->file_size = size;
-    fat->foffset = 0; 
+    fat->file_offset = 0; 
 
+    // Create at least one cluster to start with
     fat->start_cluster =
-        fat_allocate_free_space (fat_fs, 0,
+        fat_clusters_allocate (fat_fs, 0,
                                  fat->file_size == 0 ? 1 : fat->file_size);
     if (!fat->start_cluster)
         return NULL;
@@ -1778,9 +1739,9 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
             fat_size_set (fat, fat->file_size);
         }
 
-        fat->foffset = 0;
+        fat->file_offset = 0;
         if (mode & O_APPEND)
-            fat->foffset = fat->file_size;        
+            fat->file_offset = fat->file_size;        
         return fat;
     }
 
@@ -1788,9 +1749,9 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
     {
         if (fat_create (fat, pathname, 0, &ff))
         {
-            fat->foffset = 0;
+            fat->file_offset = 0;
             if (mode & O_APPEND)
-                fat->foffset = fat->file_size;        
+                fat->file_offset = fat->file_size;        
             return fat;
         }
         TRACE_INFO (FAT, "FAT:file not created: %s\n", pathname);
@@ -1806,12 +1767,13 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
 
 
 ssize_t
-fat_write (fat_t *fat, const char *buffer, size_t len)
+fat_write (fat_t *fat, const void *buffer, size_t len)
 {
     uint16_t nbytes;
     uint32_t sector;
-    uint16_t dcount;
-    uint16_t loffset;
+    uint16_t bytes_left;
+    uint16_t offset;
+    const uint8_t *data;
 
     TRACE_INFO (FAT, "FAT:write %u\n", (unsigned int)len);
 
@@ -1821,53 +1783,49 @@ fat_write (fat_t *fat, const char *buffer, size_t len)
         return -1;
     }
 
-    dcount = len;
-    while (dcount)
+    data = buffer;
+    bytes_left = len;
+    while (bytes_left)
     {
-        // Local offset within a sector 
-        loffset = fat->foffset % fat->fs->bytes_per_sector;
-        // Get the start sector
-        sector = fat_cluster2sector (fat->fs, fat->cluster);
+        offset = fat->file_offset % fat->fs->bytes_per_sector;
+        sector = fat_sector_calc (fat->fs, fat->cluster);
 
-        // Add local sector within a cluster 
-        sector += (fat->foffset % fat->fs->bytes_per_cluster) 
+        sector += (fat->file_offset % fat->fs->bytes_per_cluster) 
             / fat->fs->bytes_per_sector;
 
         // Limit to max one sector
-        nbytes = dcount < fat->fs->bytes_per_sector
-            ? dcount : fat->fs->bytes_per_sector;
+        nbytes = bytes_left < fat->fs->bytes_per_sector
+            ? bytes_left : fat->fs->bytes_per_sector;
 
         // Limit to remaining bytes in a sector
-        if (nbytes > (fat->fs->bytes_per_sector - loffset))
-            nbytes = fat->fs->bytes_per_sector - loffset;
+        if (nbytes > (fat->fs->bytes_per_sector - offset))
+            nbytes = fat->fs->bytes_per_sector - offset;
 
-        // Write the data
-        fat_partial_sector_write (fat->fs, sector, loffset, buffer, nbytes);
+        fat_partial_sector_write (fat->fs, sector, offset, data, nbytes);
 
-        // Bump buffer pointer
-        buffer += nbytes;
+        data += nbytes;
 
-        fat->foffset += nbytes;
-        dcount -= nbytes;
+        fat->file_offset += nbytes;
+        bytes_left -= nbytes;
 
-        // Cluster boundary
-        if (fat->foffset % fat->fs->bytes_per_cluster == 0)
+        // Check for cluster boundary
+        if (fat->file_offset % fat->fs->bytes_per_cluster == 0)
         {
-            // Need to add a new cluster
-            fat->cluster = fat_allocate_free_space (fat->fs, fat->cluster, 1);
+            // Append a new cluster
+            fat->cluster = fat_clusters_allocate (fat->fs, fat->cluster, 1);
 
-            // No more clusters to allocate
+            // No more clusters to allocate, out of memory
             if (!fat->cluster)
                 break;
         }
     }
-    fat->file_size += len - dcount;
+    fat->file_size += len - bytes_left;
 
     fat_size_set (fat, fat->file_size);
     fat_sector_cache_flush (fat->fs);
 
-    TRACE_INFO (FAT, "FAT:write return %u\n", (unsigned int)len - dcount);
-    return len - dcount;
+    TRACE_INFO (FAT, "FAT:write return %u\n", (unsigned int)len - bytes_left);
+    return len - bytes_left;
 }
 
 
