@@ -126,6 +126,10 @@ usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
         break;
         
     case USB_DEVICE_QUALIFIER_DESCRIPTOR:
+        /* The host issues this when the USB version (bcdUSB) is set
+           to 2.0 in the device descriptor, to examine the high-speed
+           capability of the device.  For a full-speed device, stall
+           this request.  */
         TRACE_DEBUG (USB, "USB:Qua\n");
 #ifdef USB_HIGHSPEED
         usb_control_write (usb, usb->descriptors->pQualifier, 
@@ -184,28 +188,28 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         break;
 
     case USB_CLEAR_FEATURE:
-        TRACE_INFO (USB, "USB:cFeat\n");
+        TRACE_INFO (USB, "USB:cFeat %u\n", setup->value);
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
-            TRACE_INFO (USB, "USB:Hlt\n");
+            TRACE_DEBUG (USB, "USB:Hlt\n");
             usb_halt (usb, LOW_BYTE (setup->index), USB_CLEAR_FEATURE);
             usb_control_write_zlp (usb);
             break;
         
         case USB_DEVICE_REMOTE_WAKEUP:
-            TRACE_INFO (USB, "USB:RmWak\n");
+            TRACE_DEBUG (USB, "USB:RmWak\n");
             usb_control_write_zlp (usb);
             break;
         
         default:
-            TRACE_INFO (USB, "USB:Sta\n");
+            TRACE_DEBUG (USB, "USB:Sta\n");
             usb_control_stall (usb);
         }
         break;
 
     case USB_SET_FEATURE:
-        TRACE_INFO (USB, "USB:sFeat\n");
+        TRACE_INFO (USB, "USB:sFeat %u\n", setup->value);
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
