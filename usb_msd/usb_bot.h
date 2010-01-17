@@ -68,7 +68,7 @@ typedef struct
 
 bool usb_bot_configured_p (void);
 
-bool usb_bot_awake_p (void);
+bool usb_bot_ready_p (void);
 
 bool usb_bot_update (void);
 
@@ -89,9 +89,6 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState);
 void
 usb_bot_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength, 
                                  uint8_t *pType);
-
-void
-usb_bot_reset (void);
 
 void
 usb_bot_abort (S_usb_bot_command_state *pCommandState);

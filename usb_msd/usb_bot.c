@@ -16,6 +16,9 @@
 //! \brief  Possible states of the MSD driver
 typedef enum
 {
+    USB_BOT_STATE_INIT,
+//! \brief Driver is waiting for USB to be enumerated
+    USB_BOT_STATE_WAIT,
 //! \brief  Driver is expecting a command block wrapper
     USB_BOT_STATE_READ_CBW,
 //! \brief  Driver is waiting for the transfer to finish
@@ -35,21 +38,14 @@ typedef enum
 typedef struct
 {
     uint8_t bMaxLun;             //!< Maximum LUN index
-    usb_bot_state_t bState;      //!< Current state of the driver
+    usb_bot_state_t state;      //!< Current state of the driver
     uint8_t isWaitResetRecovery; //!< Indicates if the driver is
     usb_t usb;
 } usb_bot_t;
 
 
-static usb_bot_t usb_bot_struct;
-static usb_bot_t *bot = &usb_bot_struct;
-
-
-bool
-usb_bot_awake_p (void)
-{
-    return usb_awake_p (bot->usb);
-}
+static usb_bot_t bot_dev;
+static usb_bot_t *bot = &bot_dev;
 
 
 static usb_bot_status_t
@@ -107,20 +103,6 @@ usb_bot_read (void *buffer, uint16_t size, void *pTransfer)
     return usb_bot_status (usb_read_async (bot->usb, buffer, size, 
                                            (udp_callback_t) usb_bot_callback,
                                            pTransfer));
-}
-
-
-/**
- * Resets the state of the BOT driver
- * 
- */
-void
-usb_bot_reset (void)
-{
-    TRACE_INFO (USB_BOT, "BOT:Reset\n");
-
-    bot->bState = USB_BOT_STATE_READ_CBW;
-    bot->isWaitResetRecovery = false;
 }
 
 
@@ -206,12 +188,10 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
     switch (setup->request)
     {
     case USB_CLEAR_FEATURE:
-//        TRACE_INFO (USB_BOT, "BOT:ClrFeat\n");
-    
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
-//            TRACE_INFO (USB_BOT, "BOT:Halt\n");
+            TRACE_INFO (USB_BOT, "BOT:Halt\n");
         
             // Do not clear the endpoint halt status if the device is waiting
             // for a reset recovery sequence
@@ -232,31 +212,19 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
         break;
     
     case MSD_GET_MAX_LUN:
-//        TRACE_INFO (USB_BOT, "BOT:MaxLun %d\n", bot->bMaxLun);
-    
-        // Check request parameters
-        if ((setup->value == false)
-            && (setup->index == false)
-            && (setup->length == true))
-        {
+        TRACE_INFO (USB_BOT, "BOT:MaxLun %d\n", bot->bMaxLun);
+        if (setup->value == 0 && setup->index == 0 && setup->length == 1)
             usb_control_write (bot->usb, &bot->bMaxLun, 1);
-        }
         else
-        {
             usb_control_stall (usb);
-        }
         break;
         
     case MSD_BULK_ONLY_RESET:
-//        TRACE_INFO (USB_BOT, "BOT:Reset\n");
-        
-        // Check parameters
-        if ((setup->value == 0)
-            && (setup->index == 0)
-            && (setup->length == 0)) {
-            
+        TRACE_INFO (USB_BOT, "BOT:Reset\n");
+        if (setup->value == 0 && setup->index == 0 && setup->length == 0)
+        {
             // Reset the MSD driver
-            usb_bot_reset ();
+            // TODO, what do we do?
             usb_control_write_zlp (usb);
         }
         else
@@ -273,13 +241,6 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
 }
 
 
-bool 
-usb_bot_configured_p (void)
-{
-    return usb_configured_p (bot->usb);
-}
-
-
 /**
  * Initializes a BOT driver and the associated USB driver.
  * 
@@ -292,6 +253,7 @@ bool usb_bot_init (uint8_t num, const usb_dsc_t *descriptors)
 
     bot->bMaxLun = num - 1;
 
+    bot->state = USB_BOT_STATE_INIT;
     bot->usb = usb_init (descriptors, (void *)usb_bot_request_handler);
     
     return bot->usb != 0;
@@ -303,7 +265,8 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState)
 {
     S_msd_cbw *pCbw = &pCommandState->sCbw;
 
-    /* This is required for parameter error.  */
+    /* This function is required for parameter errors.  */
+
     // Stall the endpoint waiting for data
     if (!ISSET (pCbw->bmCBWFlags, MSD_CBW_DEVICE_TO_HOST))
     {
@@ -328,7 +291,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
     S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
-    switch (bot->bState)
+    switch (bot->state)
     {
     case USB_BOT_STATE_READ_CBW:
         TRACE_DEBUG (USB_BOT, "BOT:ReadCBW\n");
@@ -337,7 +300,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
         bStatus = usb_bot_read (pCbw, MSD_CBW_SIZE, pTransfer);
 
         if (bStatus == USB_BOT_STATUS_SUCCESS)
-            bot->bState = USB_BOT_STATE_WAIT_CBW;
+            bot->state = USB_BOT_STATE_WAIT_CBW;
         return 0;
         break;
 
@@ -364,7 +327,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                     usb_halt (bot->usb,USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
-                    bot->bState = USB_BOT_STATE_READ_CBW;
+                    bot->state = USB_BOT_STATE_READ_CBW;
                 }
                 // Check the CBW Signature
                 else if (pCbw->dCBWSignature != MSD_CBW_SIGNATURE)
@@ -380,20 +343,20 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                     usb_halt (bot->usb,USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
-                    bot->bState = USB_BOT_STATE_READ_CBW;
+                    bot->state = USB_BOT_STATE_READ_CBW;
                 }
-                bot->bState = USB_BOT_STATE_PROCESS_CBW;
+                bot->state = USB_BOT_STATE_PROCESS_CBW;
                 return 1;
             }
             else
             {
-                bot->bState = USB_BOT_STATE_READ_CBW;
+                bot->state = USB_BOT_STATE_READ_CBW;
             }
         }
         break;
 
     default:
-        TRACE_ERROR (USB_BOT, "BOT:Bad state %d\n", bot->bState);
+        TRACE_ERROR (USB_BOT, "BOT:Bad state %d\n", bot->state);
         break;
     }
     return 0;
@@ -407,11 +370,11 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
     S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
-    switch (bot->bState)
+    switch (bot->state)
     {
     case USB_BOT_STATE_PROCESS_CBW:
         usb_bot_post_process_command (pCommandState);
-        bot->bState = USB_BOT_STATE_SEND_CSW;
+        bot->state = USB_BOT_STATE_SEND_CSW;
         break;
 
     case USB_BOT_STATE_SEND_CSW:
@@ -424,20 +387,50 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
         bStatus = usb_bot_write (pCsw, MSD_CSW_SIZE, pTransfer);
     
         if (bStatus == USB_BOT_STATUS_SUCCESS)
-            bot->bState = USB_BOT_STATE_WAIT_CSW;
+            bot->state = USB_BOT_STATE_WAIT_CSW;
         break;
 
     case USB_BOT_STATE_WAIT_CSW:
         if (pTransfer->bSemaphore > 0)
         {
             pTransfer->bSemaphore--;
-            bot->bState = USB_BOT_STATE_READ_CBW;
+            bot->state = USB_BOT_STATE_READ_CBW;
             return 1;
         }
         break;
 
     default:
-        TRACE_ERROR (USB_BOT, "BOT:Bad state %d\n", bot->bState);
+        TRACE_ERROR (USB_BOT, "BOT:Bad state %d\n", bot->state);
+        break;
+    }
+    return 0;
+}
+
+
+bool
+usb_bot_ready_p (void)
+{
+    switch (bot->state)
+    {
+    case USB_BOT_STATE_INIT:
+        if (usb_awake_p (bot->usb))
+            bot->state = USB_BOT_STATE_WAIT;
+        break;
+
+    case USB_BOT_STATE_WAIT:
+        if (usb_configured_p (bot->usb))
+        {
+            TRACE_INFO (USB_BOT, "BOT:Connected\n");
+
+            bot->state = USB_BOT_STATE_READ_CBW;
+            bot->isWaitResetRecovery = false;
+            return 1;
+        }
+            
+    default:
+        if (usb_configured_p (bot->usb))
+            return 1;
+        TRACE_INFO (USB_BOT, "BOT:Disconnected\n");
         break;
     }
     return 0;

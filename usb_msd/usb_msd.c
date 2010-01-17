@@ -21,7 +21,6 @@
 typedef enum 
 {
     USB_MSD_STATE_INIT,
-    USB_MSD_STATE_USB_WAIT,
     USB_MSD_STATE_COMMAND_READ,
     USB_MSD_STATE_PREPROCESS,
     USB_MSD_STATE_PROCESS,
@@ -258,25 +257,15 @@ usb_msd_update (void)
     switch (state)
     {
     case USB_MSD_STATE_INIT:
-        if (usb_bot_awake_p ())
+        if (usb_bot_ready_p ())
         {
             sbc_reset ();
-            usb_bot_reset ();
-            
-            state = USB_MSD_STATE_USB_WAIT;
+            state = USB_MSD_STATE_COMMAND_READ;
         }
         break;
 
-    case USB_MSD_STATE_USB_WAIT:
-        /* Wait for USB device to be enumerated.  */
-        if (!usb_bot_awake_p ())
-            state = USB_MSD_STATE_INIT;
-        else if (usb_bot_configured_p ())
-            state = USB_MSD_STATE_COMMAND_READ;
-        break;
-
     case USB_MSD_STATE_COMMAND_READ:
-        if (!usb_bot_awake_p ())
+        if (!usb_bot_ready_p ())
             state = USB_MSD_STATE_INIT;
         else if (usb_bot_command_get (&CommandState))
             state = USB_MSD_STATE_PREPROCESS;
