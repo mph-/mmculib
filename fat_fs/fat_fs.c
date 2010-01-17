@@ -2,7 +2,11 @@
 #include "msd.h"
 #include "sys.h"
 
-static sys_dev_t fat_dev =
+/* This file is a wrapper for fat.c to keep fat.c more general and
+   have fewer dependencies.  */
+
+
+static const sys_devops_t fat_devops =
 {
     .open = (void *)fat_open,
     .read = (void *)fat_read,
@@ -12,21 +16,44 @@ static sys_dev_t fat_dev =
 };
 
 
-static sys_fs_t fat_fs =
+static const sys_fsops_t fat_fsops =
 {
-    .name = "FAT",
-    .dev = &fat_dev,
-    .unlink = (void *)fat_unlink
+    .unlink = (void *)fat_unlink,
+    .rename = 0
 };
 
 
-bool fat_fs_init (msd_t *msd)
+static uint16_t
+fat_fs_dev_read (void *arg, uint32_t addr, void *buffer, uint16_t size)
+{
+    msd_t *msd = arg;
+
+    return msd_read (msd, addr, buffer, size);
+}
+
+
+static uint16_t
+fat_fs_dev_write (void *arg, uint32_t addr, const void *buffer, uint16_t size)
+{
+    msd_t *msd = arg;
+
+    return msd_write (msd, addr, buffer, size);
+}
+
+
+bool
+fat_fs_init (msd_t *msd, sys_fs_t *fat_fs)
 {
     void *arg;
 
-    arg = fat_init (msd);
+    arg = fat_init (msd, fat_fs_dev_read, fat_fs_dev_write);
     if (!arg)
         return 0;
-    sys_fs_register (&fat_fs, arg);
+
+    fat_fs->devops = &fat_devops;
+    fat_fs->fsops = &fat_fsops;
+    fat_fs->private = arg;
     return 1;
 }
+
+

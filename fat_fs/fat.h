@@ -2,18 +2,21 @@
 #define FAT_H_
 
 #include "config.h"
-#include "msd.h"
 #include <unistd.h>
 
 typedef struct fat_fs_struct fat_fs_t;
 
 typedef struct fat_struct fat_t;
 
-fat_fs_t *fat_init (msd_t *msd);
 
-uint16_t fat_sector_bytes (fat_fs_t *fat);
+typedef uint16_t (*fat_dev_read_t) (void *dev, uint32_t addr,
+                                    void *buffer, uint16_t size);
 
-uint32_t fat_size (fat_t *fat);
+typedef uint16_t (*fat_dev_write_t) (void *dev, uint32_t addr, 
+                                        const void *buffer, uint16_t size);
+
+fat_fs_t *fat_init (void *dev, fat_dev_read_t dev_read, 
+                    fat_dev_write_t dev_write);
 
 fat_t *fat_open (fat_fs_t *fat_fs, const char *name, int mode);
 
@@ -24,8 +27,6 @@ ssize_t fat_read (fat_t *fat, void *buffer, size_t len);
 ssize_t fat_write (fat_t *fat, const void *buffer, size_t len);
 
 long fat_lseek (fat_t *fat, off_t offset, int whence);
-
-int fat_chdir (fat_fs_t *fat_fs, const char *name);
 
 int fat_unlink (fat_fs_t *fat_fs, const char *pathname);
 
