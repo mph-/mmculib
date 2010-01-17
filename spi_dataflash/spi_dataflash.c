@@ -110,14 +110,14 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     spi_dataflash_size_t readlen;
     spi_dataflash_size_t read_bytes;
     spi_dataflash_page_t page;
-    uint8_t *data;
+    uint8_t *dst;
 
     if (!total_bytes)
         return 0;
     if (addr + total_bytes > dev->size)
         return -1;
 
-    data = buffer;
+    dst = buffer;
 
     sector_size = dev->cfg->sector_size;
     page = addr / sector_size;
@@ -145,8 +145,8 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
         spi_write (dev->spi, command, sizeof (command), 0);
 
-        spi_read (dev->spi, data, readlen, 1);
-        data += readlen;
+        spi_read (dev->spi, dst, readlen, 1);
+        dst += readlen;
 
         page++;
         offset = 0;
@@ -195,7 +195,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     spi_dataflash_offset_t offset;
     spi_dataflash_size_t writelen;
     spi_dataflash_size_t written_bytes;
-    const uint8_t *data;
+    const uint8_t *src;
     uint16_t sector_size;
     spi_dataflash_size_t total_bytes;
     spi_dataflash_size_t vlen;
@@ -224,7 +224,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     else
         writelen = total_bytes;
     
-    data = 0;
+    src = 0;
     iov_num = 0;
     vlen = 0;
     written_bytes = 0;
@@ -266,7 +266,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
             if (!vlen)
             {
-                data = iov[iov_num].data;
+                src = iov[iov_num].data;
                 vlen = iov[iov_num].len;
                 iov_num++;
             }
@@ -275,8 +275,8 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
             if (slen > vlen)
                 slen = vlen;
             
-            spi_write (dev->spi, data, slen, wlen == slen);
-            data += slen;
+            spi_write (dev->spi, src, slen, wlen == slen);
+            src += slen;
             wlen -= slen;
             vlen -= slen;
         }
