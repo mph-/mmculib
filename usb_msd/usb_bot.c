@@ -17,19 +17,27 @@
 typedef enum
 {
     USB_BOT_STATE_INIT,
-//! \brief Driver is waiting for USB to be enumerated
+//! \brief BOT is waiting for USB to be enumerated
     USB_BOT_STATE_WAIT,
-//! \brief  Driver is expecting a command block wrapper
+//! \brief  BOT is expecting a command block wrapper
     USB_BOT_STATE_READ_CBW,
-//! \brief  Driver is waiting for the transfer to finish
+//! \brief  BOT is waiting for the transfer to finish
     USB_BOT_STATE_WAIT_CBW,
-//! \brief  Driver is processing the received command
+//! \brief  BOT is processing the received command
     USB_BOT_STATE_PROCESS_CBW,
-//! \brief  Driver is starting the transmission of a command status wrapper
+//! \brief  BOT is starting the transmission of a command status wrapper
     USB_BOT_STATE_SEND_CSW,
-//! \brief  Driver is waiting for the CSW transmission to finish
+//! \brief  BOT is waiting for the CSW transmission to finish
     USB_BOT_STATE_WAIT_CSW
 } usb_bot_state_t;
+
+
+// Class-specific requests
+//! Bulk transfer reset
+#define MSD_BULK_ONLY_RESET                     0xFF
+//! Get maximum number of LUNs
+#define MSD_GET_MAX_LUN                         0xFE
+
 
 
 //! \brief  MSD driver state variables
@@ -37,9 +45,9 @@ typedef enum
 //! \see    S_std_class
 typedef struct
 {
-    uint8_t bMaxLun;             //!< Maximum LUN index
-    usb_bot_state_t state;      //!< Current state of the driver
-    uint8_t isWaitResetRecovery; //!< Indicates if the driver is
+    uint8_t max_lun;             //!< Maximum LUN index
+    usb_bot_state_t state;       //!< Current state of the driver
+    uint8_t wait_reset_recovery;
     usb_t usb;
 } usb_bot_t;
 
@@ -116,7 +124,7 @@ usb_bot_read (void *buffer, uint16_t size, void *pTransfer)
  * 
  */
 void
-usb_bot_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength, 
+usb_bot_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, 
                                  uint8_t *pType)
 {
     // Expected host transfer direction and length
@@ -150,7 +158,7 @@ usb_bot_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength,
 static void
 usb_bot_post_process_command (S_usb_bot_command_state *pCommandState)
 {
-    S_msd_csw *pCsw = &pCommandState->sCsw;
+    usb_msd_csw_t *pCsw = &pCommandState->sCsw;
 
     pCsw->dCSWDataResidue += pCommandState->dLength;
 
@@ -178,8 +186,8 @@ usb_bot_post_process_command (S_usb_bot_command_state *pCommandState)
 
 
 /**
- * Handler for incoming SETUP requests on default Control endpoint 0.
- * This runs as part of USB interrupt so avoid tracing.
+ * Handler for incoming SETUP requests on default control endpoint 0.
+ * This runs as part of UDP interrupt so avoid tracing.
  */
 static bool
 usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
@@ -191,18 +199,13 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
-            TRACE_INFO (USB_BOT, "BOT:Halt\n");
+            TRACE_INFO (USB_BOT, "BOT:Halt %d\n", bot->wait_reset_recovery);
         
             // Do not clear the endpoint halt status if the device is waiting
             // for a reset recovery sequence
-            if (!bot->isWaitResetRecovery) 
-            {
+            if (!bot->wait_reset_recovery) 
                 return 0;
-            }
-            else 
-            {
-//                TRACE_INFO (USB_BOT, "BOT:No\n");
-            }
+
             usb_control_write_zlp (usb);
             break;
         
@@ -210,11 +213,12 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
             return 0;
         }
         break;
-    
+
+        // The MSD requests should be passed up to usb_msd
     case MSD_GET_MAX_LUN:
-        TRACE_INFO (USB_BOT, "BOT:MaxLun %d\n", bot->bMaxLun);
+        TRACE_INFO (USB_BOT, "BOT:MaxLun %d\n", bot->max_lun);
         if (setup->value == 0 && setup->index == 0 && setup->length == 1)
-            usb_control_write (bot->usb, &bot->bMaxLun, 1);
+            usb_control_write (bot->usb, &bot->max_lun, 1);
         else
             usb_control_stall (usb);
         break;
@@ -223,8 +227,7 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
         TRACE_INFO (USB_BOT, "BOT:Reset\n");
         if (setup->value == 0 && setup->index == 0 && setup->length == 0)
         {
-            // Reset the MSD driver
-            // TODO, what do we do?
+            // Reset the MSD driver.  TODO, what do we do?
             usb_control_write_zlp (usb);
         }
         else
@@ -251,7 +254,7 @@ bool usb_bot_init (uint8_t num, const usb_dsc_t *descriptors)
 {
     TRACE_INFO (USB_BOT, "BOT:Init\n");
 
-    bot->bMaxLun = num - 1;
+    bot->max_lun = num - 1;
 
     bot->state = USB_BOT_STATE_INIT;
     bot->usb = usb_init (descriptors, (void *)usb_bot_request_handler);
@@ -263,7 +266,7 @@ bool usb_bot_init (uint8_t num, const usb_dsc_t *descriptors)
 void
 usb_bot_abort (S_usb_bot_command_state *pCommandState)
 {
-    S_msd_cbw *pCbw = &pCommandState->sCbw;
+    usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
 
     /* This function is required for parameter errors.  */
 
@@ -286,8 +289,8 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState)
 bool
 usb_bot_command_get (S_usb_bot_command_state *pCommandState)
 {
-    S_msd_cbw *pCbw = &pCommandState->sCbw;
-    S_msd_csw *pCsw = &pCommandState->sCsw;
+    usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
+    usb_msd_csw_t *pCsw = &pCommandState->sCsw;
     S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
@@ -320,11 +323,11 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                     TRACE_INFO (USB_BOT, "BOT:Invalid CBW size\n");
                     
                     // Wait for a reset recovery
-                    bot->isWaitResetRecovery = true;
+                    bot->wait_reset_recovery = true;
                     
-                    // Halt the Bulk-IN and Bulk-OUT pipes
-                    usb_halt (bot->usb,USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
-                    usb_halt (bot->usb,USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+                    // Halt the bulk in and bulk out pipes
+                    usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
+                    usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                     bot->state = USB_BOT_STATE_READ_CBW;
@@ -336,11 +339,11 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                                 (unsigned int)pCbw->dCBWSignature);
                     
                     // Wait for a reset recovery
-                    bot->isWaitResetRecovery = true;
+                    bot->wait_reset_recovery = true;
                     
-                    // Halt the Bulk-IN and Bulk-OUT pipes
-                    usb_halt (bot->usb,USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
-                    usb_halt (bot->usb,USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+                    // Halt the bulk in and bulk out pipes
+                    usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
+                    usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                     bot->state = USB_BOT_STATE_READ_CBW;
@@ -366,7 +369,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
 bool
 usb_bot_status_set (S_usb_bot_command_state *pCommandState)
 {
-    S_msd_csw *pCsw = &pCommandState->sCsw;
+    usb_msd_csw_t *pCsw = &pCommandState->sCsw;
     S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
@@ -423,7 +426,7 @@ usb_bot_ready_p (void)
             TRACE_INFO (USB_BOT, "BOT:Connected\n");
 
             bot->state = USB_BOT_STATE_READ_CBW;
-            bot->isWaitResetRecovery = false;
+            bot->wait_reset_recovery = false;
             return 1;
         }
             

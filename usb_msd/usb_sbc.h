@@ -21,7 +21,7 @@ typedef enum
 } sbc_status_t;
 
 
-bool sbc_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength, 
+bool sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, 
                                   uint8_t *pType);
 
 sbc_status_t sbc_process_command (S_usb_bot_command_state *pCommandState);

@@ -64,8 +64,8 @@ extern const usb_dsc_t sDescriptors;
 static bool 
 usb_msd_preprocess (S_usb_bot_command_state *pCommandState)
 {
-    S_msd_csw *pCsw = &pCommandState->sCsw;
-    S_msd_cbw *pCbw = &pCommandState->sCbw;
+    usb_msd_csw_t *pCsw = &pCommandState->sCsw;
+    usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
     uint32_t dHostLength;
     uint32_t dDeviceLength;
     uint8_t bHostType;
@@ -211,7 +211,7 @@ static bool
 usb_msd_process (S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bStatus;
-    S_msd_csw *pCsw = &pCommandState->sCsw;
+    usb_msd_csw_t *pCsw = &pCommandState->sCsw;
 
     bStatus = sbc_process_command (pCommandState);
 

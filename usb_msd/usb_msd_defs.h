@@ -12,11 +12,6 @@
 //! MSD Interface Class Protocol Codes
 #define MSD_PROTOCOL        0x50
 
-// Class-specific requests
-//! Bulk transfer reset
-#define MSD_BULK_ONLY_RESET                     0xFF
-//! Get maximum number of LUNs
-#define MSD_GET_MAX_LUN                         0xFE
 
 // Subclass codes
 //! Reduced Block Commands (RBC) T10
@@ -42,15 +37,6 @@
 #define MSD_PROTOCOL_BULK_ONLY                  0x50
 //@}
 
-/**
- * \name Test unit control:
- * 
- */
-//@{
-#define CTRL_NOT_READY                          0x00
-#define CTRL_GOOD                               0x01
-#define CTRL_BUSY                               0x02
-//@}
 
 // Command block wrapper
 #define MSD_CBW_SIZE                            31          //!< Command Block Wrapper Size
@@ -92,8 +78,8 @@ typedef struct
     uint8_t bCBWCBLength:5,          //!< bits 0->4: bCBWCBLength
             bReserved2  :3;          //!< reserved
     uint8_t pCommand[16];            //!< Command block
+} usb_msd_cbw_t;
 
-} S_msd_cbw;
 
 //! Table 5.2 - Command Status Wrapper (CSW) (usbmassbulk_10.pdf)
 typedef struct
@@ -106,7 +92,6 @@ typedef struct
                                    // amount of data expected as stated in the dCBWDataTransferLength and the actual amount of relevant
                                    // data sent by the device. The dCSWDataResidue shall not exceed the value sent in the dCBWDataTransferLength.
     uint8_t bCSWStatus;     //!< Indicates the success or failure of the command.
-
-} S_msd_csw;
+} usb_msd_csw_t;
 
 #endif /*USB_MSD_H_*/

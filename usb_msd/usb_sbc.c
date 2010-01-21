@@ -255,7 +255,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         pTransfer->bSemaphore++;
         pTransfer->bStatus = bStatus;
         pTransfer->dBytesTransferred = pLun->block_bytes;
-        pTransfer->dBytesRemaining = 0; // MPH, unused???
+        pTransfer->dBytesRemaining = 0;
         
         if (bStatus != LUN_STATUS_SUCCESS)
         {
@@ -272,7 +272,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         break;
         
     case SBC_STATE_WAIT_WRITE:
-        // Check semaphore value  (MPH, if this is not set then there is
+        // Check semaphore value  (If this is not set then there is
         // an error since lun_write is synchronous).
         if (pTransfer->bSemaphore > 0)
         {
@@ -349,7 +349,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         pTransfer->bSemaphore++;
         pTransfer->bStatus = bStatus;
         pTransfer->dBytesTransferred = pLun->block_bytes;
-        pTransfer->dBytesRemaining = 0; // MPH, unused???
+        pTransfer->dBytesRemaining = 0;
         
         if (bStatus != LUN_STATUS_SUCCESS)
         {
@@ -367,7 +367,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         break;
         
     case SBC_STATE_WAIT_READ:
-        // Check semaphore value  (MPH, if this is not set then there is
+        // Check semaphore value  (If this is not set then there is
         // an error since lun_read is synchronous).
         if (pTransfer->bSemaphore > 0)
         {
@@ -393,7 +393,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         TRACE_DEBUG (SBC, "SBC:BOT write start\n");
         
         // Send the block to the host
-        // MPH, it appears that partial blocks are never written
+        // Partial blocks are never written
         bStatus = usb_bot_write (sbc_tmp_buffer,
                                  pTransfer->dBytesTransferred, pTransfer);
         
@@ -607,7 +607,7 @@ sbc_test_unit_ready (S_lun *pLun)
  * \return  Command support status
  */
 bool
-sbc_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength, uint8_t *pType)
+sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, uint8_t *pType)
 {
     void *pCommand = pCbw->pCommand;
     S_sbc_command *pSbcCommand = (S_sbc_command *) pCommand;
@@ -703,14 +703,14 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     S_sbc_command *pCommand;
-    S_msd_cbw *pCbw = &pCommandState->sCbw;
+    usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
     S_lun *pLun;
 
     /* Need to cast array containing command to union of command
        structures.  */
     pCommand = (S_sbc_command *) pCommandState->sCbw.pCommand;
 
-    // MPH, if error do we do bad parameter handling?
+    // If lun in error should we do bad parameter handling?
     pLun = lun_get (pCbw->bCBWLUN);
     if (!pLun)
         return SBC_STATUS_ERROR;

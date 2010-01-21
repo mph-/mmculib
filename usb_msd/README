@@ -1,0 +1,7 @@
+Perhaps the usb_sbc module is too coupled to usb_bot.
+
+usb_bot requires callbacks for usb reading and writing.  Perhaps this
+should be changed to non-blocking I/O.
+
+usb_bot.c has too much MSD specific handling, for example, setup
+requests, cbw, and csw stuff.

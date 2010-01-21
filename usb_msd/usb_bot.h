@@ -53,14 +53,14 @@ typedef struct
 
 
 //! \brief  Status of an executing command
-//! \see    S_msd_cbw
-//! \see    S_msd_csw
+//! \see    usb_msd_cbw_t
+//! \see    usb_msd_csw_t
 //! \see    S_usb_bot_transfer
 typedef struct 
 {
     S_usb_bot_transfer sTransfer;   //!< Current transfer status
-    S_msd_cbw sCbw;             //!< Received CBW
-    S_msd_csw sCsw;             //!< CSW to send
+    usb_msd_cbw_t sCbw;             //!< Received CBW
+    usb_msd_csw_t sCsw;             //!< CSW to send
     uint8_t bCase;    	        //!< Actions to perform when command is complete
     uint32_t dLength;           //!< Remaining length of command
 } S_usb_bot_command_state;
@@ -87,7 +87,7 @@ bool
 usb_bot_status_set (S_usb_bot_command_state *pCommandState);
 
 void
-usb_bot_get_command_information (S_msd_cbw *pCbw, uint32_t *pLength, 
+usb_bot_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, 
                                  uint8_t *pType);
 
 void
