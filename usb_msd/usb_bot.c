@@ -85,9 +85,9 @@ usb_bot_status (usb_status_t status)
  */
 static void
 usb_bot_callback (S_usb_bot_transfer *pTransfer,
-              uint8_t bStatus,
-              uint32_t dBytesTransferred,
-              uint32_t dBytesRemaining)
+                  uint8_t bStatus,
+                  uint32_t dBytesTransferred,
+                  uint32_t dBytesRemaining)
 {
     pTransfer->bSemaphore++;
     pTransfer->bStatus = usb_bot_status (bStatus);

@@ -73,10 +73,10 @@ static const usb_dsc_dev_t devDescriptor =
     USB_VENDOR_ID,                   // Vendor ID
     USB_PRODUCT_ID,                  // Product ID
     USB_RELEASE_ID,                  // Device release number
-    0x00,                            // Index 1: manufacturer string
-    0x00,                            // Index 2: product string
-    0x00,                            // Index 3: serial number string
-    0x01                             // One possible configurations
+    0x01,                            // Index 1: manufacturer string
+    0x02,                            // Index 2: product string
+    0x03,                            // Index 3: serial number string
+    0x01                             // One possible configuration
 };
 
 
