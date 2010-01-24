@@ -1529,9 +1529,11 @@ fat_de_add (fat_t *fat, const char *filename,
     for (de = fat_de_first (fat->fs, cluster_dir, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
-        if (!fat_de_free_p (de))
-            continue;
+        if (fat_de_free_p (de))
+            break;
     }
+
+    // TODO, what if we find a slot but it is not big enough?
 
     entries = fat_filename_entries (filename);
     if (entries > 1)
