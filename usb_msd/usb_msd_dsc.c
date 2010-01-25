@@ -122,9 +122,12 @@ static const char pProduct[] =
 };
 
 //! \brief  Serial number
+// The serial number shall contain at least 12 valid digits,
+// represented as a UNICODE string. The last 12 digits of the
+// serial number shall be unique to each USB idVendor and idProduct pair.
+// Allowable digits are 0--9 and A--F.
 static const char pSerial[] = 
 {
-
     USB_STRING_DESCRIPTOR_SIZE (USB_SERIAL_LEN),
     USB_STRING_DESCRIPTOR,
     USB_SERIAL_STRING

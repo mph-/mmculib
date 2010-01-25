@@ -5,3 +5,7 @@ should be changed to non-blocking I/O.
 
 usb_bot.c has too much MSD specific handling, for example, setup
 requests, cbw, and csw stuff.
+
+
+TODO, if the USB connection times out, say by using gdb, then
+removing and reconnecting the USB does not properly work.

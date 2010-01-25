@@ -1,6 +1,12 @@
 #include <stdlib.h>
+#include "delay.h"
 #include "usb_trace.h"
 #include "usb_bot.h"
+
+/* See Universal Serial Bus Mass Storage Class Bulk-Only Transport
+   document. www.usb.org/developers/devclass_docs/usb_msc_overview_1.2.pdf
+*/
+
 
 /** Set flag(s) in a register */
 #define SET(register, flags)        ((register) = (register) | (flags))
@@ -65,7 +71,7 @@ usb_bot_status (usb_status_t status)
         return USB_BOT_STATUS_SUCCESS;
 
     case USB_STATUS_RESET:
-        TRACE_INFO (USB_BOT, "BOT:Endpoint reset\n");
+        TRACE_ERROR (USB_BOT, "BOT:Endpoint reset\n");
 
     default:
         return USB_BOT_STATUS_ERROR;
@@ -199,7 +205,7 @@ usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
-            TRACE_INFO (USB_BOT, "BOT:Halt %d\n", bot->wait_reset_recovery);
+            TRACE_ERROR (USB_BOT, "BOT:Halt %d\n", bot->wait_reset_recovery);
         
             // Do not clear the endpoint halt status if the device is waiting
             // for a reset recovery sequence
@@ -320,7 +326,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                 if ((pTransfer->dBytesTransferred != MSD_CBW_SIZE)
                     || (pTransfer->dBytesRemaining != 0))
                 {
-                    TRACE_INFO (USB_BOT, "BOT:Invalid CBW size\n");
+                    TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
                     
                     // Wait for a reset recovery
                     bot->wait_reset_recovery = true;
@@ -335,7 +341,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                 // Check the CBW Signature
                 else if (pCbw->dCBWSignature != MSD_CBW_SIGNATURE)
                 {
-                    TRACE_INFO (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
+                    TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
                                 (unsigned int)pCbw->dCBWSignature);
                     
                     // Wait for a reset recovery
@@ -424,6 +430,9 @@ usb_bot_ready_p (void)
         if (usb_configured_p (bot->usb))
         {
             TRACE_INFO (USB_BOT, "BOT:Connected\n");
+
+            // Some folks reckon a delay is needed for Windows
+            delay_ms (100);
 
             bot->state = USB_BOT_STATE_READ_CBW;
             bot->wait_reset_recovery = false;

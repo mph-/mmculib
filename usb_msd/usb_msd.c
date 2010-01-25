@@ -89,7 +89,10 @@ usb_msd_preprocess (S_usb_bot_command_state *pCommandState)
     if (!isCommandSupported)
         return false;
 
-    // Identify the command case
+    // Identify the command case.  H is the host expectation,
+    // D is the device intent.  n is for no data transfers, i is for input to
+    //host, o is for output from host.
+
     // Case 1  (Hn = Dn)
     if ((bHostType == USB_BOT_NO_TRANSFER)
         && (bDeviceType == USB_BOT_NO_TRANSFER))

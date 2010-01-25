@@ -8,9 +8,9 @@
 //@{
 #define USB_GET_STATUS                 0x00
 #define USB_CLEAR_FEATURE              0x01
-// Reserved for futur use              0x02
+// Reserved for future use             0x02
 #define USB_SET_FEATURE                0x03
-// Reserved for futur use              0x04
+// Reserved for future use             0x04
 #define USB_SET_ADDRESS                0x05
 #define USB_GET_DESCRIPTOR             0x06
 #define USB_SET_DESCRIPTOR             0x07

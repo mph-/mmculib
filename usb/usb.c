@@ -2,6 +2,8 @@
 #include "usb_std.h"
 #include "trace.h"
 
+#include "delay.h"
+
 /* This module is mostly a wrapper for the device dependent UDP.
    It also handles setup and configuration requests. 
 
@@ -16,7 +18,8 @@
 
 
 #ifndef USB_PRODUCT_ID
-#define USB_PRODUCT_ID 0x6124
+//#define USB_PRODUCT_ID 0x6124
+#define USB_PRODUCT_ID 0x6202
 #endif
 
 
@@ -63,7 +66,7 @@
 //! Device descriptor
 static const usb_dsc_dev_t devDescriptor =
 {
-    sizeof(usb_dsc_dev_t), // Size of this descriptor in bytes
+    sizeof (usb_dsc_dev_t),         // Size of this descriptor in bytes
     USB_DEVICE_DESCRIPTOR,           // DEVICE Descriptor Type
     0x0200,                          // USB specification 2.0 in BCD
     0x00,                            // Class is specified in the interface descriptor.
@@ -80,27 +83,11 @@ static const usb_dsc_dev_t devDescriptor =
 };
 
 
-/**
- * Callback for the STD_SetConfiguration function.
- * 
- */
-static void
-usb_std_configure_endpoints (usb_t usb, udp_setup_t *setup)
-{
-    unsigned int j;
-
-    // Enter the configured state
-    udp_set_configuration (usb->udp, setup);
-
-    // Configure endpoints
-    for (j = 0; j < UDP_EP_NUM; j++)
-        udp_configure_endpoint (usb->udp, j);
-}
-
-
 static void
 usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
 {
+    delay_ms (1000);
+
     // Check which descriptor was requested      
     switch (HIGH_BYTE (setup->value)) 
     {
@@ -165,24 +152,25 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
     switch (setup->request)
     {
     case USB_GET_DESCRIPTOR:
-        TRACE_INFO (USB, "USB:gDesc 0x%02x\n", setup->request);
+        TRACE_INFO (USB, "USB:gDesc 0x%02x\n", setup->value);
         usb_std_get_descriptor (usb, setup);
         break;       
 
     case USB_SET_ADDRESS:
-        TRACE_INFO (USB, "USB:sAddr\n");
+        TRACE_INFO (USB, "USB:sAddr 0x%02x\n", setup->value);
         usb_control_write_zlp (usb);
         udp_set_address (usb->udp, setup);
         break;            
 
     case USB_SET_CONFIGURATION:
-        TRACE_INFO (USB, "USB:sCfg\n");
+        TRACE_INFO (USB, "USB:sCfg 0x%02x\n", setup->value);
         usb_control_write_zlp (usb);
-        usb_std_configure_endpoints (usb, setup);
+        udp_set_configuration (usb->udp, setup);
         break;
 
     case USB_GET_CONFIGURATION:
         TRACE_INFO (USB, "USB:gCfg\n");
+        // TODO, if have multiple configurations, select current one
         cfg_desc = usb->descriptors->config;
         usb_control_write (usb, cfg_desc, cfg_desc->bLength);
         break;
@@ -222,7 +210,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
             break;
             
         default:
-            TRACE_INFO (USB, "USB:Bad SetFeature 0x%04X\n", setup->value);
+            TRACE_ERROR (USB, "USB:Bad SetFeature 0x%04X\n", setup->value);
             usb_control_stall (usb);
         }
         break;
@@ -240,21 +228,20 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         case USB_RECIPIENT_ENDPOINT:
             TRACE_INFO (USB, "USB:Ept\n");
             // Retrieve the endpoint current status
-            temp = (uint16_t) usb_halt (usb, LOW_BYTE (setup->index), 
-                                        USB_GET_STATUS);
+            temp = usb_halt (usb, LOW_BYTE (setup->index), USB_GET_STATUS);
             // Return the endpoint status
-            usb_control_write (usb, &temp, sizeof (temp));                        
+            usb_control_write (usb, &temp, sizeof (temp)); 
             break;
             
         default:
-            TRACE_INFO (USB, "USB:Bad GetStatus 0x%02X\n", 
-                       setup->type);
+            TRACE_ERROR (USB, "USB:Bad GetStatus 0x%02X\n", 
+                         setup->type);
             usb_control_stall (usb);
         }
         break;
 
     default:
-        TRACE_INFO (USB, "USB:Bad req 0x%02X\n", setup->request);
+        TRACE_ERROR (USB, "USB:Unknown req 0x%02X\n", setup->request);
         usb_control_stall (usb);
     }
 }
