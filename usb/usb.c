@@ -2,8 +2,6 @@
 #include "usb_std.h"
 #include "trace.h"
 
-#include "delay.h"
-
 /* This module is mostly a wrapper for the device dependent UDP.
    It also handles setup and configuration requests. 
 
@@ -87,8 +85,6 @@ static const usb_dsc_dev_t devDescriptor =
 static void
 usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
 {
-    delay_ms (1000);
-
     // Check which descriptor was requested      
     switch (HIGH_BYTE (setup->value)) 
     {
