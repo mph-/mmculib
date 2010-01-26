@@ -1,5 +1,5 @@
-#ifndef USB_LUN_H_
-#define USB_LUN_H_
+#ifndef USB_MSD_LUN_H_
+#define USB_MSD_LUN_H_
 
 #include "config.h"
 #include "msd.h"
@@ -50,4 +50,4 @@ S_lun *lun_get (uint8_t num);
 
 uint8_t lun_num_get (void);
 
-#endif /*USB_LUN_H_*/
+#endif /*USB_MSD_LUN_H_*/

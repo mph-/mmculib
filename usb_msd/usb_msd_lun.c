@@ -1,7 +1,7 @@
 #include "msd.h"
 #include "usb_trace.h"
-#include "usb_lun.h"
-#include "usb_sbc.h"
+#include "usb_msd_lun.h"
+#include "usb_msd_sbc.h"
 #include "byteorder.h"
 
 #include <string.h>

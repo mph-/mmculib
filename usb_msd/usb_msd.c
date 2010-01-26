@@ -1,6 +1,6 @@
 #include "usb_msd.h"
 #include "usb_bot.h"
-#include "usb_sbc.h"
+#include "usb_msd_sbc.h"
 #include "usb_trace.h"
 
 /* This is the toplevel of the USB mass storage driver (MSD).

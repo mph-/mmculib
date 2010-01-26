@@ -438,6 +438,7 @@ usb_bot_ready_p (void)
     default:
         if (usb_configured_p (bot->usb))
             return 1;
+
         TRACE_INFO (USB_BOT, "BOT:Disconnected\n");
         break;
     }

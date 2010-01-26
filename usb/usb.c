@@ -212,12 +212,18 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         break;
 
     case USB_CLEAR_FEATURE:
-        TRACE_INFO (USB, "USB:cFeat %u\n", setup->value);
+    case USB_SET_FEATURE:
+        if (setup->request == USB_SET_FEATURE)
+            TRACE_INFO (USB, "USB:sFeat %u\n", setup->value);
+        else
+            TRACE_INFO (USB, "USB:cFeat %u\n", setup->value);
+
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
             TRACE_DEBUG (USB, "USB:Hlt\n");
-            usb_halt (usb, LOW_BYTE (setup->index), USB_CLEAR_FEATURE);
+            usb_halt (usb, LOW_BYTE (setup->index),
+                      setup->request == USB_SET_FEATURE);
             usb_control_write_zlp (usb);
             break;
         
@@ -227,26 +233,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
             break;
         
         default:
-            TRACE_DEBUG (USB, "USB:Sta\n");
-            usb_control_stall (usb);
-        }
-        break;
-
-    case USB_SET_FEATURE:
-        TRACE_INFO (USB, "USB:sFeat %u\n", setup->value);
-        switch (setup->value)
-        {
-        case USB_ENDPOINT_HALT:
-            usb_halt (usb, LOW_BYTE (setup->index), USB_SET_FEATURE);
-            usb_control_write_zlp (usb);
-            break;
-            
-        case USB_DEVICE_REMOTE_WAKEUP:
-            usb_control_write_zlp (usb);
-            break;
-            
-        default:
-            TRACE_ERROR (USB, "USB:Bad SetFeature 0x%04X\n", setup->value);
+            TRACE_ERROR (USB, "USB:Bad Feature 0x%04X\n", setup->value);
             usb_control_stall (usb);
         }
         break;

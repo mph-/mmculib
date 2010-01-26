@@ -1,9 +1,9 @@
-#ifndef USB_SBC_H_
-#define USB_SBC_H_
+#ifndef USB_MSD_SBC_H_
+#define USB_MSD_SBC_H_
 
 #include "config.h"
 #include "usb_sbc_defs.h"
-#include "usb_lun.h"
+#include "usb_msd_lun.h"
 #include "usb_bot.h"
 
 
@@ -37,4 +37,4 @@ void sbc_lun_init (msd_t *msd);
 
 uint8_t sbc_lun_num_get (void);
 
-#endif /*USB_SBC_H_*/
+#endif /*USB_MSD_SBC_H_*/

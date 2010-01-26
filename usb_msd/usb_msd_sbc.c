@@ -6,8 +6,8 @@
 
 #include "usb_trace.h"
 #include "usb_bot.h"
-#include "usb_sbc.h"
-#include "usb_lun.h"
+#include "usb_msd_sbc.h"
+#include "usb_msd_lun.h"
 #include "usb_sbc_defs.h"
 #include "byteorder.h"
 
