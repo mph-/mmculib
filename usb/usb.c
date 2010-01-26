@@ -267,7 +267,7 @@ usb_control_write_zlp (usb_t usb)
 {
     udp_write_async (usb->udp, UDP_EP_CONTROL, 0, 0, 0, 0);
 
-    while (!udp_idle_p (UDP_EP_CONTROL, UDP_EP_CONTROL))
+    while (!udp_idle_p (usb->udp, UDP_EP_CONTROL))
         continue;
 }
 
