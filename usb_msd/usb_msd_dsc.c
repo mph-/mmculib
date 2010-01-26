@@ -51,7 +51,7 @@ static const usb_msd_descriptor_t sConfigurationDescriptor =
     {
         sizeof (usb_dsc_ep_t),         // Size of descriptor in bytes
         USB_ENDPOINT_DESCRIPTOR,       // ENDPOINT descriptor type
-        UDP_EP_OUT,                    // OUT endpoint
+        UDP_EP_OUT | UDP_EP_DIR_OUT,   // OUT endpoint
         0x02,                          // Bulk endpoint
         UDP_EP_OUT_SIZE,               // Maximum packet size is 64 bytes
         0x00,                          // Must be 0 for full-speed bulk
@@ -60,7 +60,7 @@ static const usb_msd_descriptor_t sConfigurationDescriptor =
     {
         sizeof (usb_dsc_ep_t),         // Size of descriptor in bytes
         USB_ENDPOINT_DESCRIPTOR,       // ENDPOINT descriptor type
-        0x82,                          // IN endpoint, address 02h
+        UDP_EP_IN | UDP_EP_DIR_IN,     // IN endpoint
         0x02,                          // Bulk endpoint
         UDP_EP_IN_SIZE,                // Maximum packet size is 64 bytes
         0x00,                          // Must be 0 for full-speed bulk

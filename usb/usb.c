@@ -83,6 +83,7 @@ static const usb_dsc_dev_t devDescriptor =
 };
 
 
+
 static void
 usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
 {
@@ -250,7 +251,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
 void 
 usb_control_write (usb_t usb, const void *buffer, usb_size_t length)
 {
-    return udp_control_write (usb->udp, buffer, length);
+    udp_write_async (usb->udp, UDP_EP_CONTROL, buffer, length, 0, 0);
 }
 
 
@@ -264,14 +265,17 @@ usb_control_gobble (usb_t usb)
 void
 usb_control_write_zlp (usb_t usb)
 {
-    return udp_control_write_zlp (usb->udp);
+    udp_write_async (usb->udp, UDP_EP_CONTROL, 0, 0, 0, 0);
+
+    while (!udp_idle_p (UDP_EP_CONTROL, UDP_EP_CONTROL))
+        continue;
 }
 
 
 void
 usb_control_stall (usb_t usb)
 {
-    return udp_control_stall (usb->udp);
+    udp_stall (usb->udp, UDP_EP_CONTROL);
 }
 
 
@@ -308,7 +312,7 @@ usb_write_async (usb_t usb, const void *buffer,
                  udp_callback_t callback, 
                  void *arg)
 {
-    return udp_write_async (usb->udp, buffer, length, callback, arg);
+    return udp_write_async (usb->udp, UDP_EP_IN, buffer, length, callback, arg);
 }
 
 
@@ -318,7 +322,7 @@ usb_read_async (usb_t usb, void *buffer,
                  udp_callback_t callback, 
                  void *arg)
 {
-    return udp_read_async (usb->udp, buffer, length, callback, arg);
+    return udp_read_async (usb->udp, UDP_EP_OUT, buffer, length, callback, arg);
 }
 
 
