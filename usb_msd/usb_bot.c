@@ -82,23 +82,16 @@ usb_bot_status (usb_status_t status)
 /**
  * This function is to be used as a callback for BOT transfers.
  * 
- * A S_usb_bot_transfer structure is updated with the method results.
- * \param   pTransfer         Pointer to USB transfer result structure 
- * \param   bStatus           Operation result code
- * \param   dBytesTransferred Number of bytes transferred by the command
- * \param   dBytesRemaining   Number of bytes not transferred
- * 
  */
 static void
-usb_bot_callback (S_usb_bot_transfer *pTransfer,
-                  uint8_t bStatus,
-                  uint32_t dBytesTransferred,
-                  uint32_t dBytesRemaining)
+usb_bot_callback (void *arg, usb_transfer_t *usb_transfer)
 {
-    pTransfer->bSemaphore++;
-    pTransfer->bStatus = usb_bot_status (bStatus);
-    pTransfer->dBytesTransferred = dBytesTransferred;
-    pTransfer->dBytesRemaining = dBytesRemaining;
+    usb_bot_transfer_t *bot_transfer = arg;
+
+    bot_transfer->bSemaphore++;
+    bot_transfer->bStatus = usb_bot_status (usb_transfer->status);
+    bot_transfer->dBytesTransferred = usb_transfer->transferred;
+    bot_transfer->dBytesRemaining = usb_transfer->remaining;
 }
 
 
@@ -106,7 +99,7 @@ usb_bot_status_t
 usb_bot_write (const void *buffer, uint16_t size, void *pTransfer)
 {
     return usb_bot_status (usb_write_async (bot->usb, buffer, size,
-                                            (udp_callback_t) usb_bot_callback,
+                                            usb_bot_callback,
                                             pTransfer));
 }
 
@@ -115,7 +108,7 @@ usb_bot_status_t
 usb_bot_read (void *buffer, uint16_t size, void *pTransfer)
 {
     return usb_bot_status (usb_read_async (bot->usb, buffer, size, 
-                                           (udp_callback_t) usb_bot_callback,
+                                           usb_bot_callback,
                                            pTransfer));
 }
 
@@ -196,9 +189,8 @@ usb_bot_post_process_command (S_usb_bot_command_state *pCommandState)
  * This runs as part of UDP interrupt so avoid tracing.
  */
 static bool
-usb_bot_request_handler (usb_t usb, udp_setup_t *setup)
+usb_bot_request_handler (usb_t usb, usb_setup_t *setup)
 {
-    // Handle requests
     switch (setup->request)
     {
     case USB_CLEAR_FEATURE:
@@ -297,7 +289,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
 {
     usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
     usb_msd_csw_t *pCsw = &pCommandState->sCsw;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
     switch (bot->state)
@@ -376,7 +368,7 @@ bool
 usb_bot_status_set (S_usb_bot_command_state *pCommandState)
 {
     usb_msd_csw_t *pCsw = &pCommandState->sCsw;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     usb_bot_status_t bStatus;
 
     switch (bot->state)

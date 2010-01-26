@@ -78,7 +78,7 @@ sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     switch (sbc_state)
     {
@@ -139,7 +139,7 @@ sbc_read_capacity10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     // Identify current command state
     switch (sbc_state)
@@ -197,7 +197,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bStatus;
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     S_sbc_write_10 *pCommand = (S_sbc_write_10 *) pCommandState->sCbw.pCommand;
     lun_addr_t addr;
 
@@ -324,7 +324,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     usb_bot_status_t bStatus;
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     S_sbc_read_10 *pCommand = (S_sbc_read_10 *) pCommandState->sCbw.pCommand;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     lun_addr_t addr;
 
     addr = DWORDB (pCommand->pLogicalBlockAddress);
@@ -460,7 +460,7 @@ sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     switch (sbc_state)
     {
@@ -517,7 +517,7 @@ sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
-    S_usb_bot_transfer *pTransfer = &pCommandState->sTransfer;
+    usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     switch (sbc_state)
     {

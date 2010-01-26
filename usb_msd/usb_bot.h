@@ -49,16 +49,16 @@ typedef struct
     uint32_t  dBytesRemaining;   //!< Number of bytes not transferred
     unsigned char bSemaphore;    //!< Semaphore to indicate transfer completion
     unsigned char bStatus;       //!< Operation result code
-} S_usb_bot_transfer;
+} usb_bot_transfer_t;
 
 
 //! \brief  Status of an executing command
 //! \see    usb_msd_cbw_t
 //! \see    usb_msd_csw_t
-//! \see    S_usb_bot_transfer
+//! \see    usb_bot_transfer_t
 typedef struct 
 {
-    S_usb_bot_transfer sTransfer;   //!< Current transfer status
+    usb_bot_transfer_t sTransfer;   //!< Current transfer status
     usb_msd_cbw_t sCbw;             //!< Received CBW
     usb_msd_csw_t sCsw;             //!< CSW to send
     uint8_t bCase;    	        //!< Actions to perform when command is complete

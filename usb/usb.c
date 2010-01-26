@@ -82,6 +82,47 @@ static const usb_dsc_dev_t devDescriptor =
 
 
 
+void 
+usb_control_write (usb_t usb, const void *buffer, usb_size_t length)
+{
+    udp_write_async (usb->udp, UDP_EP_CONTROL, buffer, length, 0, 0);
+}
+
+
+void
+usb_control_gobble (usb_t usb)
+{
+    return udp_control_gobble (usb->udp);
+}
+
+
+void
+usb_control_write_zlp (usb_t usb)
+{
+    udp_write_async (usb->udp, UDP_EP_CONTROL, 0, 0, 0, 0);
+}
+
+
+static void
+usb_control_write_zlp_callback (usb_t usb, udp_callback_t callback)
+{
+    udp_write_async (usb->udp, UDP_EP_CONTROL, 0, 0, callback, usb->udp);
+}
+
+
+void
+usb_control_stall (usb_t usb)
+{
+    udp_stall (usb->udp, UDP_EP_CONTROL);
+}
+
+
+bool usb_halt (usb_t usb, udp_ep_t endpoint, uint8_t request)
+{
+    return udp_halt (usb->udp, endpoint, request);
+}
+
+
 static void
 usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
 {
@@ -155,14 +196,12 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
 
     case USB_SET_ADDRESS:
         TRACE_INFO (USB, "USB:sAddr 0x%02x\n", setup->value);
-        usb_control_write_zlp (usb);
-        udp_set_address (usb->udp, setup);
+        usb_control_write_zlp_callback (usb, udp_address_set);
         break;            
 
     case USB_SET_CONFIGURATION:
         TRACE_INFO (USB, "USB:sCfg 0x%02x\n", setup->value);
-        usb_control_write_zlp (usb);
-        udp_set_configuration (usb->udp, setup);
+        usb_control_write_zlp_callback (usb, udp_configuration_set);
         break;
 
     case USB_GET_CONFIGURATION:
@@ -241,43 +280,6 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         TRACE_ERROR (USB, "USB:Unknown req 0x%02X\n", setup->request);
         usb_control_stall (usb);
     }
-}
-
-
-void 
-usb_control_write (usb_t usb, const void *buffer, usb_size_t length)
-{
-    udp_write_async (usb->udp, UDP_EP_CONTROL, buffer, length, 0, 0);
-}
-
-
-void
-usb_control_gobble (usb_t usb)
-{
-    return udp_control_gobble (usb->udp);
-}
-
-
-void
-usb_control_write_zlp (usb_t usb)
-{
-    udp_write_async (usb->udp, UDP_EP_CONTROL, 0, 0, 0, 0);
-
-    while (!udp_idle_p (usb->udp, UDP_EP_CONTROL))
-        continue;
-}
-
-
-void
-usb_control_stall (usb_t usb)
-{
-    udp_stall (usb->udp, UDP_EP_CONTROL);
-}
-
-
-bool usb_halt (usb_t usb, udp_ep_t endpoint, uint8_t request)
-{
-    return udp_halt (usb->udp, endpoint, request);
 }
 
 

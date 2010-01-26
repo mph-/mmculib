@@ -25,12 +25,20 @@ typedef enum
 } usb_status_t;
 
 
+typedef udp_setup_t usb_setup_t;
+
+typedef udp_transfer_t usb_transfer_t;
+
+typedef udp_callback_t usb_callback_t;
+
+typedef bool (*usb_request_handler_t) (void *arg, usb_setup_t *setup);
+
 typedef struct usb_dev_struct
 {
     udp_t udp;
     const usb_dsc_dev_t *dev_descriptor;
     const usb_descriptors_t *descriptors;
-    udp_request_handler_t request_handler;
+    usb_request_handler_t request_handler;
 } usb_dev_t;
 
 
@@ -56,12 +64,12 @@ usb_size_t usb_write (usb_t usb, const void *buffer, usb_size_t length);
 
 usb_status_t usb_write_async (usb_t usb, const void *buffer, 
                               unsigned int length, 
-                              udp_callback_t callback, 
+                              usb_callback_t callback, 
                               void *arg);
 
 usb_status_t usb_read_async (usb_t usb, void *buffer, 
                              unsigned int length, 
-                             udp_callback_t callback, 
+                             usb_callback_t callback, 
                              void *arg);
 
 bool usb_configured_p (usb_t usb);
