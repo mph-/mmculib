@@ -40,33 +40,33 @@
 
 
 
-#ifndef TRACE_SBC_ERROR
-#define TRACE_SBC_ERROR(...)
+#ifndef TRACE_USB_MSD_SBC_ERROR
+#define TRACE_USB_MSD_SBC_ERROR(...)
 #endif
 
 
-#ifndef TRACE_SBC_INFO
-#define TRACE_SBC_INFO(...)
+#ifndef TRACE_USB_MSD_SBC_INFO
+#define TRACE_USB_MSD_SBC_INFO(...)
 #endif
 
 
-#ifndef TRACE_SBC_DEBUG
-#define TRACE_SBC_DEBUG(...)
+#ifndef TRACE_USB_MSD_SBC_DEBUG
+#define TRACE_USB_MSD_SBC_DEBUG(...)
 #endif
 
 
-#ifndef TRACE_LUN_ERROR
-#define TRACE_LUN_ERROR(...)
+#ifndef TRACE_USB_MSD_LUN_ERROR
+#define TRACE_USB_MSD_LUN_ERROR(...)
 #endif
 
 
-#ifndef TRACE_LUN_INFO
-#define TRACE_LUN_INFO(...)
+#ifndef TRACE_USB_MSD_LUN_INFO
+#define TRACE_USB_MSD_LUN_INFO(...)
 #endif
 
 
-#ifndef TRACE_LUN_DEBUG
-#define TRACE_LUN_DEBUG(...)
+#ifndef TRACE_USB_MSD_LUN_DEBUG
+#define TRACE_USB_MSD_LUN_DEBUG(...)
 #endif
 
 

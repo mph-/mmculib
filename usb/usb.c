@@ -276,6 +276,16 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         }
         break;
 
+    case USB_GET_INTERFACE:
+        TRACE_INFO (USB, "USB:gInt 0x%02x\n", setup->value);
+        usb_control_stall (usb);
+        break;
+
+    case USB_SET_INTERFACE:
+        TRACE_INFO (USB, "USB:sInt 0x%02x\n", setup->value);
+        usb_control_stall (usb);
+        break;
+
     default:
         TRACE_ERROR (USB, "USB:Unknown req 0x%02X\n", setup->request);
         usb_control_stall (usb);

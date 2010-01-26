@@ -83,7 +83,7 @@ sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:Inquiry\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:Inquiry\n");
         sbc_state = SBC_STATE_WRITE;
         
         // Change additional length field of inquiry data
@@ -99,7 +99,7 @@ sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         if (bStatus != USB_BOT_STATUS_SUCCESS)
         {
             bResult = SBC_STATUS_ERROR;
-            TRACE_ERROR (SBC, "SBC:Inquiry error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Inquiry error\n");
         }
         else
             sbc_state = SBC_STATE_WAIT_WRITE;
@@ -115,7 +115,7 @@ sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        TRACE_ERROR (SBC, "SBC: Bad state\n");
+        TRACE_ERROR (USB_MSD_SBC, "SBC: Bad state\n");
         break;
     }
 
@@ -145,7 +145,7 @@ sbc_read_capacity10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:RdCapacity (10)\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:RdCapacity (10)\n");
         sbc_state = SBC_STATE_WRITE;
         /* Fall through...  */
 
@@ -170,7 +170,7 @@ sbc_read_capacity10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        TRACE_ERROR (SBC, "SBC: Bad state\n");
+        TRACE_ERROR (USB_MSD_SBC, "SBC: Bad state\n");
         break;
     }
 
@@ -206,21 +206,21 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:Write (%d) [%u]\n", 
+        TRACE_INFO (USB_MSD_SBC, "SBC:Write (%d) [%u]\n", 
                (unsigned int) addr,
                (unsigned int)pCommandState->dLength);
         sbc_state = SBC_STATE_READ;
         /* Fall through...  */
 
     case SBC_STATE_READ:
-        TRACE_DEBUG (SBC, "SBC:BOT read start\n");
+        TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT read start\n");
         // Read one block of data sent by the host
         bStatus = usb_bot_read (sbc_tmp_buffer, pLun->block_bytes,
                                 pTransfer);
 
         if (bStatus != USB_BOT_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:BOT read error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT read error\n");
             lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR, 0, 0);
             bResult = SBC_STATUS_ERROR;
         }
@@ -235,14 +235,14 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 
             if (pTransfer->bStatus != USB_BOT_STATUS_SUCCESS)
             {
-                TRACE_ERROR (SBC, "SBC:BOT read error\n");
+                TRACE_ERROR (USB_MSD_SBC, "SBC:BOT read error\n");
                 lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR,
                                        0, 0);
                 bResult = SBC_STATUS_ERROR;
             }
             else
             {
-                TRACE_DEBUG (SBC, "SBC:BOT read done\n");
+                TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT read done\n");
                 sbc_state = SBC_STATE_WRITE;
             }
         }
@@ -250,7 +250,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         
     case SBC_STATE_WRITE:
         // Write the block to the media
-        TRACE_DEBUG (SBC, "SBC:LUN write\n");
+        TRACE_DEBUG (USB_MSD_SBC, "SBC:LUN write\n");
         bStatus = lun_write (pLun, addr, sbc_tmp_buffer, 1);
         pTransfer->bSemaphore++;
         pTransfer->bStatus = bStatus;
@@ -259,7 +259,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         
         if (bStatus != LUN_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:LUN write error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:LUN write error\n");
             lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
                                    0, 0);
             bResult = SBC_STATUS_ERROR;
@@ -280,7 +280,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 
             if (pTransfer->bStatus != LUN_STATUS_SUCCESS)
             {
-                TRACE_ERROR (SBC, "SBC:LUN write error\n");
+                TRACE_ERROR (USB_MSD_SBC, "SBC:LUN write error\n");
                 lun_update_sense_data (pLun, SBC_SENSE_KEY_RECOVERED_ERROR,
                                        SBC_ASC_TOO_MUCH_WRITE_DATA,
                                        0);
@@ -288,7 +288,7 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
             }
             else
             {
-                TRACE_DEBUG (SBC, "SBC:LUN write done\n");
+                TRACE_DEBUG (USB_MSD_SBC, "SBC:LUN write done\n");
                 // Update transfer length and block address
                 pCommandState->dLength -= pTransfer->dBytesTransferred;
                 STORE_DWORDB (addr + 1, pCommand->pLogicalBlockAddress);
@@ -334,14 +334,14 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:Read (%u) [%u]\n",
+        TRACE_INFO (USB_MSD_SBC, "SBC:Read (%u) [%u]\n",
                    (unsigned int)addr,
                    (unsigned int)pCommandState->dLength);
         sbc_state = SBC_STATE_READ;
         /* Fall through ...  */
 
     case SBC_STATE_READ:
-        TRACE_DEBUG (SBC, "SBC:LUN read start\n");
+        TRACE_DEBUG (USB_MSD_SBC, "SBC:LUN read start\n");
 
         // Read one block of data from the media
         bStatus = lun_read (pLun, addr, sbc_tmp_buffer, 1);
@@ -353,7 +353,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         
         if (bStatus != LUN_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:LUN read error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:LUN read error\n");
             lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
                                    SBC_ASC_LOGICAL_UNIT_NOT_READY,
                                    0);
@@ -375,7 +375,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 
             if (pTransfer->bStatus != LUN_STATUS_SUCCESS)
             {
-                TRACE_ERROR (SBC, "SBC:LUN read error\n");
+                TRACE_ERROR (USB_MSD_SBC, "SBC:LUN read error\n");
                 lun_update_sense_data (pLun, SBC_SENSE_KEY_RECOVERED_ERROR,
                                        SBC_ASC_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE,
                                        0);
@@ -383,14 +383,14 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
             }
             else
             {
-                TRACE_DEBUG (SBC, "SBC:LUN read done\n");
+                TRACE_DEBUG (USB_MSD_SBC, "SBC:LUN read done\n");
                 sbc_state = SBC_STATE_WRITE;
             }
         }
         break;
         
     case SBC_STATE_WRITE:
-        TRACE_DEBUG (SBC, "SBC:BOT write start\n");
+        TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT write start\n");
         
         // Send the block to the host
         // Partial blocks are never written
@@ -399,7 +399,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         
         if (bStatus != USB_BOT_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:BOT write error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT write error\n");
             lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR,
                                    0, 0);
             bResult = SBC_STATUS_ERROR;
@@ -417,14 +417,14 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 
             if (pTransfer->bStatus != USB_BOT_STATUS_SUCCESS)
             {
-                TRACE_ERROR (SBC, "SBC:BOT write error\n");
+                TRACE_ERROR (USB_MSD_SBC, "SBC:BOT write error\n");
                 lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR,
                                        0, 0);
                 bResult = SBC_STATUS_ERROR;
             }
             else
             {
-                TRACE_DEBUG (SBC, "SBC:BOT write done\n");
+                TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT write done\n");
 
                 // Update transfer length and block address
                 pCommandState->dLength -= pTransfer->dBytesTransferred;
@@ -465,7 +465,7 @@ sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:ModeSense\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:ModeSense\n");
         sbc_state = SBC_STATE_WRITE;
         /* Fall through...  */
 
@@ -476,7 +476,7 @@ sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
     
         if (bStatus != USB_BOT_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:Write error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
             bResult = SBC_STATUS_ERROR;
         }
         else
@@ -493,7 +493,7 @@ sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        TRACE_ERROR (SBC, "SBC: Bad state\n");
+        TRACE_ERROR (USB_MSD_SBC, "SBC: Bad state\n");
         break;
     }
 
@@ -522,7 +522,7 @@ sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (SBC, "SBC:ReqSense\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:ReqSense\n");
         sbc_state = SBC_STATE_WRITE;
         /* Fall through ...  */
 
@@ -533,7 +533,7 @@ sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
 
         if (bStatus != USB_BOT_STATUS_SUCCESS)
         {
-            TRACE_ERROR (SBC, "SBC:Write error\n");
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
             bResult = SBC_STATUS_ERROR;
         }
         else
@@ -552,7 +552,7 @@ sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        TRACE_ERROR (SBC, "SBC: Bad state\n");
+        TRACE_ERROR (USB_MSD_SBC, "SBC: Bad state\n");
         break;
     }
 
@@ -571,23 +571,23 @@ sbc_test_unit_ready (S_lun *pLun)
 {
     msd_status_t status;
 
-    TRACE_INFO (SBC, "SBC:TstUnitRdy\n");
+    TRACE_INFO (USB_MSD_SBC, "SBC:TstUnitRdy\n");
     
     status = lun_status_get (pLun);
 
     switch (status)
     {
     case MSD_STATUS_READY:
-        TRACE_INFO (SBC, "SBC:Ready\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:Ready\n");
         break;
         
     case MSD_STATUS_BUSY:
-        TRACE_INFO (SBC, "SBC:Busy\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:Busy\n");
         lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY, 0, 0);
         break;
         
     case MSD_STATUS_NODEVICE:
-        TRACE_INFO (SBC, "SBC:?\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:?\n");
         lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
                                SBC_ASC_MEDIUM_NOT_PRESENT, 0);
         break;
@@ -638,7 +638,7 @@ sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, uint8_t *pT
         if (pSbcCommand->sModeSense6.bPageCode != SBC_PAGE_RETURN_ALL)
         {
             // Unsupported page
-            TRACE_ERROR (SBC, "SBC:Bad page code (0X%02X)\n",
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Bad page code (0X%02X)\n",
                          pSbcCommand->sModeSense6.bPageCode);
             isCommandSupported = false;
             *pLength = 0;
@@ -731,7 +731,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     case SBC_VERIFY_10:
-        TRACE_INFO (SBC, "SBC:Verify (10)\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:Verify (10)\n");
         // Nothing to do
         bResult = SBC_STATUS_SUCCESS;
         break;
@@ -753,7 +753,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     case SBC_PREVENT_ALLOW_MEDIUM_REMOVAL:
-        TRACE_INFO (SBC, "SBC:PrevAllowRem\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:PrevAllowRem\n");
         // Nothing to do
         bResult = SBC_STATUS_SUCCESS;
         break;
@@ -765,7 +765,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
     switch (bResult)
     {
     case SBC_STATUS_PARAMETER:
-        TRACE_ERROR (SBC, "SBC:Bad command 0x%02X\n", pCbw->pCommand[0]);
+        TRACE_ERROR (USB_MSD_SBC, "SBC:Bad command 0x%02X\n", pCbw->pCommand[0]);
         lun_update_sense_data (pLun, SBC_SENSE_KEY_ILLEGAL_REQUEST,
                                SBC_ASC_INVALID_COMMAND_OPERATION_CODE,
                                /* SBC_ASC_INVALID_FIELD_IN_CDB, */
@@ -773,7 +773,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
     
     case SBC_STATUS_ERROR:
-        TRACE_ERROR (SBC, "SBC:Command failed\n");
+        TRACE_ERROR (USB_MSD_SBC, "SBC:Command failed\n");
         lun_update_sense_data (pLun, SBC_SENSE_KEY_MEDIUM_ERROR,
                                SBC_ASC_INVALID_FIELD_IN_CDB, 0);
         break;
@@ -783,7 +783,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     case SBC_STATUS_SUCCESS:
-        TRACE_DEBUG (SBC, "SBC:Command complete\n");
+        TRACE_DEBUG (USB_MSD_SBC, "SBC:Command complete\n");
         lun_update_sense_data (pLun, SBC_SENSE_KEY_NO_SENSE, 0, 0);
         break;
     }

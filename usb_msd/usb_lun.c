@@ -59,7 +59,7 @@ void lun_init (msd_t *msd)
     S_lun *pLun;
     msd_size_t block_max;
 
-    TRACE_INFO (LUN, "LUN:Init\n");
+    TRACE_INFO (USB_MSD_LUN, "LUN:Init\n");
 
     if (lun_num >= USB_MSD_LUN_NUM)
         return;
@@ -130,13 +130,13 @@ lun_read (S_lun *pLun, lun_addr_t block, void *buffer, msd_size_t blocks)
 
     bytes = blocks * pLun->block_bytes;
 
-    TRACE_INFO (LUN, "LUN:Read (%u)[%u]\n",
+    TRACE_INFO (USB_MSD_LUN, "LUN:Read (%u)[%u]\n",
                (unsigned int)block, (unsigned int)blocks);
     
     // Check that the data is not too big
     if (bytes > (pLun->media_bytes - pLun->block_bytes * block))
     {
-        TRACE_ERROR (LUN, "LUN:Read too big\n");
+        TRACE_ERROR (USB_MSD_LUN, "LUN:Read too big\n");
         return LUN_STATUS_ERROR;
     }
 
@@ -144,7 +144,7 @@ lun_read (S_lun *pLun, lun_addr_t block, void *buffer, msd_size_t blocks)
     if (result == bytes)
         return LUN_STATUS_SUCCESS;
 
-    TRACE_ERROR (LUN, "LUN:Read error %u/%u bytes\n", result, bytes);
+    TRACE_ERROR (USB_MSD_LUN, "LUN:Read error %u/%u bytes\n", result, bytes);
     return LUN_STATUS_ERROR;
 }
 
@@ -167,13 +167,13 @@ lun_write (S_lun *pLun, lun_addr_t block, const void *buffer,
 
     bytes = blocks * pLun->block_bytes;
 
-    TRACE_INFO (LUN, "LUN:Write (%u)[%u]\n", 
+    TRACE_INFO (USB_MSD_LUN, "LUN:Write (%u)[%u]\n", 
                 (unsigned int)block, (unsigned int)blocks);
 
     // Check that the data is not too big
     if (bytes > (pLun->media_bytes - pLun->block_bytes * block))
     {
-        TRACE_ERROR (LUN, "LUN:Write too big\n");
+        TRACE_ERROR (USB_MSD_LUN, "LUN:Write too big\n");
         return LUN_STATUS_ERROR;
     }
 
@@ -182,7 +182,7 @@ lun_write (S_lun *pLun, lun_addr_t block, const void *buffer,
     if (result == bytes)
         return LUN_STATUS_SUCCESS;
 
-    TRACE_ERROR (LUN, "LUN:Write error %u/%u bytes\n", result, bytes);
+    TRACE_ERROR (USB_MSD_LUN, "LUN:Write error %u/%u bytes\n", result, bytes);
     return LUN_STATUS_ERROR;
 }
 

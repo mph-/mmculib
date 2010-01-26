@@ -272,13 +272,13 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState)
     if (!ISSET (pCbw->bmCBWFlags, MSD_CBW_DEVICE_TO_HOST))
     {
         // Stall the OUT endpoint : host to device
-        usb_halt (bot->usb,USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
         TRACE_ERROR (USB_BOT, "BOT:StallOut 1\n");
     }
     else
     {
         // Stall the IN endpoint : device to host
-        usb_halt (bot->usb,USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
         TRACE_ERROR (USB_BOT, "BOT:StallIn 1\n");
     }
 }
@@ -302,6 +302,8 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
 
         if (bStatus == USB_BOT_STATUS_SUCCESS)
             bot->state = USB_BOT_STATE_WAIT_CBW;
+        else
+            TRACE_ERROR (USB_BOT, "BOT:ReadCBW fail\n");            
         return 0;
         break;
 
@@ -389,6 +391,8 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
     
         if (bStatus == USB_BOT_STATUS_SUCCESS)
             bot->state = USB_BOT_STATE_WAIT_CSW;
+        else
+            TRACE_ERROR (USB_BOT, "BOT:SendCSW fail\n");            
         break;
 
     case USB_BOT_STATE_WAIT_CSW:
