@@ -5,6 +5,22 @@
 
 /* See Universal Serial Bus Mass Storage Class Bulk-Only Transport
    document. www.usb.org/developers/devclass_docs/usb_msc_overview_1.2.pdf
+
+   See also http://www.atmel.com/dyn/resources/prod_documents/doc6283.pdf
+
+   When severe errors occur during command or data transfers, the
+   device must halt both Bulk endpoints and wait for a Reset Recovery
+   procedure.  The Reset Recovery sequence goes as follows:  The host
+   issues a Bulk-Only Mass Storage Reset request.  The host issues two
+   CLEAR_FEATURE requests to unhalt each endpoint.  A device waiting for
+   a Reset Recovery must not carry out CLEAR_FEATURE requests trying
+   to unhalt either Bulk endpoint until after a Reset request has been
+   received.  This enables the host to distinguish between severe and
+   minor errors.  The only major error defined by the Bulk-Only
+   Transport standard is when a CBW is not valid.  This means one or
+   more of the following: The CBW is not received after a CSW has
+   been sent or a reset.  The CBW is not exactly 31 bytes in length.
+   The dCBWSignature field of the CBW is not equal to 43425355h.
 */
 
 
@@ -165,14 +181,14 @@ usb_bot_post_process_command (S_usb_bot_command_state *pCommandState)
     if (ISSET (pCommandState->bCase, USB_BOT_CASE_STALL_IN))
     {
         TRACE_INFO (USB_BOT, "BOT:StallIn\n");
-        usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, 1);
     }
 
     // Stall Bulk OUT endpoint ?
     if (ISSET (pCommandState->bCase, USB_BOT_CASE_STALL_OUT))
     {
         TRACE_INFO (USB_BOT, "BOT:StallOut\n");
-        usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, 1);
     }
 
     // Set CSW status code to phase error ?
@@ -193,20 +209,20 @@ usb_bot_request_handler (usb_t usb, usb_setup_t *setup)
 {
     switch (setup->request)
     {
+    // Intercept endpoint halt
     case USB_CLEAR_FEATURE:
         switch (setup->value)
         {
         case USB_ENDPOINT_HALT:
-            TRACE_ERROR (USB_BOT, "BOT:Halt %d\n", bot->wait_reset_recovery);
-        
             // Do not clear the endpoint halt status if the device is waiting
             // for a reset recovery sequence
-            if (!bot->wait_reset_recovery) 
-                return 0;
-
-            usb_control_write_zlp (usb);
-            break;
-        
+            if (bot->wait_reset_recovery) 
+            {
+                TRACE_ERROR (USB_BOT, "BOT:reset wait\n");
+                usb_control_write_zlp (usb);
+                break;
+            }
+            // Fall through
         default:
             return 0;
         }
@@ -225,7 +241,9 @@ usb_bot_request_handler (usb_t usb, usb_setup_t *setup)
         TRACE_INFO (USB_BOT, "BOT:Reset\n");
         if (setup->value == 0 && setup->index == 0 && setup->length == 0)
         {
-            // Reset the MSD driver.  TODO, what do we do?
+            // Reset the MSD driver.  TODO, what else do we do?
+            bot->state = USB_BOT_STATE_WAIT;
+            bot->wait_reset_recovery = false;
             usb_control_write_zlp (usb);
         }
         else
@@ -272,15 +290,28 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState)
     if (!ISSET (pCbw->bmCBWFlags, MSD_CBW_DEVICE_TO_HOST))
     {
         // Stall the OUT endpoint : host to device
-        usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, 1);
         TRACE_ERROR (USB_BOT, "BOT:StallOut 1\n");
     }
     else
     {
         // Stall the IN endpoint : device to host
-        usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+        usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, 1);
         TRACE_ERROR (USB_BOT, "BOT:StallIn 1\n");
     }
+}
+
+
+static void
+bot_error (void)
+{
+    
+    // Wait for a reset recovery
+    bot->wait_reset_recovery = true;
+    
+    // Halt the bulk in and bulk out pipes
+    usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, 1);
+    usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, 1);
 }
 
 
@@ -321,13 +352,8 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                     || (pTransfer->dBytesRemaining != 0))
                 {
                     TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
-                    
-                    // Wait for a reset recovery
-                    bot->wait_reset_recovery = true;
-                    
-                    // Halt the bulk in and bulk out pipes
-                    usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
-                    usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+
+                    bot_error ();
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                     bot->state = USB_BOT_STATE_READ_CBW;
@@ -338,12 +364,7 @@ usb_bot_command_get (S_usb_bot_command_state *pCommandState)
                     TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
                                 (unsigned int)pCbw->dCBWSignature);
                     
-                    // Wait for a reset recovery
-                    bot->wait_reset_recovery = true;
-                    
-                    // Halt the bulk in and bulk out pipes
-                    usb_halt (bot->usb, USB_BOT_EPT_BULK_OUT, USB_SET_FEATURE);
-                    usb_halt (bot->usb, USB_BOT_EPT_BULK_IN, USB_SET_FEATURE);
+                    bot_error ();
                     
                     pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                     bot->state = USB_BOT_STATE_READ_CBW;
@@ -381,6 +402,10 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
         break;
 
     case USB_BOT_STATE_SEND_CSW:
+        // MPH hack.  We cannot send CSW while endpoint halted.
+        if (usb_halt_p (bot->usb, USB_BOT_EPT_BULK_IN))
+            break;
+
         pCsw->dCSWSignature = MSD_CSW_SIGNATURE;
 
         TRACE_DEBUG (USB_BOT, "BOT:SendCSW\n");
@@ -434,12 +459,14 @@ usb_bot_ready_p (void)
             bot->wait_reset_recovery = false;
             return 1;
         }
+        break;
             
     default:
         if (usb_configured_p (bot->usb))
             return 1;
 
         TRACE_INFO (USB_BOT, "BOT:Disconnected\n");
+        bot->state = USB_BOT_STATE_INIT;
         break;
     }
     return 0;
