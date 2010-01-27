@@ -5,21 +5,20 @@
  * \name USB standard request identifier
  * 
  */
-//@{
-#define USB_GET_STATUS                 0x00
-#define USB_CLEAR_FEATURE              0x01
-// Reserved for future use             0x02
-#define USB_SET_FEATURE                0x03
-// Reserved for future use             0x04
-#define USB_SET_ADDRESS                0x05
-#define USB_GET_DESCRIPTOR             0x06
-#define USB_SET_DESCRIPTOR             0x07
-#define USB_GET_CONFIGURATION          0x08
-#define USB_SET_CONFIGURATION          0x09
-#define USB_GET_INTERFACE              0x0A
-#define USB_SET_INTERFACE              0x0B
-#define USB_SYNCH_FRAME                0x0C
-//@}
+enum 
+{
+    USB_GET_STATUS        = 0x00,
+    USB_CLEAR_FEATURE     = 0x01,
+    USB_SET_FEATURE       = 0x03,
+    USB_SET_ADDRESS       = 0x05,
+    USB_GET_DESCRIPTOR    = 0x06,
+    USB_SET_DESCRIPTOR    = 0x07,
+    USB_GET_CONFIGURATION = 0x08,
+    USB_SET_CONFIGURATION = 0x09,
+    USB_GET_INTERFACE     = 0x0A,
+    USB_SET_INTERFACE     = 0x0B,
+    USB_SYNCH_FRAME       = 0x0C
+};
 
 /**
  * \name USB standard feature selectors

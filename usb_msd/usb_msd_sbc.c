@@ -637,8 +637,8 @@ sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, uint8_t *pT
         // Only "return all pages" command is supported
         if (pSbcCommand->sModeSense6.bPageCode != SBC_PAGE_RETURN_ALL)
         {
-            // Unsupported page
-            TRACE_ERROR (USB_MSD_SBC, "SBC:Bad page code (0X%02X)\n",
+            // Unsupported page, Windows sends this
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Bad page code 0X%02X\n",
                          pSbcCommand->sModeSense6.bPageCode);
             isCommandSupported = false;
             *pLength = 0;
@@ -765,7 +765,10 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
     switch (bResult)
     {
     case SBC_STATUS_PARAMETER:
-        TRACE_ERROR (USB_MSD_SBC, "SBC:Bad command 0x%02X\n", pCbw->pCommand[0]);
+        // Windows seems to send this
+        TRACE_ERROR (USB_MSD_SBC, "SBC:Bad command 0x%02X\n",
+                     pCbw->pCommand[0]);
+
         lun_update_sense_data (pLun, SBC_SENSE_KEY_ILLEGAL_REQUEST,
                                SBC_ASC_INVALID_COMMAND_OPERATION_CODE,
                                /* SBC_ASC_INVALID_FIELD_IN_CDB, */

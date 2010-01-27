@@ -117,9 +117,15 @@ usb_control_stall (usb_t usb)
 }
 
 
-bool usb_halt (usb_t usb, udp_ep_t endpoint, uint8_t request)
+bool usb_halt (usb_t usb, udp_ep_t endpoint, bool halt)
 {
-    return udp_halt (usb->udp, endpoint, request);
+    return udp_halt (usb->udp, endpoint, halt);
+}
+
+
+bool usb_halt_p (usb_t usb, udp_ep_t endpoint)
+{
+    return udp_halt_p (usb->udp, endpoint);
 }
 
 
@@ -214,9 +220,9 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
     case USB_CLEAR_FEATURE:
     case USB_SET_FEATURE:
         if (setup->request == USB_SET_FEATURE)
-            TRACE_INFO (USB, "USB:sFeat %u\n", setup->value);
+            TRACE_INFO (USB, "USB:sFeat %u %u\n", setup->value, setup->index);
         else
-            TRACE_INFO (USB, "USB:cFeat %u\n", setup->value);
+            TRACE_INFO (USB, "USB:cFeat %u %u\n", setup->value, setup->index);
 
         switch (setup->value)
         {
@@ -270,7 +276,8 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
 
     case USB_SET_INTERFACE:
         TRACE_INFO (USB, "USB:sInt 0x%02x\n", setup->value);
-        usb_control_stall (usb);
+        // Let's ignore this
+        usb_control_write_zlp (usb);
         break;
 
     default:

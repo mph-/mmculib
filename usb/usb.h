@@ -54,7 +54,9 @@ void usb_control_write_zlp (usb_t usb);
 
 void usb_control_stall (usb_t usb);
 
-bool usb_halt (usb_t usb, udp_ep_t endpoint, uint8_t request);
+bool usb_halt (usb_t usb, udp_ep_t endpoint, bool halt);
+
+bool usb_halt_p (usb_t usb, udp_ep_t endpoint);
 
 bool usb_read_ready_p (usb_t usb);
 
