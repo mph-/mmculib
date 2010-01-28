@@ -2,6 +2,9 @@
 #include "msd.h"
 #include <string.h>
 
+/* This only supports a single instance, however, it would 
+   be trivial to use malloc to allow multiple instances.  */
+
 #ifndef RAM_MSD_BYTES
 #error RAM_MSD_BYTES undefined in config.h
 #endif
@@ -13,7 +16,8 @@ static uint8_t mem[RAM_MSD_BYTES];
 
 
 static msd_size_t
-ram_msd_read (void *dev, msd_addr_t addr, void *buffer, msd_size_t size)
+ram_msd_read (void *dev __unused__, msd_addr_t addr,
+              void *buffer, msd_size_t size)
 {
     if (addr + size > RAM_MSD_BYTES)
         return 0;
@@ -25,7 +29,8 @@ ram_msd_read (void *dev, msd_addr_t addr, void *buffer, msd_size_t size)
 
 
 static msd_size_t
-ram_msd_write (void *dev, msd_addr_t addr, const void *buffer, msd_size_t size)
+ram_msd_write (void *dev __unused__, msd_addr_t addr,
+               const void *buffer, msd_size_t size)
 {
     if (addr + size > RAM_MSD_BYTES)
         return 0;
@@ -37,7 +42,7 @@ ram_msd_write (void *dev, msd_addr_t addr, const void *buffer, msd_size_t size)
 
 
 static msd_status_t
-ram_msd_status_get (void *dev)
+ram_msd_status_get (void *dev __unused__)
 {
     return MSD_STATUS_READY;
 }
@@ -51,7 +56,7 @@ static msd_t ram_msd =
     .status_get = ram_msd_status_get,
     .media_bytes = RAM_MSD_BYTES,
     .block_bytes = RAM_MSD_BLOCK_BYTES,
-    .flags.removable = 0,
+    .flags = {.removable = 0, .reserved = 0},
     .name = "RAM_MSD"
 };
 
