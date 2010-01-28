@@ -65,8 +65,6 @@ dialog_display (dialog_t *dialog, const char *string)
     dialog_data.display (rows - 1, buffer);        
 
     dialog_data.current = dialog;
-
-
 }
 
 

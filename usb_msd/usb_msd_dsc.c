@@ -3,6 +3,11 @@
 #include "usb_dsc.h"
 
 
+#ifndef USB_CURRENT_MA
+#define USB_CURRENT_MA 100
+#endif
+
+
 /**
  * Configuration descriptor used by the MSD driver
  * 
