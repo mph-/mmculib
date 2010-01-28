@@ -1815,17 +1815,18 @@ fat_unlink (fat_fs_t *fat_fs, const char *pathname)
 
     fat_cluster_chain_free (fat_fs, ff.cluster);
 
+    /* Search for start of desired dir entry.  */
     for (de = fat_de_first (fat_fs, ff.parent_dir_cluster, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
-        /* Find start of dir entry.  */
         if (de_iter.offset == ff.de_offset && de_iter.sector == ff.de_sector)
         {
             for (; fat_de_attr_long_filename_p (de);
                  de = fat_de_next (&de_iter))
                 de->name[0] = SLOT_DELETED;                
             
-            de->name[0] = SLOT_DELETED;                
+            de->name[0] = SLOT_DELETED;     
+            fat_sector_cache_write (fat_fs, de_iter.sector);           
             fat_sector_cache_flush (fat_fs);
             return 0;
         }
