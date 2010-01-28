@@ -770,13 +770,17 @@ fat_de_next (fat_de_iter_t *de_iter)
                 // we want another cluster added to the directory.
                 cluster_next 
                     = fat_clusters_allocate (fat_fs, de_iter->cluster, 1);
-                de = (fat_de_t *) fat_fs->sector_buffer;
 
+                de_iter->sector = fat_sector_calc (fat_fs, cluster_next);
+                fat_sector_cache_read (fat_fs, de_iter->sector);
                 memset (fat_fs->sector_buffer, 0,
                         sizeof (fat_fs->sector_buffer));
+
+                de = (fat_de_t *) fat_fs->sector_buffer;
+
                 // Create an empty slot
                 de->name[0] = SLOT_EMPTY;
-                de_iter->sector = fat_sector_calc (fat_fs, cluster_next);
+
                 fat_sector_cache_write (fat_fs, de_iter->sector);
             }
 
