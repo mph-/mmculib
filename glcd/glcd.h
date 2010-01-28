@@ -49,6 +49,8 @@ typedef struct
     const glcd_cfg_t *cfg;
     spi_t spi;
     uint16_t modified;
+    uint8_t xoff;
+    uint8_t yoff;
     uint8_t screen[GLCD_PIXEL_BYTES];
 } glcd_private_t;
 
@@ -59,6 +61,10 @@ typedef glcd_dev_t *glcd_t;
 
 extern void 
 glcd_pixel_set (glcd_t glcd, uint16_t x, uint16_t y, uint8_t val);
+
+
+extern void 
+glcd_origin_set (glcd_t glcd, uint16_t x, uint16_t y);
 
 
 extern void 

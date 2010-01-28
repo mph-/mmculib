@@ -33,7 +33,8 @@
    GLCD_BACKLIGHT to specify the PIO if the backlight is connected.
 */
 
-enum {
+enum
+{
     GLCD_CMD_DISPLAY_OFF = 0xAE,
     GLCD_CMD_DISPLAY_ON = 0xAF,
     GLCD_CMD_REF_VOLTAGE_MODE = 0x81,
@@ -215,12 +216,21 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     pio_output_high (GLCD_RESET);
 #endif
 
+    glcd_origin_set (glcd, 0, 0);
     glcd_config (glcd);
 
     glcd->modified = 0;
     glcd_clear (glcd);
 
     return glcd;
+}
+
+
+void 
+glcd_origin_set (glcd_t glcd, uint16_t x, uint16_t y)
+{
+    glcd->xoff = x;
+    glcd->yoff = y;
 }
 
 
@@ -232,6 +242,9 @@ glcd_pixel_set (glcd_t glcd, uint16_t x, uint16_t y, uint8_t val)
     uint8_t mask;
     uint8_t oldval;
     uint8_t newval;
+
+    x += glcd->xoff;
+    y += glcd->yoff;
 
     if (x >= GLCD_WIDTH || y >= GLCD_HEIGHT)
         return;
