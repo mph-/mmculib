@@ -22,7 +22,8 @@ typedef enum
 typedef struct
 {
     unsigned int removable:1;
-    unsigned int reserved:7;
+    unsigned int volatile1:1;
+    unsigned int reserved:6;
 } msd_flags_t;
 
 

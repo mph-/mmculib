@@ -56,7 +56,7 @@ static msd_t ram_msd =
     .status_get = ram_msd_status_get,
     .media_bytes = RAM_MSD_BYTES,
     .block_bytes = RAM_MSD_BLOCK_BYTES,
-    .flags = {.removable = 0, .reserved = 0},
+    .flags = {.removable = 0, .volatile1 = 1, .reserved = 0},
     .name = "RAM_MSD"
 };
 
