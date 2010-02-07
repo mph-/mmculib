@@ -46,10 +46,13 @@ dialog_display (dialog_t *dialog, const char *string)
             }
         }
     }
+    if (string[i - 1] == '\n')
+        rows--;
+
     dialog_data.display (0, string);
 
     for (; rows < dialog_data.rows; rows++)
-        dialog_data.display (rows - 1, "\n");        
+        dialog_data.display (rows, "\n");        
 
     cols = dialog_data.cols 
         - (strlen (dialog->left_name) + strlen (dialog->right_name));
