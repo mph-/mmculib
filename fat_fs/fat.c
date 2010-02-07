@@ -1823,7 +1823,10 @@ fat_unlink (fat_fs_t *fat_fs, const char *pathname)
         {
             for (; fat_de_attr_long_filename_p (de);
                  de = fat_de_next (&de_iter))
+            {
                 de->name[0] = SLOT_DELETED;                
+                fat_sector_cache_write (fat_fs, de_iter.sector); 
+            }
             
             de->name[0] = SLOT_DELETED;     
             fat_sector_cache_write (fat_fs, de_iter.sector);           
