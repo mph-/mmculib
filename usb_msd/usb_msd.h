@@ -7,5 +7,6 @@ bool usb_msd_init (msd_t **luns, uint8_t num_luns);
 
 bool usb_msd_update (void);
 
+void usb_msd_shutdown (void);
 
 #endif

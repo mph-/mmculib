@@ -309,3 +309,10 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
 
     return true;
 };
+
+
+void 
+usb_msd_shutdown (void)
+{
+
+}
