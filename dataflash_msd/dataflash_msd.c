@@ -43,12 +43,20 @@ dataflash_msd_status_get (void *dev __unused__)
 }
 
 
+static void
+dataflash_shutdown (void *dev)
+{
+    return spi_dataflash_shutdown (dev);
+}
+
+
 static msd_t dataflash_msd =
 {
     .handle = 0,
     .read = dataflash_msd_read,
     .write = dataflash_msd_write,
     .status_get = dataflash_msd_status_get,
+    .shutdown = dataflash_shutdown,
     .media_bytes = SPI_DATAFLASH_SECTOR_SIZE * SPI_DATAFLASH_PAGES,
     .block_bytes = SPI_DATAFLASH_SECTOR_SIZE,
     .flags = {.removable = 0, .reserved = 0},

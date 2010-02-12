@@ -21,3 +21,11 @@ msd_status_get (msd_t *msd)
 {
     return msd->status_get (msd->handle);
 }
+
+
+void
+msd_shutdown (msd_t *msd)
+{
+    if (msd->shutdown)
+        msd->shutdown (msd->handle);
+}

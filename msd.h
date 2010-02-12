@@ -30,11 +30,17 @@ typedef struct
 typedef msd_size_t
 (*msd_read_t)(void *handle, msd_addr_t addr, void *buffer, msd_size_t size);
 
+
 typedef msd_size_t 
 (*msd_write_t)(void *handle, msd_addr_t addr, const void *buffer, msd_size_t size);
 
+
 typedef msd_status_t
 (*msd_status_get_t)(void *handle);
+
+
+typedef void
+(*msd_shutdown_t)(void *shutdown);
 
 
 typedef struct msd_lun_struct
@@ -43,6 +49,7 @@ typedef struct msd_lun_struct
     msd_read_t read;
     msd_write_t write;
     msd_status_get_t status_get;
+    msd_shutdown_t shutdown;
     msd_addr_t media_bytes;
     msd_size_t block_bytes;
     const char *name;
@@ -55,5 +62,7 @@ msd_size_t msd_read (msd_t *msd, msd_addr_t addr, void *buffer, msd_size_t size)
 msd_size_t msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size);
 
 msd_status_t msd_status_get (msd_t *msd);
+
+void msd_shutdown (msd_t *msd);
 
 #endif
