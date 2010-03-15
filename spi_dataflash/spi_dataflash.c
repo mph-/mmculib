@@ -117,6 +117,10 @@ spi_dataflash_read (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     if (addr + total_bytes > dev->size)
         return -1;
 
+    /* Check that powered and ready.  */
+    if (!spi_dataflash_ready_wait (dev))
+        return 0;
+
     dst = buffer;
 
     sector_size = dev->cfg->sector_size;
