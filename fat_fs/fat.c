@@ -699,7 +699,7 @@ dos2str (char *str, const char *dos, const char *ext)
     if (*ext && *ext != ' ')
     {
         *str++ = '.';
-        for (i=0;i<3 && *ext && *ext != ' ';i++)
+        for (i = 0; i < 3 && *ext && *ext != ' '; i++)
             *str++ = *ext++;
     }
     *str = 0;
@@ -878,10 +878,7 @@ fat_dir_search (fat_fs_t *fat_fs, uint32_t dir_cluster,
             
             // Check for end of long name
             if ((we->weCnt & WIN_CNT) == 1)
-            {
-                // Set match flag
                 longmatch = szWildMatch8 (name, ff->name);
-            }
         }
         else
         {
@@ -894,8 +891,7 @@ fat_dir_search (fat_fs_t *fat_fs, uint32_t dir_cluster,
             // Skip the single dot entry
             if (strcmp (matchspace, ".") != 0)
             {
-                if ((match || longmatch) 
-                    && ! fat_de_attr_volume_p (de))
+                if ((match || longmatch) && ! fat_de_attr_volume_p (de))
                 {
                     // File found
                     ff->de_sector = de_iter.sector;
