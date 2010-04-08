@@ -245,11 +245,12 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
 
 
 /* Poll the state machines.   */
-bool
+usb_msd_ret_t
 usb_msd_update (void)
 {
     static usb_msd_state_t state = USB_MSD_STATE_INIT;
     static S_usb_bot_command_state CommandState;
+    usb_msd_ret_t ret;
 
     /* This implements a simple state machine to get a CBW from the
        BOT, send a command to the SBC, then send a CSW to the BOT.
@@ -258,6 +259,7 @@ usb_msd_update (void)
        initiate an action, then subequently to poll their completion.
        An example of this is bot_command_get.   */
 
+    ret = USB_MSD_ACTIVE;
     switch (state)
     {
     case USB_MSD_STATE_INIT:
@@ -265,12 +267,20 @@ usb_msd_update (void)
         {
             sbc_reset ();
             state = USB_MSD_STATE_COMMAND_READ;
+            ret = USB_MSD_CONNECTED;
+        }
+        else
+        {
+            ret = USB_MSD_INACTIVE;
         }
         break;
 
     case USB_MSD_STATE_COMMAND_READ:
         if (!usb_bot_ready_p ())
+        {
             state = USB_MSD_STATE_INIT;
+            ret = USB_MSD_DISCONNECTED;
+        }
         else if (usb_bot_command_get (&CommandState))
             state = USB_MSD_STATE_PREPROCESS;
         break;
@@ -291,7 +301,7 @@ usb_msd_update (void)
         break;
     }
 
-    return state != USB_MSD_STATE_INIT;
+    return ret;
 }
 
 
