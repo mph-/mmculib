@@ -197,9 +197,14 @@ glcd_t
 glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
 {
     glcd_t glcd;
-    const spi_cfg_t spi_cfg = SPI_CFG (GLCD_SPI_CHANNEL, 
-                                       GLCD_SPI_DIVISOR,
-                                       GLCD_CS);
+    const spi_cfg_t spi_cfg = 
+    {
+        .channel = GLCD_SPI_CHANNEL,
+        .clock_divisor =  GLCD_SPI_DIVISOR,
+        .cs = GLCD_CS,
+        .mode = SPI_MODE_0,
+        .bits = 8
+    };
 
     glcd = dev;
     glcd->cfg = cfg;

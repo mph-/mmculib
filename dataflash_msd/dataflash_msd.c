@@ -68,7 +68,9 @@ static const spi_dataflash_cfg_t dataflash_cfg =
 {
     .spi = {.channel = SPI_DATAFLASH_SPI_CHANNEL,
             .clock_divisor =  F_CPU / 20e6 + 1,
-            .cs = SPI_DATAFLASH_CS},
+            .cs = SPI_DATAFLASH_CS,
+            .mode = SPI_MODE_0,
+            .bits = 8},
     .wp = SPI_DATAFLASH_WP,
     .pages = SPI_DATAFLASH_PAGES,
     .page_size = SPI_DATAFLASH_PAGE_SIZE,

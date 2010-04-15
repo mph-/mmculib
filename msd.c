@@ -1,5 +1,6 @@
 #include "msd.h"
 
+/* Perhaps make these inline?  */
 
 msd_size_t 
 msd_read (msd_t *msd, msd_addr_t addr, void *buffer, msd_size_t size)
@@ -12,7 +13,6 @@ msd_size_t
 msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
 {
     return msd->write (msd->handle, addr, buffer, size);
-
 }
 
 

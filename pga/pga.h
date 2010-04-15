@@ -50,8 +50,6 @@ typedef enum {PGA_GAIN_1 = 0,
 
 typedef spi_cfg_t pga_cfg_t;
 
-#define PGA_CFG SPI_CFG
-
 
 /* This structure is defined here so the compiler can allocate enough
    memory for it.  However, its fields should be treated as private.  */
