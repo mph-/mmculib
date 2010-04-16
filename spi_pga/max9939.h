@@ -11,8 +11,4 @@
 
 extern spi_pga_ops_t max9939_ops;
 
-
-
-// Also have gain 0.2 (5 V) or 0.25 (3.3 V)
-
 #endif

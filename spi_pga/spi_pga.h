@@ -14,7 +14,8 @@ typedef enum
 {
     SPI_PGA_DUMMY,
     SPI_PGA_MAX9939,
-    SPI_PGA_MCP6S21
+    SPI_PGA_MCP6S21,
+    SPI_PGA_MCP6S2X
 } spi_pga_type_t;
 
 

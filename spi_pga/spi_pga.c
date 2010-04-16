@@ -2,6 +2,7 @@
 #include "spi_pga.h"
 
 #include "max9939.h"
+#include "mcp6sx.h"
 
 //#ifdef SPI_PGA_MAX9939
 //#endif
@@ -46,6 +47,10 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
         spi_pga->ops = &max9939_ops;
         break;
 
+    case SPI_PGA_MCP6S2X:
+        spi_pga->ops = &mcp6s2x_ops;
+        break;
+
     default:
         return 0;
     }
@@ -88,7 +93,11 @@ spi_pga_shutdown (spi_pga_t pga)
 {
     if (!pga->ops->shutdown_set)
         return 0;
-    return pga->ops->shutdown_set (pga, 1);
+    if (!pga->ops->shutdown_set (pga, 1))
+        return 0;
+
+    spi_shutdown (pga->spi);
+    return 1;
 }
 
 
@@ -97,5 +106,7 @@ spi_pga_wakeup (spi_pga_t pga)
 {
     if (!pga->ops->shutdown_set)
         return 0;
+
+    // spi_wakeup ?  */
     return pga->ops->shutdown_set (pga, 0);
 }
