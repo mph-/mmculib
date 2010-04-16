@@ -20,6 +20,7 @@
 
 typedef enum 
 {
+    USB_MSD_STATE_UNINIT,
     USB_MSD_STATE_INIT,
     USB_MSD_STATE_COMMAND_READ,
     USB_MSD_STATE_PREPROCESS,
@@ -50,6 +51,7 @@ typedef enum
 
 
 extern const usb_dsc_t sDescriptors;
+static usb_msd_state_t state = USB_MSD_STATE_UNINIT;
 
 /**
  * Pre-processes a command by checking the differences between the
@@ -248,7 +250,6 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
 usb_msd_ret_t
 usb_msd_update (void)
 {
-    static usb_msd_state_t state = USB_MSD_STATE_INIT;
     static S_usb_bot_command_state CommandState;
     usb_msd_ret_t ret;
 
@@ -262,6 +263,10 @@ usb_msd_update (void)
     ret = USB_MSD_ACTIVE;
     switch (state)
     {
+    case USB_MSD_STATE_UNINIT:
+        ret = USB_MSD_INACTIVE;
+        break;
+
     case USB_MSD_STATE_INIT:
         if (usb_bot_ready_p ())
         {
@@ -316,6 +321,8 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
     usb_bot_init (num_luns, &sDescriptors);
 
     usb_msd_update ();
+
+    state = USB_MSD_STATE_INIT;
 
     return true;
 };
