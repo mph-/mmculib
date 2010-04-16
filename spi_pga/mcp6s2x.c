@@ -87,7 +87,7 @@ mcp6sx_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
-spi_pga_ops_t mcp6sx_ops =
+spi_pga_ops_t mcp6s2x_ops =
 {
     .gain_set = mcp6sx_gain_set,   
     .channel_set = mcp6sx_channel_set,   

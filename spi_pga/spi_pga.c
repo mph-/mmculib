@@ -2,7 +2,7 @@
 #include "spi_pga.h"
 
 #include "max9939.h"
-#include "mcp6sx.h"
+#include "mcp6s2x.h"
 
 //#ifdef SPI_PGA_MAX9939
 //#endif
