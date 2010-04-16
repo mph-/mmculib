@@ -8,30 +8,44 @@
 #define SPI_PGA_H
 
 #include "config.h"
+#include "spi_pga_dev.h"
+
+typedef enum
+{
+    SPI_PGA_DUMMY,
+    SPI_PGA_MAX9939,
+    SPI_PGA_MCP6S21
+} spi_pga_type_t;
 
 
-#if defined (SPI_PGA_MCP6S21) || defined (SPI_PGA_MCP6S22)
-   || defined (SPI_PGA_MCP6S26) || defined (SPI_PGA_MCP6S28)
-#include "mcp6s21.h"
+typedef struct spi_pga_cfg_struct
+{
+    const spi_cfg_t spi;
+    spi_pga_type_t type;
+} spi_pga_cfg_t;
 
 
-#define pga_gain_set mcp6s21_gain_set
-
-#define pga_channel_set mcp6s21_channel_set
-
-#define pga_wakeup mcp6s21_wakeup
-
-#define pga_shutdown mcp6s21_shutdown
-
-#define pga_init mcp6s21_init
+spi_pga_gain_t 
+spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain);
 
 
-#else
-#error Undefined SPI_PGA_TYPE
+spi_pga_channel_t
+spi_pga_channel_set (spi_pga_t pga, spi_pga_channel_t channel);
+
+
+spi_pga_offset_t
+spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool enable);
+
+
+bool
+spi_pga_shutdown (spi_pga_t pga);
+
+
+bool
+spi_pga_wakeup (spi_pga_t pga);
+
+
+spi_pga_t
+spi_pga_init (const spi_pga_cfg_t *cfg);
+
 #endif
-
-
-
-#endif
-
-
