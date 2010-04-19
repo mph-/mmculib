@@ -78,13 +78,10 @@ static const spi_dataflash_cfg_t dataflash_cfg =
 };
 
 
-static spi_dataflash_obj_t dataflash_obj;
-
-
 msd_t *
 dataflash_msd_init (void)
 {
-    dataflash_msd.handle = spi_dataflash_init (&dataflash_obj, &dataflash_cfg);
+    dataflash_msd.handle = spi_dataflash_init (&dataflash_cfg);
     if (!dataflash_msd.handle)
         return NULL;
 

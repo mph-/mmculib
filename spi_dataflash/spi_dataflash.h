@@ -31,11 +31,11 @@ typedef struct
     uint8_t page_bits;
     uint32_t size;
     const spi_dataflash_cfg_t *cfg;
-} spi_dataflash_obj_t;
+} spi_dataflash_dev_t;
 
 
 
-typedef spi_dataflash_obj_t *spi_dataflash_t;
+typedef spi_dataflash_dev_t *spi_dataflash_t;
 
 typedef enum
 {
@@ -77,7 +77,7 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
 
 extern spi_dataflash_t
-spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg);
+spi_dataflash_init (const spi_dataflash_cfg_t *cfg);
 
 
 extern void

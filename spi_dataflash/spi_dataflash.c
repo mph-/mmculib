@@ -70,6 +70,15 @@ enum {SPI_DATAFLASH_STATUS_RDY = BIT (7),
 #define SPI_DATAFLASH_RETRIES 50
 
 
+#ifndef SPI_DATAFLASH_DEVICES_NUM
+#define SPI_DATAFLASH_DEVICES_NUM 4
+#endif 
+
+
+static uint8_t spi_dataflash_devices_num = 0;
+static spi_dataflash_dev_t spi_dataflash_devices[SPI_DATAFLASH_DEVICES_NUM];
+
+
 uint8_t
 spi_dataflash_status_read (spi_dataflash_t dev)
 {
@@ -336,12 +345,15 @@ spi_dataflash_write (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
 
 spi_dataflash_t
-spi_dataflash_init (spi_dataflash_obj_t *obj, const spi_dataflash_cfg_t *cfg)
+spi_dataflash_init (const spi_dataflash_cfg_t *cfg)
 {
     spi_dataflash_t dev;
     uint16_t page_size;
 
-    dev = obj;
+    if (spi_dataflash_devices_num >= SPI_DATAFLASH_DEVICES_NUM)
+        return 0;
+
+    dev = spi_dataflash_devices + spi_dataflash_devices_num;
 
     page_size = cfg->page_size;
     dev->cfg = cfg;
