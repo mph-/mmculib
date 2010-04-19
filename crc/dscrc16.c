@@ -22,7 +22,7 @@ dscrc16_bit (crc16_t crc, uint8_t in)
 
     crc >>= 1;    
     if (bit0 ^ in)
-        crc = crc ^ (BIT (15) | BIT (13) | BIT (0));
+        crc = crc ^ (BIT (15 - 0) | BIT (15 - 2) | BIT (15 - 15));
 
     return crc;
 }
@@ -53,6 +53,3 @@ dscrc16 (crc16_t crc, void *bytes, uint8_t size)
 
     return crc;
 }
-    
-
-
