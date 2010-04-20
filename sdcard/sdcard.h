@@ -8,11 +8,10 @@
 #ifndef SDCARD_H
 #define SDCARD_H
 
-
 #include "config.h"
-#include "iovec.h"
-#include "pio.h"
 #include "spi.h"
+
+enum {SDCARD_SECTOR_SIZE = 512};
 
 
 typedef struct
@@ -37,12 +36,16 @@ typedef struct
 
 typedef sdcard_dev_t *sdcard_t;
 
+
 typedef enum
 {
-    SPI_FLASH_OK,
-    SPI_FLASH_TIMEOUT,
-    SPI_FLASH_SECTOR_INVALID
-} spi_flash_err_t;
+    SDCARD_ERR_OK = 0,
+    SDCARD_ERR_NO_CARD,
+    SDCARD_ERR_ERROR,
+    SDCARD_ERR_WRITE_PROECT,
+    SDCARD_ERR_NOT_READY,
+    SDCARD_ERR_PARAM
+} sdcard_err_t;
 
 
 typedef uint32_t sdcard_addr_t;
@@ -64,6 +67,9 @@ sdcard_write (sdcard_t dev, sdcard_addr_t addr,
 extern sdcard_t
 sdcard_init (const sdcard_cfg_t *cfg);
 
+
+extern sdcard_err_t
+sdcard_probe (sdcard_t dev);
 
 extern void
 sdcard_shutdown (sdcard_t dev);
