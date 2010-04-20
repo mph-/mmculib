@@ -89,10 +89,10 @@ sdcard_crc16_byte (uint16_t crc, uint8_t val)
 
 
 uint16_t
-sdcard_crc16 (uint16_t crc, void *bytes, uint16_t size)
+sdcard_crc16 (uint16_t crc, const void *bytes, uint16_t size)
 {
     uint8_t i;
-    uint8_t *data = bytes;
+    const uint8_t *data = bytes;
     
     for (i = 0; i < size; i++)
         crc = sdcard_crc16_byte (crc, data[i]);
@@ -136,10 +136,10 @@ sdcard_crc7_byte (uint8_t crc, uint8_t val)
 
 
 uint8_t
-sdcard_crc7 (uint8_t crc, void *bytes, uint8_t size)
+sdcard_crc7 (uint8_t crc, const void *bytes, uint8_t size)
 {
     uint8_t i;
-    uint8_t *data = bytes;
+    const uint8_t *data = bytes;
 
     for (i = 0; i < size; i++)
         crc = sdcard_crc7_byte (crc, data[i]);
@@ -212,11 +212,11 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
 // Write a 512 byte sector at a given location (according to Sandisk SD
 // card product manual, 512 bytes is minimum sector len see pp5-1)
 uint16_t
-sdcard_write_sector (sdcard_t dev, void *buffer, sdcard_sector_t sector)
+sdcard_write_sector (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
+                     sdcard_sector_t sector)
 {
     uint8_t status;
     uint16_t crc;
-    sdcard_addr_t addr;
     uint8_t command[2];
     uint8_t response[1];
 
@@ -270,9 +270,61 @@ sdcard_write_sector (sdcard_t dev, void *buffer, sdcard_sector_t sector)
 
 // Read a 512 sector of data on the SD card
 sdcard_ret_t 
-sdcard_read_sector (sdcard_t dev, void *buffer, sdcard_sector_t sector)
+sdcard_read_sector (sdcard_t dev, sdcard_addr_t addr, void *buffer,
+                    sdcard_sector_t sector)
 {
     return 0;
+}
+
+
+sdcard_ret_t
+sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
+{
+    uint16_t sectors;
+    uint16_t i;
+    sdcard_size_t total;
+    sdcard_size_t bytes;
+    uint8_t *dst;
+
+    /* Ignore partial reads.  */
+    sectors = size / SDCARD_SECTOR_SIZE;
+    dst = buffer;
+    total = 0;
+    for (i = 0; i < sectors; i++)
+    {
+        bytes = sdcard_read_sector (dev, addr + i, dst, size);
+        if (!bytes)
+            return total;
+        dst += bytes;
+        total += bytes;
+    }
+    return total;
+}
+
+
+sdcard_ret_t
+sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
+              sdcard_size_t size)
+{
+    uint16_t sectors;
+    uint16_t i;
+    sdcard_size_t total;
+    sdcard_size_t bytes;
+    const uint8_t *src;
+
+    /* Ignore partial writes.  */
+    sectors = size / SDCARD_SECTOR_SIZE;
+    src = buffer;
+    total = 0;
+    for (i = 0; i < sectors; i++)
+    {
+        bytes = sdcard_write_sector (dev, addr + i, src, size);
+        if (!bytes)
+            return total;
+        src += bytes;
+        total += bytes;
+    }
+    return total;
 }
 
 

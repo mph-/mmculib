@@ -17,10 +17,6 @@ enum {SDCARD_SECTOR_SIZE = 512};
 typedef struct
 {
     spi_cfg_t spi;
-    pio_t wp;
-    uint16_t pages;
-    uint16_t page_size;
-    uint16_t sector_size;
 } sdcard_cfg_t;    
 
 
@@ -70,6 +66,7 @@ sdcard_init (const sdcard_cfg_t *cfg);
 
 extern sdcard_err_t
 sdcard_probe (sdcard_t dev);
+
 
 extern void
 sdcard_shutdown (sdcard_t dev);
