@@ -11,25 +11,19 @@
     disabled by default.
 
     The host starts every bus transaction by asserting the CS signal
-    low.
-
-
-*/
-
-
-
+    low.  */
 
 enum {SD_BLOCK_SIZE = 512};
 enum {SD_CMD_LEN = 6};
 
-enum 
+typedef enum 
 {
     SD_OP_SEND_CSD = 9,           /* CMD9 */
     SD_OP_READ_SINGLE_BLOCK = 17, /* CMD17 */
     SD_OP_WRITE_BLOCK = 24,     /* CMD24 */
     SD_OP_WRITE_MULTIPLE_BLOCK = 25, /* CMD25 */
     SD_OP_CRC_ON_OFF = 59,           /* CMD59 */
-};
+} sdcard_op_t;
 
 
 /* The command format is 6 bytes:
@@ -81,7 +75,7 @@ uint16_t
 sdcard_crc16_byte (uint16_t crc, uint8_t val)
 {
     uint8_t i;
-
+    
     for (i = 0; i < 8; i++)
     {
         crc = sdcard_crc16_bit (crc, val & 1);
@@ -96,10 +90,10 @@ sdcard_crc16 (uint16_t crc, void *bytes, uint8_t size)
 {
     uint8_t i;
     uint8_t *data = bytes;
-
+    
     for (i = 0; i < size; i++)
         crc = sdcard_crc16_byte (crc, data[i]);
-
+    
     return crc;
 }
 
@@ -107,20 +101,19 @@ sdcard_crc16 (uint16_t crc, void *bytes, uint8_t size)
 /* The 7-bit CRC uses a generator polynomial:
    x^7 + x^3 + 1   */
 
-
 static uint8_t 
 sdcard_crc7_bit (uint8_t crc, uint8_t in)
 {
     uint8_t bit0;
-
+    
     /* NB, the CRC is stored in reverse order to that specified
        by the polynomial.  */
     bit0 = crc & 1;
 
     crc >>= 1;    
     if (bit0 ^ in)
-        crc = crc ^ (BIT (7 - 0) | BIT (7 - 3);
-
+        crc = crc ^ (BIT (7 - 0) | BIT (7 - 3));
+                     
     return crc;
 }
 
@@ -152,7 +145,6 @@ sdcard_crc7 (uint8_t crc, void *bytes, uint8_t size)
 }
 
 
-
 // Keeps clocking the SD card until the desired byte is returned from the card
 bool
 sdcard_response_match (sdcard_t dev, uint8_t desired)
@@ -171,12 +163,33 @@ sdcard_response_match (sdcard_t dev, uint8_t desired)
 }
 
 
+static uint8_t
+sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
+{
+    uint8_t command[SD_CMD_LEN];
+
+    command[0] = op | SD_HOST_BIT;
+    command[1] = param >> 24;
+    command[2] = param >> 16;
+    command[3] = param >> 8;
+    command[4] = param;
+    command[5] = (sdcard_crc7 (command, 5) << 1) | SD_END_BIT
+
+    spi_write (dev->spi, command, SD_CMD_LEN, 1);
+
+    /* Should get a R1 response.  */
+
+    
+    return 0;
+}
+
+
 // Write a 512 byte block at a given location (according to Sandisk SD
 // card product manual, 512 bytes is minimum block len see pp5-1)
 uint16_t
 sdcard_write_block (sdcard_t dev, void *buffer, sdcard_block_t block)
 {
-    uint8_t command[SD_CMD_LEN];
+
     uint8_t status;
     uint16_t checksum;
     sdcard_addr_t addr;
@@ -184,16 +197,7 @@ sdcard_write_block (sdcard_t dev, void *buffer, sdcard_block_t block)
 
     addr = block * SD_BLOCK_SIZE;
 
-    command[0] = SD_OP_WRITE_BLOCK | SD_HOST_BIT;
-    command[1] = addr >> 24;
-    command[2] = addr >> 16;
-    command[3] = addr >> 8;
-    command[4] = addr;
-    command[5] = (sdcard_crc7 (command, 5) << 1) | SD_END_BIT
-
-    spi_write (dev->spi, command, SD_CMD_LEN, 1);
-
-    /* Should get a R1 response.  */
+    sdcard_command (dev, SD_OP_WRITE_BLOCK, addr);
     
     if (!sdcard_response_match (0x00))
     {
