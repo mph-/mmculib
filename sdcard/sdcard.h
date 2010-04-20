@@ -41,35 +41,19 @@ typedef enum
 {
     SPI_FLASH_OK,
     SPI_FLASH_TIMEOUT,
-    SPI_FLASH_SECTOR_INVALID,
-    SPI_FLASH_BLOCK_INVALID,
+    SPI_FLASH_SECTOR_INVALID
 } spi_flash_err_t;
 
 
 typedef uint32_t sdcard_addr_t;
 typedef uint32_t sdcard_size_t;
 typedef int32_t sdcard_ret_t;
-typedef uint16_t sdcard_block_t;
+typedef uint16_t sdcard_sector_t;
 
 
 extern sdcard_ret_t
 sdcard_read (sdcard_t dev, sdcard_addr_t addr,
              void *buffer, sdcard_size_t len);
-
-
-/** Write to dataflash using a gather approach from a vector of
-    descriptors.  The idea is to coalesce writes to the dataflash
-    to minimise the number of erase operations.  */
-extern sdcard_ret_t
-sdcard_writev (sdcard_t dev, sdcard_addr_t addr,
-               iovec_t *iov, iovec_count_t iov_count);
-
-
-/** Read from dataflash using a scatter approach to a vector of
-    descriptors.  */
-extern sdcard_ret_t
-sdcard_readv (sdcard_t dev, sdcard_addr_t addr,
-              iovec_t *iov, iovec_count_t iov_count);
 
 
 extern sdcard_ret_t

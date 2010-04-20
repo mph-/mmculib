@@ -198,7 +198,7 @@ spi_dataflash_readv (spi_dataflash_t dev, spi_dataflash_addr_t addr,
 
 
 /** Write to dataflash using a gather approach from a vector of
-    descriptors.  The idea is to coalesce writes to ther dataflash
+    descriptors.  The idea is to coalesce writes to the dataflash
     to minimise the number of erase operations.  */
 spi_dataflash_ret_t
 spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
