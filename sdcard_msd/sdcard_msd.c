@@ -28,7 +28,7 @@ sdcard_msd_status_get (void *dev __unused__)
 
 
 static void
-sdcard_shutdown (void *dev)
+sdcard_msd_shutdown (void *dev)
 {
     return sdcard_shutdown (dev);
 }
@@ -40,7 +40,7 @@ static msd_t sdcard_msd =
     .read = sdcard_msd_read,
     .write = sdcard_msd_write,
     .status_get = sdcard_msd_status_get,
-    .shutdown = sdcard_shutdown,
+    .shutdown = sdcard_msd_shutdown,
     .media_bytes = SDCARD_SECTOR_SIZE * 1000,
     .block_bytes = SDCARD_SECTOR_SIZE,
     .flags = {.removable = 1, .reserved = 0},
