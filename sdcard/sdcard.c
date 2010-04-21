@@ -1,3 +1,5 @@
+/* Secure digital card driver.  */
+
 #include "sdcard.h"
 
 /*  The SD Card wakes up in the SD Bus mode.  It will enter SPI mode
@@ -14,20 +16,19 @@
     low.  
 
     SanDisk cards allow partial reads (down to 1 byte) but not partial
-    writes.
-*/
+    writes.  Writes have a minimum block size of 512 bytes.  */
 
 enum {SD_CMD_LEN = 6};
 
 typedef enum 
 {
-    SD_OP_GO_IDLE_STATE = 0,                  /* CMD0 */
+    SD_OP_GO_IDLE_STATE = 0,          /* CMD0 */
     SD_OP_SEND_OP_COND = 1,           /* CMD1 */
     SD_OP_SEND_CSD = 9,               /* CMD9 */
     SD_OP_SET_BLOCKLEN = 16,          /* CMD16 */
-    SD_OP_READ_BLOCK = 17,           /* CMD17 */
-    SD_OP_WRITE_BLOCK = 24,          /* CMD24 */
-    SD_OP_WRITE_MULTIPLE_BLOCK = 25, /* CMD25 */
+    SD_OP_READ_BLOCK = 17,            /* CMD17 */
+    SD_OP_WRITE_BLOCK = 24,           /* CMD24 */
+    SD_OP_WRITE_MULTIPLE_BLOCK = 25,  /* CMD25 */
     SD_OP_READ_OCR = 58,              /* CMD58 */
     SD_OP_CRC_ON_OFF = 59,            /* CMD59 */
 } sdcard_op_t;
@@ -59,6 +60,7 @@ enum
 #endif 
 
 #define SDCARD_RETRIES_NUM 256
+
 
 
 static uint8_t sdcard_devices_num = 0;
@@ -218,6 +220,25 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     }
 
     return response[0];
+}
+
+
+uint8_t
+sdcard_csd_read (sdcard_t dev)
+{
+    uint8_t message[SD_CMD_LEN];
+    
+    message[0] = SD_OP_SEND_CSD | SD_HOST_BIT;
+    message[1] = 0;
+    message[2] = 0;
+    message[3] = 0;
+    message[4] = 0;
+    message[5] = (sdcard_crc7 (0, message, 5) << 1) | SD_STOP_BIT;
+        
+    /* Send command and read R2 response.  */
+    spi_transfer (dev->spi, message, message, sizeof (message), 0);
+
+    return message[0];
 }
 
 
