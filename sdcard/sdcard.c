@@ -17,16 +17,24 @@ enum {SD_CMD_LEN = 6};
 
 typedef enum 
 {
-    SD_OP_RESET = 0,              /* CMD0 */
-    SD_OP_SEND_OP_COND = 1,       /* CMD1 */
-    SD_OP_SEND_CSD = 9,           /* CMD9 */
-    SD_OP_SET_BLOCKLEN = 16,           /* CMD16 */
-    SD_OP_READ_SINGLE_SECTOR = 17, /* CMD17 */
-    SD_OP_WRITE_SECTOR = 24,       /* CMD24 */
-    SD_OP_WRITE_MULTIPLE_SECTOR = 25, /* CMD25 */
+    SD_OP_GO_IDLE_STATE = 0,                  /* CMD0 */
+    SD_OP_SEND_OP_COND = 1,           /* CMD1 */
+    SD_OP_SEND_CSD = 9,               /* CMD9 */
+    SD_OP_SET_BLOCKLEN = 16,          /* CMD16 */
+    SD_OP_READ_BLOCK = 17,           /* CMD17 */
+    SD_OP_WRITE_BLOCK = 24,          /* CMD24 */
+    SD_OP_WRITE_MULTIPLE_BLOCK = 25, /* CMD25 */
     SD_OP_READ_OCR = 58,              /* CMD58 */
     SD_OP_CRC_ON_OFF = 59,            /* CMD59 */
 } sdcard_op_t;
+
+
+enum 
+{
+    SD_WRITE_OK = 5,
+    SD_WRITE_CRC_ERROR = 11,
+    SD_WRITE_ERROR = 13
+};
 
 
 /* The command format is 6 bytes:
@@ -209,34 +217,32 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
 }
 
 
-// Write a 512 byte sector at a given location (according to Sandisk SD
-// card product manual, 512 bytes is minimum sector len see pp5-1)
 uint16_t
-sdcard_write_sector (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
-                     sdcard_sector_t sector)
+sdcard_write_block (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
+                     sdcard_block_t block)
 {
     uint8_t status;
     uint16_t crc;
     uint8_t command[2];
     uint8_t response[1];
 
-    addr = sector * SDCARD_SECTOR_SIZE;
+    addr = block * SDCARD_BLOCK_SIZE;
 
-    status = sdcard_command (dev, SD_OP_WRITE_SECTOR, addr);
+    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr);
     if (status != 0)
     {
         sdcard_deselect (dev);
         return 0;
     }
 
-    crc = sdcard_crc16 (0, buffer, SDCARD_SECTOR_SIZE);
+    crc = sdcard_crc16 (0, buffer, SDCARD_BLOCK_SIZE);
     
     /* Send data begin token.  */
     command[0] = 0xFE;
     spi_write (dev->spi, command, 1, 1);
 
     /* Send the data.  */
-    spi_write (dev->spi, buffer, SDCARD_SECTOR_SIZE, 1);
+    spi_write (dev->spi, buffer, SDCARD_BLOCK_SIZE, 1);
 
     command[0] = crc >> 8;
     command[1] = crc & 0xff;
@@ -249,7 +255,7 @@ sdcard_write_sector (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     spi_transfer (dev->spi, command, response, 1, 1);    
     
     /* Check to see if the data was accepted.  */
-    if ((response[0] & 0x0F) != 0x05)
+    if ((response[0] & 0x1F) != SD_WRITE_OK)
     {
         sdcard_deselect (dev);
         return 0;
@@ -264,35 +270,59 @@ sdcard_write_sector (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     
     sdcard_deselect (dev);
 
-    return SDCARD_SECTOR_SIZE;
+    return SDCARD_BLOCK_SIZE;
 }
 
 
-// Read a 512 sector of data on the SD card
+// Read a 512 block of data on the SD card
 sdcard_ret_t 
-sdcard_read_sector (sdcard_t dev, sdcard_addr_t addr, void *buffer,
-                    sdcard_sector_t sector)
+sdcard_read_block (sdcard_t dev, sdcard_addr_t addr, void *buffer,
+                    sdcard_block_t block)
 {
-    return 0;
+    uint8_t status;
+    uint8_t command[2];
+
+    addr = block * SDCARD_BLOCK_SIZE;
+
+    status = sdcard_command (dev, SD_OP_READ_BLOCK, addr);
+    if (status != 0)
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+
+    /* Send data begin token.  */
+    command[0] = 0xFE;
+    spi_write (dev->spi, command, 1, 1);
+
+    /* Read the data.  */
+    spi_read (dev->spi, buffer, SDCARD_BLOCK_SIZE, 1);
+
+    /* Read the crc.  */
+    spi_read (dev->spi, command, 2, 1);
+
+    sdcard_deselect (dev);
+
+    return SDCARD_BLOCK_SIZE;
 }
 
 
 sdcard_ret_t
 sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
 {
-    uint16_t sectors;
+    uint16_t blocks;
     uint16_t i;
     sdcard_size_t total;
     sdcard_size_t bytes;
     uint8_t *dst;
 
     /* Ignore partial reads.  */
-    sectors = size / SDCARD_SECTOR_SIZE;
+    blocks = size / SDCARD_BLOCK_SIZE;
     dst = buffer;
     total = 0;
-    for (i = 0; i < sectors; i++)
+    for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_read_sector (dev, addr + i, dst, size);
+        bytes = sdcard_read_block (dev, addr + i, dst, size);
         if (!bytes)
             return total;
         dst += bytes;
@@ -306,19 +336,19 @@ sdcard_ret_t
 sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
               sdcard_size_t size)
 {
-    uint16_t sectors;
+    uint16_t blocks;
     uint16_t i;
     sdcard_size_t total;
     sdcard_size_t bytes;
     const uint8_t *src;
 
     /* Ignore partial writes.  */
-    sectors = size / SDCARD_SECTOR_SIZE;
+    blocks = size / SDCARD_BLOCK_SIZE;
     src = buffer;
     total = 0;
-    for (i = 0; i < sectors; i++)
+    for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_write_sector (dev, addr + i, src, size);
+        bytes = sdcard_write_block (dev, addr + i, src, size);
         if (!bytes)
             return total;
         src += bytes;
@@ -338,10 +368,12 @@ sdcard_probe (sdcard_t dev)
     uint8_t command[4];
     uint8_t response[4];
 
-    /* Send the card 80 clocks to activate it.  */
+    /* Send the card 80 clocks to activate it (at least 74 are
+       required).  */
     spi_write (dev->spi, dummy, sizeof (dummy), 0);
 
-    status = sdcard_command (dev, SD_OP_RESET, 0);
+    /* Send software reset.  */
+    status = sdcard_command (dev, SD_OP_GO_IDLE_STATE, 0);
     if (status != 0x01)
         return SDCARD_ERR_NO_CARD;
 
@@ -350,7 +382,7 @@ sdcard_probe (sdcard_t dev)
     /* The card should be in the idle state.  The only valid commands
        are READ_OCR (CMD58) and CMD59.  */
 
-    /* Read operation condition register.  */
+    /* Read operation condition register (OCR).  */
     for (retries = 0; retries < 65536; retries++)
     {
         status = sdcard_command (dev, SD_OP_READ_OCR, 0);
@@ -379,7 +411,7 @@ sdcard_probe (sdcard_t dev)
         return SDCARD_ERR_ERROR;
     }
 
-    status = sdcard_command (dev, SD_OP_SET_BLOCKLEN, SDCARD_SECTOR_SIZE);
+    status = sdcard_command (dev, SD_OP_SET_BLOCKLEN, SDCARD_BLOCK_SIZE);
     if (status != 0)
     {
         sdcard_deselect (dev);

@@ -11,7 +11,7 @@
 #include "config.h"
 #include "spi.h"
 
-enum {SDCARD_SECTOR_SIZE = 512};
+enum {SDCARD_BLOCK_SIZE = 512};
 
 
 typedef struct
@@ -47,7 +47,7 @@ typedef enum
 typedef uint32_t sdcard_addr_t;
 typedef uint32_t sdcard_size_t;
 typedef int32_t sdcard_ret_t;
-typedef uint16_t sdcard_sector_t;
+typedef uint16_t sdcard_block_t;
 
 
 extern sdcard_ret_t

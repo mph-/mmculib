@@ -220,9 +220,13 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
     case USB_CLEAR_FEATURE:
     case USB_SET_FEATURE:
         if (setup->request == USB_SET_FEATURE)
+        {
             TRACE_INFO (USB, "USB:sFeat %u %u\n", setup->value, setup->index);
+        }
         else
+        {
             TRACE_INFO (USB, "USB:cFeat %u %u\n", setup->value, setup->index);
+        }
 
         switch (setup->value)
         {
