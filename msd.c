@@ -39,6 +39,8 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
 
+    /* Need to flush cache if dirty.  */
+
     if (msd_cache.msd == msd && msd_cache.addr == addr)
         return MSD_CACHE_SIZE;
 
@@ -58,7 +60,8 @@ msd_cache_flush (msd_t *msd, msd_addr_t addr)
 
     bytes = msd->write (msd_cache.msd, addr, msd_cache.data,
                         MSD_CACHE_SIZE);
-    /* Could clear dirty bit.  */
+
+    /* Clear dirty bit.  */
 
     return bytes;
 }
@@ -131,13 +134,17 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
         }
         else
         {
+            /* Need to flush cache if dirty.  */
+            msd_cache.msd = msd;
+            msd_cache.addr = addr;
+
             bytes = MSD_CACHE_SIZE;
         }
 
         bytes = MIN (bytes - offset, size);
         memcpy (msd_cache.data + offset, src, bytes);
 
-        /* Implement write-back policy for now to ensure that data
+        /* Implement write-through policy for now to ensure that data
            hits storage.  This is inefficient for many small
            writes.  */
 
