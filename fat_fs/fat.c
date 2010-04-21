@@ -409,7 +409,7 @@ struct fat_fs_struct
     uint32_t    num_fat_sectors;        //!< Number of sectors per FAT
     uint16_t    bytes_per_sector;       //!< Number of bytes per sector
     uint16_t    bytes_per_cluster;      //!< Number of bytes per cluster
-    uint32_t    sector;                  //!< Cached sector
+    uint32_t    sector;                 //!< Cached sector
     uint8_t     sector_buffer[FAT_SECTOR_SIZE];
     bool        dirty;
 };

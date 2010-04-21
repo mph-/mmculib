@@ -277,7 +277,7 @@ sdcard_write_block (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
 // Read a 512 block of data on the SD card
 sdcard_ret_t 
 sdcard_read_block (sdcard_t dev, sdcard_addr_t addr, void *buffer,
-                    sdcard_block_t block)
+                   sdcard_block_t block)
 {
     uint8_t status;
     uint8_t command[2];
