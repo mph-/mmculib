@@ -11,7 +11,11 @@
     disabled by default.
 
     The host starts every bus transaction by asserting the CS signal
-    low.  */
+    low.  
+
+    SanDisk cards allow partial reads (down to 1 byte) but not partial
+    writes.
+*/
 
 enum {SD_CMD_LEN = 6};
 
@@ -317,6 +321,9 @@ sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
     uint8_t *dst;
 
     /* Ignore partial reads.  */
+    if (addr % SDCARD_BLOCK_SIZE || size % SDCARD_BLOCK_SIZE)
+        return 0;
+
     blocks = size / SDCARD_BLOCK_SIZE;
     dst = buffer;
     total = 0;
@@ -343,6 +350,9 @@ sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     const uint8_t *src;
 
     /* Ignore partial writes.  */
+    if (addr % SDCARD_BLOCK_SIZE || size % SDCARD_BLOCK_SIZE)
+        return 0;
+
     blocks = size / SDCARD_BLOCK_SIZE;
     src = buffer;
     total = 0;

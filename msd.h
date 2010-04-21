@@ -23,7 +23,9 @@ typedef struct
 {
     unsigned int removable:1;
     unsigned int volatile1:1;
-    unsigned int reserved:6;
+    unsigned int partial_read:1;
+    unsigned int partial_write:1;
+    unsigned int reserved:4;
 } msd_flags_t;
 
 

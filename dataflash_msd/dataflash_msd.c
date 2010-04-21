@@ -59,7 +59,7 @@ static msd_t dataflash_msd =
     .shutdown = dataflash_shutdown,
     .media_bytes = SPI_DATAFLASH_SECTOR_SIZE * SPI_DATAFLASH_PAGES,
     .block_bytes = SPI_DATAFLASH_SECTOR_SIZE,
-    .flags = {.removable = 0, .reserved = 0},
+    .flags = {.removable = 0, .partial_read = 1, .partial_write = 1},
     .name = "DATAFLASH_MSD"
 };
 

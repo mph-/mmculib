@@ -43,7 +43,7 @@ static msd_t sdcard_msd =
     .shutdown = sdcard_msd_shutdown,
     .media_bytes = SDCARD_BLOCK_SIZE * 1000,
     .block_bytes = SDCARD_BLOCK_SIZE,
-    .flags = {.removable = 1, .reserved = 0},
+    .flags = {.removable = 1, .partial_read = 1, .partial_write = 0},
     .name = "SDCARD_MSD"
 };
 
