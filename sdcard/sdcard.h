@@ -23,11 +23,8 @@ typedef struct
 typedef struct
 {
     spi_t spi;
-    uint8_t page_bits;
-    uint32_t size;
-    const sdcard_cfg_t *cfg;
+    uint8_t status;
 } sdcard_dev_t;
-
 
 
 typedef sdcard_dev_t *sdcard_t;

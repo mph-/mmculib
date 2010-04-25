@@ -16,7 +16,12 @@
     low.  
 
     SanDisk cards allow partial reads (down to 1 byte) but not partial
-    writes.  Writes have a minimum block size of 512 bytes.  */
+    writes.  Writes have a minimum block size of 512 bytes. 
+
+    In SPI mode, CRC checks are disabled by default.
+
+    The maximum SPI clock speed is 25 MHz.
+ */
 
 enum {SD_CMD_LEN = 6};
 
@@ -65,7 +70,6 @@ enum
 
 static uint8_t sdcard_devices_num = 0;
 static sdcard_dev_t sdcard_devices[SDCARD_DEVICES_NUM];
-
 
 /* The 16-bit CRC uses a standard CCIT generator polynomial:
    x^16 + x^12 + x^5 + 1   */
@@ -118,34 +122,19 @@ sdcard_crc16 (uint16_t crc, const void *bytes, uint16_t size)
 /* The 7-bit CRC uses a generator polynomial:
    x^7 + x^3 + 1   */
 
-static uint8_t 
-sdcard_crc7_bit (uint8_t crc, uint8_t in)
-{
-    uint8_t bit0;
-    
-    /* NB, the CRC is stored in reverse order to that specified
-       by the polynomial.  */
-    bit0 = crc & 1;
-
-    crc >>= 1;    
-    if (bit0 ^ in)
-        crc = crc ^ (BIT (7 - 0) | BIT (7 - 3));
-                     
-    return crc;
-}
-
-
 uint8_t
-sdcard_crc7_byte (uint8_t crc, uint8_t val)
+sdcard_crc7_byte (uint8_t crc, uint8_t val, uint8_t bits)
 {
-    uint8_t i;
-
-    for (i = 0; i < 8; i++)
+    int i;
+    
+    for (i = bits; i--; val <<= 1)
     {
-        crc = sdcard_crc7_bit (crc, val & 1);
-        val >>= 1;
+        crc = (crc << 1) | ((val & 0x80) ? 1 : 0);
+        
+        if (crc & 0x80)
+            crc ^= (BIT(0) | BIT(3));
     }
-    return crc;
+    return crc & 0x7f;
 }
 
 
@@ -156,7 +145,9 @@ sdcard_crc7 (uint8_t crc, const void *bytes, uint8_t size)
     const uint8_t *data = bytes;
 
     for (i = 0; i < size; i++)
-        crc = sdcard_crc7_byte (crc, data[i]);
+        crc = sdcard_crc7_byte (crc, data[i], 8);
+
+    crc = sdcard_crc7_byte (crc, 0, 7);
 
     return crc;
 }
@@ -185,13 +176,17 @@ sdcard_deselect (sdcard_t dev)
 {
     uint8_t dummy[1] = {0xff};
 
+    spi_cs_disable (dev->spi);
+
     /* After the last SPI bus transaction, the host is required to
        provide 8 clock cycles for the card to complete the operation
        before shutting down the clock. Throughout this 8-clock period,
        the state of the CS signal is irrelevant.  It can be asserted
        or de-asserted.  */
 
-    spi_write (dev->spi, dummy, sizeof (dummy), 1);
+    spi_write (dev->spi, dummy, sizeof (dummy), 0);
+
+    spi_cs_enable (dev->spi);
 }
 
 
@@ -209,24 +204,45 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     command[4] = param;
     command[5] = (sdcard_crc7 (0, command, 5) << 1) | SD_STOP_BIT;
         
-    /* Send command and read R1 response.  */
+    /* Send command; the card will respond with a sequence of 0xff.  */
     spi_transfer (dev->spi, command, response, SD_CMD_LEN, 0);
 
-    for (retries = 0; retries < SDCARD_RETRIES_NUM; retries++)
+    command[0] = 0xff;
+
+    /* Search for R1 response; the command should respond with 0 to 8
+       bytes of 0xff.  */
+    for (retries = 0; retries < 4096; retries++)
     {
-        spi_read (dev->spi, response, 1, 0);
-        if (! (response[0] & 0x80))
+        spi_transfer (dev->spi, command, &dev->status, 1, 0);
+        
+#if 0
+        if (! (dev->status & 0x80))
             break;
+
+//        if (dev->status == 0xff)
+//            continue;
+
+#else
+        /* Check for R1 response.  */
+        if ((op == SD_OP_GO_IDLE_STATE && dev->status == 0x01)
+            || (op != SD_OP_GO_IDLE_STATE && dev->status == 0x00))
+            break;
+
+//        /* The first bit is zero when the response is received.
+//           The other bits indicate errors.  */
+//        if (! (dev->status & 0x80))
+//            break;
+#endif
     }
 
-    return response[0];
+    return dev->status;
 }
 
 
 uint8_t
 sdcard_csd_read (sdcard_t dev)
 {
-    uint8_t message[SD_CMD_LEN];
+    uint8_t message[17];
     
     message[0] = SD_OP_SEND_CSD | SD_HOST_BIT;
     message[1] = 0;
@@ -242,9 +258,45 @@ sdcard_csd_read (sdcard_t dev)
 }
 
 
+sdcard_addr_t
+sdcard_capacity (sdcard_t dev)
+{
+    uint8_t message[17];
+    uint16_t c_size;
+    uint16_t c_size_mult;
+    uint16_t read_bl_len;
+    uint16_t block_len;
+    sdcard_addr_t capacity;
+    
+    message[0] = SD_OP_SEND_CSD | SD_HOST_BIT;
+    message[1] = 0;
+    message[2] = 0;
+    message[3] = 0;
+    message[4] = 0;
+    message[5] = (sdcard_crc7 (0, message, 5) << 1) | SD_STOP_BIT;
+        
+    /* Send command and read R2 response.  */
+    spi_transfer (dev->spi, message, message, sizeof (message), 0);
+
+    /* C_SIZE bits 70:62
+       C_SIZE_MULT bits 49:47
+       READ_BL_LEN bits 83:80
+    */
+
+    c_size = ((message[7] & 0x7f) << 2) | (message[8] >> 6);
+    c_size_mult = ((message[9] & 0x03) << 1) | (message[10] >> 7);
+    read_bl_len = message[5] & 0x0f;
+    
+    block_len = 1 << read_bl_len;
+    capacity = c_size * (1LL << (c_size_mult + 2)) * block_len;
+
+    return capacity;
+}
+
+
 uint16_t
 sdcard_write_block (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
-                     sdcard_block_t block)
+                    sdcard_block_t block)
 {
     uint8_t status;
     uint16_t crc;
@@ -401,7 +453,9 @@ sdcard_probe (sdcard_t dev)
 
     /* Send the card 80 clocks to activate it (at least 74 are
        required).  */
-    spi_write (dev->spi, dummy, sizeof (dummy), 0);
+    spi_write (dev->spi, dummy, sizeof (dummy), 1);
+
+    //sdcard_deselect (dev);
 
     /* Send software reset.  */
     status = sdcard_command (dev, SD_OP_GO_IDLE_STATE, 0);
@@ -410,9 +464,26 @@ sdcard_probe (sdcard_t dev)
 
     sdcard_deselect (dev);
 
-    /* The card should be in the idle state.  The only valid commands
-       are READ_OCR (CMD58) and CMD59.  */
+    /* Check to see if card happy with our supply voltage.  */
 
+    for (retries = 0; retries < 256; retries++)
+    {
+        /* Need to keep sending this command until the in-idle-state
+           bit is set to 0.  */
+        status = sdcard_command (dev, SD_OP_SEND_OP_COND, 0);
+        if ((status & 0x01) == 0)
+            break;
+    }
+
+    sdcard_deselect (dev);
+
+    if (status != 0)
+    {
+        /* Have an error bit set.  */
+        return SDCARD_ERR_ERROR;
+    }
+
+#if 0
     /* Read operation condition register (OCR).  */
     for (retries = 0; retries < 65536; retries++)
     {
@@ -427,27 +498,13 @@ sdcard_probe (sdcard_t dev)
     }
 
     spi_transfer (dev->spi, command, response, 4, 0);    
+#endif
     
-    /* Should check to see if card happy with our supply voltage.  */
-
-    for (retries = 0; retries < 65536; retries++)
-    {
-        status = sdcard_command (dev, SD_OP_SEND_OP_COND, BIT (30));
-        if (status == 0)
-            break;
-    }
-    if (status != 0)
-    {
-        sdcard_deselect (dev);
-        return SDCARD_ERR_ERROR;
-    }
-
     status = sdcard_command (dev, SD_OP_SET_BLOCKLEN, SDCARD_BLOCK_SIZE);
+    sdcard_deselect (dev);
+
     if (status != 0)
-    {
-        sdcard_deselect (dev);
         return SDCARD_ERR_ERROR;
-    }
 
     return SDCARD_ERR_OK;
 }
@@ -469,6 +526,11 @@ sdcard_init (const sdcard_cfg_t *cfg)
     // Hmmm, should we let the user override the mode?
     spi_mode_set (dev->spi, SPI_MODE_0);
     spi_cs_mode_set (dev->spi, SPI_CS_MODE_FRAME);
+
+    /* Ensure chip select isn't asserted too soon.  */
+    spi_cs_assert_delay_set (dev->spi, 16);    
+    /* Ensure chip select isn't negated too soon.  */
+    spi_cs_negate_delay_set (dev->spi, 16);    
    
     return dev;
 }
