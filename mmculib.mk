@@ -3,26 +3,21 @@
 # OPT optimisation level, e.g. -O2
 # MCU name of microcontroller
 # RUN_MODE either ROM_RUN or RAM_RUN
-# MAT91LIB_DIR path to mat91lib
 # MMCULIB_DIR path to mmculib
 # TARGET name of target to build, e.g., treetap.bin
 # DRIVERS list of drivers to build
 # PERIPHERALS list of peripherals to build
 # SRC list of additional C source files
 
-
 ifndef ROOT
 ROOT = .
 endif
 
-
 INCLUDES += -I.
-
 
 ifdef BOARD
 CFLAGS += -D$(BOARD)
 endif
-
 
 # Create list of object and dependency files.  Note, sort removes duplicates.
 OBJ = $(addprefix objs/, $(sort $(SRC:.c=.o)))
@@ -51,8 +46,30 @@ deps/%.d: %.c deps
 	| sed 's,\(.*\)\.o[ :]*,objs/\1.o deps/\1.d : ,g' > $@; \
 	[ -s $@ ] || rm -f $@
 
+# Include the driver dependencies.
 include $(MMCULIB_DIR)/drivers.mk
+
+# Include the architecture dependent dependencies.
+ifneq (, $(findstring AT91, $(MCU)))
+# AT91SAM7 family
+ifndef MAT91LIB_DIR
+MAT91LIB_DIR = $(MMCULIB_DIR)/../mat91lib
+endif
 include $(MAT91LIB_DIR)/mat91lib.mk
+else ifneq (, $(findstring ATmega, $(MCU)))
+# AVR family
+ifndef MAVRLIB_DIR
+MAVRLIB_DIR = $(MMCULIB_DIR)/../mavrlib
+endif
+include $(MAVRLIB_DIR)/mavrlib.mk
+else ifneq (, $(findstring BF5, $(MCU)))
+# Blackfin family
+ifndef MBFLIB_DIR
+MBFLIB_DIR = $(MMCULIB_DIR)/../mbflib
+endif
+include $(MBFLIB_DIR)/mbflib.mk
+endif
+
 
 # Include the dependency files.
 -include $(DEPS)
