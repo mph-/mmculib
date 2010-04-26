@@ -1,3 +1,5 @@
+DRIVER_DIR = $(MMCULIB_DIR)
+
 include $(foreach driver, $(DRIVERS), $(DRIVER_DIR)/$(driver)/$(driver).mk)
 
 # Perform second pass for that drivers that depend on other drivers
