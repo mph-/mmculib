@@ -13,6 +13,10 @@ ifndef ROOT
 ROOT = .
 endif
 
+ifndef MCU
+MCU = AT91SAM7S256
+endif
+
 INCLUDES += -I.
 
 ifdef BOARD
