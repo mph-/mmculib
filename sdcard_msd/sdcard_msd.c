@@ -69,6 +69,7 @@ sdcard_msd_init (void)
         return NULL;
 
     /* The number of pages should be probed...  */
+    sdcard_msd.media_bytes = sdcard_capacity (sdcard_msd.handle);
 
     return &sdcard_msd;
 }

@@ -1,5 +1,5 @@
 /* Secure digital card driver.  */
-
+#include <string.h>
 #include "sdcard.h"
 
 /*  The SD Card wakes up in the SD Bus mode.  It will enter SPI mode
@@ -153,18 +153,19 @@ sdcard_crc7 (uint8_t crc, const void *bytes, uint8_t size)
 }
 
 
-// Keeps clocking the SD card until the desired byte is returned from the card
+/*  Keeps polling the SD card until the desired byte is returned.  */
 bool
 sdcard_response_match (sdcard_t dev, uint8_t desired)
 {
     uint16_t retries;
-    uint8_t response;
+    uint8_t response[1];
     
     // Keep reading the SD card for the desired response
     for (retries = 0; retries < SDCARD_RETRIES_NUM; retries++)
     {
-        spi_read (dev->spi, &response, 1, 0);
-        if (response == desired)
+        response[0] = 0xff;
+        spi_transfer (dev->spi, response, response, 1, 0);
+        if (response[0] == desired)
             return 1;
     }
     return 0;
@@ -184,7 +185,7 @@ sdcard_deselect (sdcard_t dev)
        the state of the CS signal is irrelevant.  It can be asserted
        or de-asserted.  */
 
-    spi_write (dev->spi, dummy, sizeof (dummy), 0);
+    spi_write (dev->spi, dummy, sizeof (dummy), 1);
 
     spi_cs_enable (dev->spi);
 }
@@ -209,29 +210,23 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
 
     command[0] = 0xff;
 
-    /* Search for R1 response; the command should respond with 0 to 8
-       bytes of 0xff.  */
-    for (retries = 0; retries < 4096; retries++)
+    /* Search for R1 response; the card should respond with 0 to 8
+       bytes of 0xff beforehand.  */
+    for (retries = 0; retries < 65; retries++)
     {
         spi_transfer (dev->spi, command, &dev->status, 1, 0);
         
 #if 0
+        /* This doesn't seem to work.  Sometimes I get a response of 0x7f
+           which trips this test.  */
         if (! (dev->status & 0x80))
             break;
-
-//        if (dev->status == 0xff)
-//            continue;
 
 #else
         /* Check for R1 response.  */
         if ((op == SD_OP_GO_IDLE_STATE && dev->status == 0x01)
             || (op != SD_OP_GO_IDLE_STATE && dev->status == 0x00))
             break;
-
-//        /* The first bit is zero when the response is received.
-//           The other bits indicate errors.  */
-//        if (! (dev->status & 0x80))
-//            break;
 #endif
     }
 
@@ -239,53 +234,61 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
 }
 
 
-uint8_t
-sdcard_csd_read (sdcard_t dev)
+bool
+sdcard_csd_read (sdcard_t dev, uint8_t *csd, uint8_t bytes)
 {
-    uint8_t message[17];
-    
-    message[0] = SD_OP_SEND_CSD | SD_HOST_BIT;
-    message[1] = 0;
-    message[2] = 0;
-    message[3] = 0;
-    message[4] = 0;
-    message[5] = (sdcard_crc7 (0, message, 5) << 1) | SD_STOP_BIT;
-        
-    /* Send command and read R2 response.  */
-    spi_transfer (dev->spi, message, message, sizeof (message), 0);
+    uint8_t crc[2];
+    uint8_t status;
 
-    return message[0];
+    status = sdcard_command (dev, SD_OP_SEND_CSD, 0);
+    if (status != 0)
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+
+    /* Wait for card to return the start data token.  */
+    if (!sdcard_response_match (dev, 0xfe))
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+
+    /* Read the 128 bits of data.  */
+    memset (csd, 0xff, bytes);
+    spi_transfer (dev->spi, csd, csd, bytes, 0);
+
+    /* Read the 16 bit crc.  */
+    memset (crc, 0xff, sizeof (crc));
+    spi_transfer (dev->spi, crc, crc, sizeof (crc), 0);
+
+    sdcard_deselect (dev);
+    
+    return 1;
 }
 
 
 sdcard_addr_t
 sdcard_capacity (sdcard_t dev)
 {
-    uint8_t message[17];
+    uint8_t csd[16];
     uint16_t c_size;
     uint16_t c_size_mult;
     uint16_t read_bl_len;
     uint16_t block_len;
     sdcard_addr_t capacity;
-    
-    message[0] = SD_OP_SEND_CSD | SD_HOST_BIT;
-    message[1] = 0;
-    message[2] = 0;
-    message[3] = 0;
-    message[4] = 0;
-    message[5] = (sdcard_crc7 (0, message, 5) << 1) | SD_STOP_BIT;
-        
-    /* Send command and read R2 response.  */
-    spi_transfer (dev->spi, message, message, sizeof (message), 0);
+
+    if (!sdcard_csd_read (dev, csd, sizeof (csd)))
+        return 0;
 
     /* C_SIZE bits 70:62
        C_SIZE_MULT bits 49:47
        READ_BL_LEN bits 83:80
     */
 
-    c_size = ((message[7] & 0x7f) << 2) | (message[8] >> 6);
-    c_size_mult = ((message[9] & 0x03) << 1) | (message[10] >> 7);
-    read_bl_len = message[5] & 0x0f;
+    c_size = ((csd[7] & 0x7f) << 2) | (csd[8] >> 6);
+    c_size_mult = ((csd[9] & 0x03) << 1) | (csd[10] >> 7);
+    read_bl_len = csd[5] & 0x0f;
     
     block_len = 1 << read_bl_len;
     capacity = c_size * (1LL << (c_size_mult + 2)) * block_len;
@@ -294,72 +297,20 @@ sdcard_capacity (sdcard_t dev)
 }
 
 
-uint16_t
-sdcard_write_block (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
-                    sdcard_block_t block)
+bool
+sdcard_page_erase (sdcard_t dev, sdcard_addr_t addr)
 {
-    uint8_t status;
-    uint16_t crc;
-    uint8_t command[2];
-    uint8_t response[1];
 
-    addr = block * SDCARD_BLOCK_SIZE;
-
-    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr);
-    if (status != 0)
-    {
-        sdcard_deselect (dev);
-        return 0;
-    }
-
-    crc = sdcard_crc16 (0, buffer, SDCARD_BLOCK_SIZE);
-    
-    /* Send data begin token.  */
-    command[0] = 0xFE;
-    spi_write (dev->spi, command, 1, 1);
-
-    /* Send the data.  */
-    spi_write (dev->spi, buffer, SDCARD_BLOCK_SIZE, 1);
-
-    command[0] = crc >> 8;
-    command[1] = crc & 0xff;
-
-    /* Send the crc.  */
-    spi_write (dev->spi, command, 2, 1);
-
-    /* Get the status response.  */
-    command[0] = 0xff;
-    spi_transfer (dev->spi, command, response, 1, 1);    
-    
-    /* Check to see if the data was accepted.  */
-    if ((response[0] & 0x1F) != SD_WRITE_OK)
-    {
-        sdcard_deselect (dev);
-        return 0;
-    }
-    
-    /* Wait for card to complete write cycle.  */
-    if (!sdcard_response_match (dev, 0x00))
-    {
-        sdcard_deselect (dev);
-        return 0;
-    }
-    
-    sdcard_deselect (dev);
-
-    return SDCARD_BLOCK_SIZE;
+    return 1;
 }
 
 
 // Read a 512 block of data on the SD card
 sdcard_ret_t 
-sdcard_read_block (sdcard_t dev, sdcard_addr_t addr, void *buffer,
-                   sdcard_block_t block)
+sdcard_block_read (sdcard_t dev, sdcard_addr_t addr, void *buffer)
 {
     uint8_t status;
     uint8_t command[2];
-
-    addr = block * SDCARD_BLOCK_SIZE;
 
     status = sdcard_command (dev, SD_OP_READ_BLOCK, addr);
     if (status != 0)
@@ -373,10 +324,10 @@ sdcard_read_block (sdcard_t dev, sdcard_addr_t addr, void *buffer,
     spi_write (dev->spi, command, 1, 1);
 
     /* Read the data.  */
-    spi_read (dev->spi, buffer, SDCARD_BLOCK_SIZE, 1);
+    spi_read (dev->spi, buffer, SDCARD_BLOCK_SIZE, 0);
 
     /* Read the crc.  */
-    spi_read (dev->spi, command, 2, 1);
+    spi_read (dev->spi, command, 2, 0);
 
     sdcard_deselect (dev);
 
@@ -402,13 +353,126 @@ sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
     total = 0;
     for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_read_block (dev, addr + i, dst, size);
+        bytes = sdcard_block_read (dev, addr + i, dst);
         if (!bytes)
             return total;
         dst += bytes;
         total += bytes;
     }
     return total;
+}
+
+
+uint16_t
+sdcard_erased_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
+{
+    uint8_t status;
+    uint16_t crc;
+    uint8_t command[2];
+    uint8_t response[1];
+
+    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr);
+    if (status != 0)
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+
+    crc = sdcard_crc16 (0, buffer, SDCARD_BLOCK_SIZE);
+    
+    /* Send data start block token.  */
+    command[0] = 0xFE;
+    spi_write (dev->spi, command, 1, 0);
+
+    /* Send the data.  */
+    spi_write (dev->spi, buffer, SDCARD_BLOCK_SIZE, 0);
+
+    command[0] = crc >> 8;
+    command[1] = crc & 0xff;
+
+    /* Send the crc.  */
+    spi_write (dev->spi, command, 2, 0);
+
+    /* Get the status response.  */
+    command[0] = 0xff;
+    spi_transfer (dev->spi, command, response, 1, 0);    
+    
+    /* Check to see if the data was accepted.  */
+    if ((response[0] & 0x1F) != SD_WRITE_OK)
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+    
+    /* Wait for card to complete write cycle.  */
+    if (!sdcard_response_match (dev, 0x00))
+    {
+        sdcard_deselect (dev);
+        return 0;
+    }
+    
+    sdcard_deselect (dev);
+
+    return SDCARD_BLOCK_SIZE;
+}
+
+
+uint16_t
+sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
+{
+    int page;
+    int first_block;
+    sdcard_addr_t addr1;
+    sdcard_addr_t addr2;
+    sdcard_addr_t new_page_addr;
+    sdcard_addr_t spare_page_addr = 1000 * SDCARD_PAGE_SIZE;
+    int i;
+
+    page = addr / SDCARD_PAGE_SIZE;
+    first_block = page * SDCARD_PAGE_SIZE;
+    new_page_addr = first_block * SDCARD_PAGE_SIZE;
+
+    /* Erase spare page.  */
+    sdcard_page_erase (dev, spare_page_addr);
+
+    /* Copy data to spare page.  */
+    addr1 = new_page_addr;
+    addr2 = spare_page_addr;
+    for (i = 0; i < SDCARD_PAGE_BLOCKS; i++)
+    {
+        int bytes;
+        uint8_t tmp[SDCARD_BLOCK_SIZE];
+
+        bytes = sdcard_block_read (dev, addr1, tmp);
+        bytes = sdcard_erased_block_write (dev, addr2, tmp);
+        addr1 += SDCARD_BLOCK_SIZE;
+        addr2 += SDCARD_BLOCK_SIZE;
+    }
+    
+    /* Erase desired page.  */
+    sdcard_page_erase (dev, addr1);
+
+    /* Copy data from spare page.  */
+    addr1 = new_page_addr;
+    addr2 = spare_page_addr;
+    for (i = 0; i < SDCARD_PAGE_BLOCKS; i++)
+    {
+        int bytes;
+        uint8_t tmp[SDCARD_BLOCK_SIZE];
+        
+        if (addr2 == addr)
+        {
+            bytes = sdcard_erased_block_write (dev, addr1, buffer);
+        }
+        else
+        {
+            bytes = sdcard_block_read (dev, addr2, tmp);
+            bytes = sdcard_erased_block_write (dev, addr1, tmp);
+        }
+        addr1 += SDCARD_BLOCK_SIZE;
+        addr2 += SDCARD_BLOCK_SIZE;
+    }
+    return SDCARD_BLOCK_SIZE;
 }
 
 
@@ -431,7 +495,7 @@ sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     total = 0;
     for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_write_block (dev, addr + i, src, size);
+        bytes = sdcard_block_write (dev, addr + i, src);
         if (!bytes)
             return total;
         src += bytes;
@@ -448,21 +512,20 @@ sdcard_probe (sdcard_t dev)
     int retries;
     uint8_t dummy[10] = {0xff, 0xff, 0xff, 0xff, 0xff,
                          0xff, 0xff, 0xff, 0xff, 0xff};
-    uint8_t command[4];
-    uint8_t response[4];
 
     /* Send the card 80 clocks to activate it (at least 74 are
        required).  */
+    spi_cs_disable (dev->spi);
     spi_write (dev->spi, dummy, sizeof (dummy), 1);
-
-    //sdcard_deselect (dev);
+    spi_cs_enable (dev->spi);
 
     /* Send software reset.  */
     status = sdcard_command (dev, SD_OP_GO_IDLE_STATE, 0);
-    if (status != 0x01)
-        return SDCARD_ERR_NO_CARD;
 
     sdcard_deselect (dev);
+
+    if (status != 0x01)
+        return SDCARD_ERR_NO_CARD;
 
     /* Check to see if card happy with our supply voltage.  */
 

@@ -12,6 +12,8 @@
 #include "spi.h"
 
 enum {SDCARD_BLOCK_SIZE = 512};
+enum {SDCARD_PAGE_BLOCKS = 32};
+enum {SDCARD_PAGE_SIZE = SDCARD_BLOCK_SIZE * SDCARD_PAGE_BLOCKS};
 
 
 typedef struct
@@ -47,25 +49,29 @@ typedef int32_t sdcard_ret_t;
 typedef uint16_t sdcard_block_t;
 
 
-extern sdcard_ret_t
+sdcard_ret_t
 sdcard_read (sdcard_t dev, sdcard_addr_t addr,
              void *buffer, sdcard_size_t len);
 
 
-extern sdcard_ret_t
+sdcard_ret_t
 sdcard_write (sdcard_t dev, sdcard_addr_t addr,
               const void *buffer, sdcard_size_t len);
 
 
-extern sdcard_t
+sdcard_t
 sdcard_init (const sdcard_cfg_t *cfg);
 
 
-extern sdcard_err_t
+sdcard_addr_t
+sdcard_capacity (sdcard_t dev);
+
+
+sdcard_err_t
 sdcard_probe (sdcard_t dev);
 
 
-extern void
+void
 sdcard_shutdown (sdcard_t dev);
 
 #endif

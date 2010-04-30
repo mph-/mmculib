@@ -12,8 +12,18 @@
 
    For a partial block write we read the block into a temporary buffer
    overwrite the buffer with the user's data then write the temporary
-   buffer.  Some flash devices such as dataflash can do this using
-   internal buffers but sdcards do not.
+   buffer (assuming that the write does an erase first).  Some flash
+   devices such as dataflash can do this using internal buffers but
+   sdcards do not.  Unfortunately, devices such as microsd/microsdhc
+   et al have pages of 32 or 64 blocks, each of 512 bytes.  This is
+   the minimum size that can be erased so we need a really big buffer.
+
+   An alternative approach is to put the onus on the sdcard driver to
+   manage page modification.  It can do this by reserving a spare page
+   (say at the end), erasing the spare page, then copying the page
+   containing the block that needs to be modified to the spare page,
+   erasing the page that needs to be modified, writing the new block contents,
+   then copying the other block contents from the spare page.  Phew!
 */
 
 
@@ -58,6 +68,9 @@ msd_cache_flush (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
 
+    /* This assumes that the write routine does any erasing if
+       necessary and that MSD_CACHE_SIZE is a multiple of the page
+       size.  */
     bytes = msd->write (msd_cache.msd, addr, msd_cache.data,
                         MSD_CACHE_SIZE);
 
@@ -146,7 +159,7 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
 
         /* Implement write-through policy for now to ensure that data
            hits storage.  This is inefficient for many small
-           writes.  */
+           writes and for large page sizes.  */
 
         bytes = msd_cache_flush (msd, addr);
         /* Perhaps should return error.  */
