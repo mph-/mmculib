@@ -1,10 +1,10 @@
-/** @file sdcard.h
- *  @author Michael Hayes
- *  @date 06/08/03
- * 
- *  @brief Routines to communicate with an sdcard.
- */
- 
+/** @file   sdcard.c
+    @author Michael Hayes
+    @date   1 May 2010
+    @brief  Secure digital card driver. 
+    @note   This has only been tested with a SanDisk 4 GB microSDHC card.
+    To support older cards the probe routine needs modifying.  */
+
 #ifndef SDCARD_H
 #define SDCARD_H
 
@@ -14,6 +14,13 @@
 enum {SDCARD_BLOCK_SIZE = 512};
 enum {SDCARD_PAGE_BLOCKS = 32};
 enum {SDCARD_PAGE_SIZE = SDCARD_BLOCK_SIZE * SDCARD_PAGE_BLOCKS};
+
+typedef enum
+{
+    SDCARD_TYPE_SDHC = 1,
+    SDCARD_TYPE_SDXC,
+    SDCARD_TYPE_SD
+} sdcard_type_t;
 
 
 typedef struct
@@ -25,7 +32,14 @@ typedef struct
 typedef struct
 {
     spi_t spi;
+    uint32_t sectors;
+    uint32_t Nac;
+    uint32_t Nbs;
+    uint32_t speed;
+    uint16_t block_size;
+    uint8_t addr_shift;
     uint8_t status;
+    sdcard_type_t type;
 } sdcard_dev_t;
 
 
@@ -47,6 +61,7 @@ typedef uint32_t sdcard_addr_t;
 typedef uint32_t sdcard_size_t;
 typedef int32_t sdcard_ret_t;
 typedef uint16_t sdcard_block_t;
+typedef uint16_t sdcard_status_t;
 
 
 sdcard_ret_t

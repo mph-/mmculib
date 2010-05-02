@@ -1,3 +1,9 @@
+/** @file   fat.c
+    @author Michael Hayes
+    @date   7 January 2009
+    @brief  FAT32 filesystem routines.
+*/
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

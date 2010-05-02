@@ -1,3 +1,9 @@
+/** @file   fat.h
+    @author Michael Hayes
+    @date   7 January 2009
+    @brief  FAT32 filesystem routines.
+*/
+
 #ifndef FAT_H_
 #define FAT_H_
 
