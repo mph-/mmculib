@@ -74,7 +74,7 @@ sbc_status (usb_bot_status_t status)
  * 
  */
 static sbc_status_t
-sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_inquiry (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
@@ -135,7 +135,7 @@ sbc_inquiry (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t 
-sbc_read_capacity10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
@@ -193,13 +193,13 @@ sbc_read_capacity10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bStatus;
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     S_sbc_write_10 *pCommand = (S_sbc_write_10 *) pCommandState->sCbw.pCommand;
-    lun_addr_t addr;
+    usb_msd_lun_addr_t addr;
 
     addr = DWORDB (pCommand->pLogicalBlockAddress);
 
@@ -319,13 +319,13 @@ sbc_write10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bStatus;
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     S_sbc_read_10 *pCommand = (S_sbc_read_10 *) pCommandState->sCbw.pCommand;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
-    lun_addr_t addr;
+    usb_msd_lun_addr_t addr;
 
     addr = DWORDB (pCommand->pLogicalBlockAddress);
 
@@ -456,7 +456,7 @@ sbc_read10 (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
+sbc_mode_sense6 (usb_msd_lun_t *pLun __unused__, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
@@ -513,7 +513,7 @@ sbc_mode_sense6 (S_lun *pLun __unused__, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
+sbc_request_sense (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
@@ -567,7 +567,7 @@ sbc_request_sense (S_lun *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_test_unit_ready (S_lun *pLun)
+sbc_test_unit_ready (usb_msd_lun_t *pLun)
 {
     msd_status_t status;
 
@@ -612,7 +612,7 @@ sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, uint8_t *pT
     void *pCommand = pCbw->pCommand;
     S_sbc_command *pSbcCommand = (S_sbc_command *) pCommand;
     bool isCommandSupported = true;
-    S_lun *pLun;
+    usb_msd_lun_t *pLun;
 
     pLun = lun_get (pCbw->bCBWLUN);
     if (!pLun)
@@ -704,7 +704,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     S_sbc_command *pCommand;
     usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
-    S_lun *pLun;
+    usb_msd_lun_t *pLun;
 
     /* Need to cast array containing command to union of command
        structures.  */

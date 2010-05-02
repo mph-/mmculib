@@ -28,7 +28,7 @@
 #endif
 
 
-static S_lun Luns[USB_MSD_LUN_NUM];     //!< LUNs used by the BOT driver
+static usb_msd_lun_t Luns[USB_MSD_LUN_NUM];     //!< LUNs used by the BOT driver
 static uint8_t lun_num = 0;
 
 /**
@@ -56,8 +56,8 @@ static const S_sbc_inquiry_data sInquiryData =
  */
 void lun_init (msd_t *msd)
 {
-    S_lun *pLun;
-    msd_size_t block_max;
+    usb_msd_lun_t *pLun;
+    usb_msd_lun_addr_t block_max;
 
     TRACE_INFO (USB_MSD_LUN, "LUN:Init\n");
 
@@ -123,7 +123,8 @@ void lun_init (msd_t *msd)
  * \return Operation result code
  */
 lun_status_t
-lun_read (S_lun *pLun, lun_addr_t block, void *buffer, msd_size_t blocks)
+lun_read (usb_msd_lun_t *pLun, usb_msd_lun_addr_t block, void *buffer, 
+          msd_size_t blocks)
 {
     msd_size_t bytes;
     msd_size_t result;
@@ -159,7 +160,7 @@ lun_read (S_lun *pLun, lun_addr_t block, void *buffer, msd_size_t blocks)
  * \return Operation result code
  */
 lun_status_t
-lun_write (S_lun *pLun, lun_addr_t block, const void *buffer,
+lun_write (usb_msd_lun_t *pLun, usb_msd_lun_addr_t block, const void *buffer,
            msd_size_t blocks)
 {
     msd_size_t bytes;
@@ -194,7 +195,7 @@ lun_write (S_lun *pLun, lun_addr_t block, const void *buffer,
  * \return Operation result code
  */
 msd_status_t
-lun_status_get (S_lun *pLun)
+lun_status_get (usb_msd_lun_t *pLun)
 {
     return msd_status_get (pLun->msd);
 }
@@ -209,7 +210,7 @@ lun_status_get (S_lun *pLun)
  * \param   bAdditionalSenseCodeQualifier Additional sense code qualifier
  */
 void 
-lun_update_sense_data (S_lun *pLun,
+lun_update_sense_data (usb_msd_lun_t *pLun,
                        unsigned char bSenseKey,
                        unsigned char bAdditionalSenseCode,
                        unsigned char bAdditionalSenseCodeQualifier)
@@ -225,7 +226,7 @@ lun_update_sense_data (S_lun *pLun,
 }
 
 
-S_lun *lun_get (uint8_t num)
+usb_msd_lun_t *lun_get (uint8_t num)
 {
     if (num >= lun_num)
         return 0;

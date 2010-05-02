@@ -12,11 +12,11 @@ typedef enum
 } lun_status_t;
 
 
-typedef uint64_t lun_size_t;
-typedef uint32_t lun_addr_t;
+typedef uint64_t usb_msd_lun_size_t;
+typedef uint32_t usb_msd_lun_addr_t; /* Block address.  */
 
 
-/** \struct S_lun 
+/** \struct usb_msd_lun_t 
  * LUN description structure
  * 
  */ 
@@ -26,27 +26,27 @@ typedef struct
     S_sbc_inquiry_data sInquiryData; //!< Inquiry data structure
     S_sbc_request_sense_data sRequestSenseData;  //!< Sense data structure
     S_sbc_read_capacity_10_data sReadCapacityData;  //!< Capacity data sturcture
-    lun_size_t media_bytes;       //!< Size of LUN in bytes
-    uint32_t block_bytes;         //!< Sector size of LUN in bytes
+    usb_msd_lun_size_t media_bytes;       //!< Size of LUN in bytes
+    uint16_t block_bytes;         //!< Sector size of LUN in bytes
     uint8_t bMediaStatus;         //!< LUN status
-} S_lun;
+} usb_msd_lun_t;
 
 void lun_init (msd_t *msd);
 
-lun_status_t lun_read (S_lun *pLun, lun_addr_t block, void *buffer,
-                       msd_size_t bytes);
+lun_status_t lun_read (usb_msd_lun_t *pLun, usb_msd_lun_addr_t block,
+                       void *buffer, msd_size_t bytes);
 
-lun_status_t lun_write (S_lun *pLun, lun_addr_t block, const void *buffer,
-                        msd_size_t bytes);
+lun_status_t lun_write (usb_msd_lun_t *pLun, usb_msd_lun_addr_t block,
+                        const void *buffer, msd_size_t bytes);
 
-msd_status_t lun_status_get (S_lun *pLun);
+msd_status_t lun_status_get (usb_msd_lun_t *pLun);
 
-void lun_update_sense_data (S_lun *pLun,
+void lun_update_sense_data (usb_msd_lun_t *pLun,
                             unsigned char bSenseKey,
                             unsigned char bAdditionalSenseCode,
                             unsigned char bAdditionalSenseCodeQualifier);
 
-S_lun *lun_get (uint8_t num);
+usb_msd_lun_t *lun_get (uint8_t num);
 
 uint8_t lun_num_get (void);
 
