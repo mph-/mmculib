@@ -827,6 +827,11 @@ sdcard_probe (sdcard_t dev)
 
     status = sdcard_ocr_read (dev, &ocr);
 
+    /* If the OCR is zero then it is likely that the card is being current 
+       limited and is throwing a wobbly.  */
+    if (!ocr)
+        return SDCARD_ERR_ERROR;
+
     sdcard_csd_parse (dev);
 
     return SDCARD_ERR_OK;
