@@ -248,9 +248,6 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     command[3] = param >> 8;
     command[4] = param;
 
-#if 0
-    command[5] = (sdcard_crc7 (0, command, 5) << 1) | SD_STOP_BIT;
-#else
     switch (op)
     {
         /* The CRC only needs to be calculated for two commands in SPI
@@ -264,10 +261,12 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
         break;
 
     default:
-        command[5] = 0xff;
+        if (dev->crc_enabled)
+            command[5] = (sdcard_crc7 (0, command, 5) << 1) | SD_STOP_BIT;
+        else
+            command[5] = 0xff;
         break;
     }
-#endif
         
     /* Send command; the card will respond with a sequence of 0xff.  */
     spi_transfer (dev->spi, command, response, SD_CMD_LEN, 0);
@@ -375,6 +374,8 @@ sdcard_command_read (sdcard_t dev, sdcard_op_t op, uint32_t param,
     spi_transfer (dev->spi, crc, crc, sizeof (crc), 0);
 
     sdcard_deselect (dev);
+
+    /* Could check crc here.  */
     
     return 0;
 }
@@ -581,11 +582,10 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
         return 0;
     }
 
-#if 0
-    crc = sdcard_crc16 (0, buffer, dev->block_size);
-#else
-    crc = 0xffff;
-#endif
+    if (dev->crc_enabled)
+        crc = sdcard_crc16 (0, buffer, dev->block_size);
+    else
+        crc = 0xffff;
     
     /* Send Nwr dummy clocks then data start block token.  */
     command[0] = 0xff;

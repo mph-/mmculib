@@ -50,6 +50,7 @@ typedef struct
     uint8_t addr_shift;
     uint8_t status;
     sdcard_type_t type;
+    bool crc_enabled;
 } sdcard_dev_t;
 
 
