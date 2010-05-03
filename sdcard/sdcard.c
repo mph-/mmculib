@@ -52,12 +52,12 @@ typedef enum
 } sdcard_op_t;
 
 
-enum 
+typedef enum 
 {
     SD_WRITE_OK = 5,
     SD_WRITE_CRC_ERROR = 11,
     SD_WRITE_ERROR = 13
-};
+} sdcard_write_response_t;
 
 
 enum
@@ -613,7 +613,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     }
     
     /* Wait for card to complete write cycle.  */
-    if (!sdcard_response_not_match (dev, 0xff, dev->Nbs))
+    if (!sdcard_response_not_match (dev, 0x00, dev->Nbs))
     {
         sdcard_deselect (dev);
         return 0;
