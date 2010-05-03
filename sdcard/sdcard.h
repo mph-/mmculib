@@ -23,6 +23,12 @@ typedef enum
 } sdcard_type_t;
 
 
+typedef uint32_t sdcard_addr_t;
+typedef uint32_t sdcard_size_t;
+typedef int32_t sdcard_ret_t;
+typedef uint16_t sdcard_block_t;
+typedef uint16_t sdcard_status_t;
+
 typedef struct
 {
     spi_cfg_t spi;
@@ -37,6 +43,10 @@ typedef struct
     uint32_t Nbs;
     uint32_t speed;
     uint16_t block_size;
+    uint16_t timeouts;
+    uint16_t write_rejects;
+    uint16_t write_errors;
+    sdcard_status_t write_status;
     uint8_t addr_shift;
     uint8_t status;
     sdcard_type_t type;
@@ -55,13 +65,6 @@ typedef enum
     SDCARD_ERR_NOT_READY,
     SDCARD_ERR_PARAM
 } sdcard_err_t;
-
-
-typedef uint32_t sdcard_addr_t;
-typedef uint32_t sdcard_size_t;
-typedef int32_t sdcard_ret_t;
-typedef uint16_t sdcard_block_t;
-typedef uint16_t sdcard_status_t;
 
 
 sdcard_ret_t

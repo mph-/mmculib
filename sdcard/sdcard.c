@@ -189,6 +189,7 @@ sdcard_response_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] == desired)
             return 1;
     }
+    dev->timeouts++;
     return 0;
 }
 
@@ -210,6 +211,7 @@ sdcard_response_not_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] != desired)
             return 1;
     }
+    dev->timeouts++;
     return 0;
 }
 
@@ -219,8 +221,6 @@ sdcard_deselect (sdcard_t dev)
 {
     uint8_t dummy[1] = {0xff};
 
-    spi_cs_disable (dev->spi);
-
     /* After the last SPI bus transaction, the host is required to
        provide 8 clock cycles for the card to complete the operation
        before shutting down the clock. Throughout this 8-clock period,
@@ -228,8 +228,6 @@ sdcard_deselect (sdcard_t dev)
        or de-asserted.  */
 
     spi_transfer (dev->spi, dummy, dummy, sizeof (dummy), 1);
-
-    spi_cs_enable (dev->spi);
 }
 
 
@@ -281,20 +279,21 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     for (retries = 0; retries < SDCARD_NCR + 1; retries++)
     {
         spi_transfer (dev->spi, command, response, 1, 0);
+        dev->status = response[0];
 
         if (op == SD_OP_GO_IDLE_STATE)
         {
             if (response[0] == 0x01)
-                break;
+                return dev->status;
         }
         else
         {
             if (response[0] != 0xff)
-                break;
+                return dev->status;
         }
     }
 
-    dev->status = response[0];
+    dev->timeouts++;
     return dev->status;
 }
 
@@ -570,6 +569,7 @@ uint16_t
 sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
 {
     uint8_t status;
+    sdcard_status_t wstatus;
     uint16_t crc;
     uint8_t command[3];
     uint8_t response[3];
@@ -605,7 +605,10 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     /* Check to see if the data was accepted.  */
     if ((response[2] & 0x1F) != SD_WRITE_OK)
     {
+        dev->write_rejects++;
         sdcard_deselect (dev);
+        dev->write_status = response[2];
+        // dev->write_status = sdcard_status_read (dev);
         return 0;
     }
     
@@ -619,8 +622,12 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     sdcard_deselect (dev);
 
     /* Look for a write error; should flag the type of error.  */
-    if (sdcard_status_read (dev))
+    if ((wstatus = sdcard_status_read (dev)))
+    {
+        dev->write_errors++;
+        dev->write_status = wstatus;
         return 0;
+    }
     
     return dev->block_size;
 }
