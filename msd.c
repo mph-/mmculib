@@ -48,16 +48,21 @@ static msd_size_t
 msd_cache_fill (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
+    int retries;
 
     /* Need to flush write-back cache here if dirty.  */
 
     if (msd_cache.msd == msd && msd_cache.addr == addr)
         return MSD_CACHE_SIZE;
 
-    bytes = msd->ops->read (msd->handle, addr, msd_cache.data,
-                            MSD_CACHE_SIZE);
-    if (bytes != MSD_CACHE_SIZE)
-        msd->read_errors++;
+    for (retries = 0; retries < 2; retries++)
+    {
+        bytes = msd->ops->read (msd->handle, addr, msd_cache.data,
+                                MSD_CACHE_SIZE);
+        msd->reads++;
+        if (bytes != MSD_CACHE_SIZE)
+            msd->read_errors++;
+    }
     
     msd_cache.msd = msd;
     msd_cache.addr = addr;
@@ -69,14 +74,19 @@ static msd_size_t
 msd_cache_flush (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
+    int retries;
 
     /* This assumes that the write routine does any erasing if
        necessary and that MSD_CACHE_SIZE is a multiple of the page
        size.  */
-    bytes = msd->ops->write (msd_cache.msd->handle, addr, msd_cache.data,
-                             MSD_CACHE_SIZE);
-    if (bytes != MSD_CACHE_SIZE)
-        msd->write_errors++;
+    for (retries = 0; retries < 2; retries++)
+    {
+        bytes = msd->ops->write (msd_cache.msd->handle, addr, msd_cache.data,
+                                 MSD_CACHE_SIZE);
+        msd->writes++;
+        if (bytes != MSD_CACHE_SIZE)
+            msd->write_errors++;
+    }
 
     /* Could clear dirty bit here if you a write-back cache.  */
 

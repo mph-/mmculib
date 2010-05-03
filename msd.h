@@ -60,6 +60,8 @@ typedef struct msd_struct
     const msd_ops_t *ops;
     msd_addr_t media_bytes;
     msd_size_t block_bytes;
+    uint32_t reads;
+    uint32_t writes;
     uint16_t read_errors;
     uint16_t write_errors;
     const char *name;

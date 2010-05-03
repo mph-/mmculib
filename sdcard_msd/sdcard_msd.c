@@ -50,9 +50,7 @@ static msd_t sdcard_msd =
     .media_bytes = 0,
     .block_bytes = SDCARD_BLOCK_SIZE,
     .flags = {.removable = 1, .partial_read = 1, .partial_write = 0},
-    .name = "SDCARD_MSD",
-    .read_errors = 0,
-    .write_errors = 0
+    .name = "SDCard"
 };
 
 

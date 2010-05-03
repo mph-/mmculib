@@ -63,9 +63,7 @@ static msd_t ram_msd =
     .media_bytes = RAM_MSD_BYTES,
     .block_bytes = RAM_MSD_BLOCK_BYTES,
     .flags = {.removable = 0, .volatile1 = 1, .reserved = 0},
-    .name = "RAM_MSD",
-    .read_errors = 0,
-    .write_errors = 0
+    .name = "Ramdisk"
 };
 
 
