@@ -71,7 +71,7 @@ msd_cache_flush (msd_t *msd, msd_addr_t addr)
     /* This assumes that the write routine does any erasing if
        necessary and that MSD_CACHE_SIZE is a multiple of the page
        size.  */
-    bytes = msd->write (msd_cache.msd, addr, msd_cache.data,
+    bytes = msd->write (msd_cache.msd->handle, addr, msd_cache.data,
                         MSD_CACHE_SIZE);
 
     /* Clear dirty bit.  */
