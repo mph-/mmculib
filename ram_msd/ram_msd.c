@@ -48,16 +48,24 @@ ram_msd_status_get (void *dev __unused__)
 }
 
 
+static const msd_ops_t ram_msd_ops =
+{
+    .read = ram_msd_read,
+    .write = ram_msd_write,
+    .status_get = ram_msd_status_get
+};
+
+
 static msd_t ram_msd =
 {
     .handle = 0,
-    .read = ram_msd_read,
-    .write = ram_msd_write,
-    .status_get = ram_msd_status_get,
+    .ops = &ram_msd_ops,
     .media_bytes = RAM_MSD_BYTES,
     .block_bytes = RAM_MSD_BLOCK_BYTES,
     .flags = {.removable = 0, .volatile1 = 1, .reserved = 0},
-    .name = "RAM_MSD"
+    .name = "RAM_MSD",
+    .read_errors = 0,
+    .write_errors = 0
 };
 
 

@@ -45,15 +45,23 @@ typedef void
 (*msd_shutdown_t)(void *shutdown);
 
 
-typedef struct msd_lun_struct
+typedef struct msd_ops_struct
 {
-    void *handle;
     msd_read_t read;
     msd_write_t write;
     msd_status_get_t status_get;
     msd_shutdown_t shutdown;
+} msd_ops_t;
+
+
+typedef struct msd_struct
+{
+    void *handle;
+    const msd_ops_t *ops;
     msd_addr_t media_bytes;
     msd_size_t block_bytes;
+    uint16_t read_errors;
+    uint16_t write_errors;
     const char *name;
     msd_flags_t flags;
 } msd_t;

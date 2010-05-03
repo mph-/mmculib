@@ -50,17 +50,25 @@ dataflash_shutdown (void *dev)
 }
 
 
-static msd_t dataflash_msd =
+static const msd_ops_t dataflash_msd_ops =
 {
-    .handle = 0,
     .read = dataflash_msd_read,
     .write = dataflash_msd_write,
     .status_get = dataflash_msd_status_get,
-    .shutdown = dataflash_shutdown,
+    .shutdown = dataflash_msd_shutdown,
+};
+
+
+static msd_t dataflash_msd =
+{
+    .handle = 0,
+    .ops = &dataflash_msd_ops,
     .media_bytes = SPI_DATAFLASH_SECTOR_SIZE * SPI_DATAFLASH_PAGES,
     .block_bytes = SPI_DATAFLASH_SECTOR_SIZE,
     .flags = {.removable = 0, .partial_read = 1, .partial_write = 1},
-    .name = "DATAFLASH_MSD"
+    .name = "DATAFLASH_MSD",
+    .read_errors = 0,
+    .write_errors = 0
 };
 
 

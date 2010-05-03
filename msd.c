@@ -49,13 +49,15 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
 
-    /* Need to flush cache if dirty.  */
+    /* Need to flush write-back cache here if dirty.  */
 
     if (msd_cache.msd == msd && msd_cache.addr == addr)
         return MSD_CACHE_SIZE;
 
-    bytes = msd->read (msd->handle, addr, msd_cache.data,
-                       MSD_CACHE_SIZE);
+    bytes = msd->ops->read (msd->handle, addr, msd_cache.data,
+                            MSD_CACHE_SIZE);
+    if (bytes != MSD_CACHE_SIZE)
+        msd->read_errors++;
     
     msd_cache.msd = msd;
     msd_cache.addr = addr;
@@ -71,10 +73,12 @@ msd_cache_flush (msd_t *msd, msd_addr_t addr)
     /* This assumes that the write routine does any erasing if
        necessary and that MSD_CACHE_SIZE is a multiple of the page
        size.  */
-    bytes = msd->write (msd_cache.msd->handle, addr, msd_cache.data,
-                        MSD_CACHE_SIZE);
+    bytes = msd->ops->write (msd_cache.msd->handle, addr, msd_cache.data,
+                             MSD_CACHE_SIZE);
+    if (bytes != MSD_CACHE_SIZE)
+        msd->write_errors++;
 
-    /* Clear dirty bit.  */
+    /* Could clear dirty bit here if you a write-back cache.  */
 
     return bytes;
 }
@@ -180,13 +184,13 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
 msd_status_t
 msd_status_get (msd_t *msd)
 {
-    return msd->status_get (msd->handle);
+    return msd->ops->status_get (msd->handle);
 }
 
 
 void
 msd_shutdown (msd_t *msd)
 {
-    if (msd->shutdown)
-        msd->shutdown (msd->handle);
+    if (msd->ops->shutdown)
+        msd->ops->shutdown (msd->handle);
 }
