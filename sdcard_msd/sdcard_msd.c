@@ -14,7 +14,7 @@ sdcard_msd_read (void *dev, msd_addr_t addr, void *buffer, msd_size_t size)
 
 static msd_size_t
 sdcard_msd_write (void *dev, msd_addr_t addr, const void *buffer,
-                     msd_size_t size)
+                  msd_size_t size)
 {
     return sdcard_write (dev, addr, buffer, size);
 }
@@ -41,7 +41,7 @@ static msd_t sdcard_msd =
     .write = sdcard_msd_write,
     .status_get = sdcard_msd_status_get,
     .shutdown = sdcard_msd_shutdown,
-    .media_bytes = SDCARD_BLOCK_SIZE * 1000,
+    .media_bytes = 0,
     .block_bytes = SDCARD_BLOCK_SIZE,
     .flags = {.removable = 1, .partial_read = 1, .partial_write = 0},
     .name = "SDCARD_MSD"
@@ -69,7 +69,7 @@ sdcard_msd_init (void)
         return NULL;
 
     /* The number of pages should be probed...  */
-    sdcard_msd.media_bytes = sdcard_capacity (sdcard_msd.handle);
+    sdcard_msd.media_bytes = sdcard_capacity_get (sdcard_msd.handle);
 
     return &sdcard_msd;
 }

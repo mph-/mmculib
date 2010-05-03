@@ -79,7 +79,7 @@ sdcard_init (const sdcard_cfg_t *cfg);
 
 
 sdcard_addr_t
-sdcard_capacity (sdcard_t dev);
+sdcard_capacity_get (sdcard_t dev);
 
 
 sdcard_err_t

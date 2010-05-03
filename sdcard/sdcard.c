@@ -515,28 +515,11 @@ sdcard_init_wait (sdcard_t dev)
 
 
 sdcard_addr_t
-sdcard_capacity (sdcard_t dev)
+sdcard_capacity_get (sdcard_t dev)
 {
     return dev->sectors * dev->block_size;
 }
 
-
-bool
-sdcard_page_erase (sdcard_t dev, sdcard_addr_t addr)
-{
-    uint8_t status;
-
-    status = sdcard_command (dev, SD_OP_ERASE_WR_BLK_START_ADDR, addr);
-    status = sdcard_command (dev, SD_OP_ERASE_WR_BLK_END_ADDR, addr 
-        + SDCARD_PAGE_SIZE);
-
-#if 0
-    status = sdcard_command (dev, SD_OP_ERASE, 0);
-    /* Need to wait for busy to clear.  */
-#endif
-
-    return 1;
-}
 
 
 sdcard_ret_t 
@@ -572,9 +555,10 @@ sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
     total = 0;
     for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_block_read (dev, addr + i, dst);
+        bytes = sdcard_block_read (dev, addr, dst);
         if (!bytes)
             return total;
+        addr += bytes;
         dst += bytes;
         total += bytes;
     }
@@ -661,9 +645,10 @@ sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     total = 0;
     for (i = 0; i < blocks; i++)
     {
-        bytes = sdcard_block_write (dev, addr + i, src);
+        bytes = sdcard_block_write (dev, addr, src);
         if (!bytes)
             return total;
+        addr += bytes;
         src += bytes;
         total += bytes;
     }

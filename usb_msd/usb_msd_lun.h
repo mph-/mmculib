@@ -12,7 +12,7 @@ typedef enum
 } lun_status_t;
 
 
-typedef uint64_t usb_msd_lun_size_t;
+typedef uint64_t usb_msd_lun_capacity_t;
 typedef uint32_t usb_msd_lun_addr_t; /* Block address.  */
 
 
@@ -26,7 +26,7 @@ typedef struct
     S_sbc_inquiry_data sInquiryData; //!< Inquiry data structure
     S_sbc_request_sense_data sRequestSenseData;  //!< Sense data structure
     S_sbc_read_capacity_10_data sReadCapacityData;  //!< Capacity data sturcture
-    usb_msd_lun_size_t media_bytes;       //!< Size of LUN in bytes
+    usb_msd_lun_capacity_t media_bytes;       //!< Size of LUN in bytes
     uint16_t block_bytes;         //!< Sector size of LUN in bytes
     uint8_t bMediaStatus;         //!< LUN status
 } usb_msd_lun_t;
