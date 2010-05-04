@@ -20,12 +20,28 @@
     The host starts every bus transaction by asserting the CS signal
     low.  
 
-    SanDisk cards allow partial reads (down to 1 byte) but not partial
-    writes.  Writes have a minimum block size of 512 bytes. 
-
     In SPI mode, CRC checks are disabled by default.
 
     The maximum SPI clock speed is 25 MHz.
+
+    MMC and SD cards have internal controllers that manage the
+    internal NAND memory. and performs wear leveling, ECC, CRC, and
+    block management.  There is no need to erase blocks; the
+    controller will write to an erased block and logically remap it.
+
+    The read access time is Nac and has a minimum of 1 unit (1 unit =
+    8 clocks) and a maximum of 10xTAAC (specified in the CSD).  TAAC
+    is typically 10ms.  This makes the maximum read access time 10 x
+    10ms => 100ms.  In practice, it can be a lot less; it depends on
+    what the controller is doing.
+ 
+    For write, you multiply the R2W_FACTOR (1 to 4) by the read access
+    time.  R2W_FACTOR is 1:4.  This gives a maximum of 4 x 100ms =>
+    400ms for write.  For SD cards the write timeout is 250 ms.
+ 
+    To get the fastest transfers we need to use the multiple block
+    read/write commands.  Some cards have multiple internal buffers
+    an an internal parallel reading/writing scheme.
  */
 
 enum {SD_CMD_LEN = 6};
@@ -42,9 +58,6 @@ typedef enum
     SD_OP_READ_SINGLE_BLOCK = 17,     /* CMD17 */
     SD_OP_WRITE_BLOCK = 24,           /* CMD24 */
     SD_OP_WRITE_MULTIPLE_BLOCK = 25,  /* CMD25 */
-    SD_OP_ERASE_WR_BLK_START_ADDR = 32,
-    SD_OP_ERASE_WR_BLK_END_ADDR = 33,
-    SD_OP_ERASE = 38,
     SD_OP_APP_SEND_OP_COND = 41,      /* ACMD41 */
     SD_OP_APP_CMD = 55,               /* CMD55 */
     SD_OP_READ_OCR = 58,              /* CMD58 */
