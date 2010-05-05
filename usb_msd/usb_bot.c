@@ -440,6 +440,8 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
 bool
 usb_bot_ready_p (void)
 {
+    usb_poll (bot->usb);
+
     switch (bot->state)
     {
     case USB_BOT_STATE_INIT:
