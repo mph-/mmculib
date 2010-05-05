@@ -746,8 +746,8 @@ sdcard_csd_parse (sdcard_t dev)
     uint16_t read_bl_len;
     uint32_t speed;
     int i;
-    static const uint8_t MMC_m[] = {10, 12, 13, 15, 20, 25, 30,
-                                    35, 40, 45, 50, 55, 60, 70, 80};
+    static const uint8_t mult[] = {10, 12, 13, 15, 20, 25, 30,
+                                   35, 40, 45, 50, 55, 60, 70, 80};
 
     if (sdcard_csd_read (dev, csd, sizeof (csd)))
         return 0;
@@ -769,7 +769,7 @@ sdcard_csd_parse (sdcard_t dev)
         speed *= 10;
 
     /*  (TRAN_SPEED_tu * 10) * (TRAN_SPEED_tv * 10) * 10000 (Hz).  */
-    speed *= (MMC_m[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
+    speed *= (mult[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
 
     dev->speed = speed;
     speed = spi_clock_speed_set (dev->spi, speed);
