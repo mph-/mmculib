@@ -349,17 +349,17 @@ usb_configured_p (usb_t usb)
 }
 
 
-void
-usb_connect (usb_t usb)
-{
-    udp_connect (usb->udp);
-}
-
-
 bool
 usb_awake_p (usb_t usb)
 {
     return udp_awake_p (usb->udp);
+}
+
+
+void
+usb_poll (usb_t usb)
+{
+    return udp_poll (usb->udp);
 }
 
 
