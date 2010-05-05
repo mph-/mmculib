@@ -32,6 +32,11 @@
 
    For a simplified description of FAT32 see 
    http://www.pjrc.com/tech/8051/ide/fat32.html
+
+   Note, FAT is horrendous in terms of efficiency.   Here we implement
+   a simple read cache for a single sector of the FAT.  However, writes
+   are the killer.  We should have a write-back cache to minimise writing
+   to flash (and all the attendant page erasing).
 */
 
 

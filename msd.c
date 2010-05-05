@@ -12,23 +12,19 @@
 
    For a partial block write we read the block into a temporary buffer
    overwrite the buffer with the user's data then write the temporary
-   buffer (assuming that the write does an erase first).  Some flash
-   devices such as dataflash can do this using internal buffers but
-   sdcards do not.  Unfortunately, devices such as microsd/microsdhc
-   et al have pages of 32 or 64 blocks, each of 512 bytes.  This is
-   the minimum size that can be erased so we need a really big buffer.
+   buffer (assuming that the write does an erase first). 
 
-   An alternative approach is to put the onus on the sdcard driver to
-   manage page modification.  It can do this by reserving a spare page
-   (say at the end), erasing the spare page, then copying the page
-   containing the block that needs to be modified to the spare page,
-   erasing the page that needs to be modified, writing the new block contents,
-   then copying the other block contents from the spare page.  Phew!
+   Some flash devices such as dataflash allow partial block writes
+   but SD cards do not (although they can do partial block reads).
 */
 
 
 #ifndef MSD_CACHE_SIZE
 #define MSD_CACHE_SIZE 512
+#endif
+
+#ifndef MSD_RETRIES
+#define MSD_RETRIES 2
 #endif
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -55,7 +51,7 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
     if (msd_cache.msd == msd && msd_cache.addr == addr)
         return MSD_CACHE_SIZE;
 
-    for (retries = 0; retries < 2; retries++)
+    for (retries = 0; retries < MSD_RETRIES; retries++)
     {
         bytes = msd->ops->read (msd->handle, addr, msd_cache.data,
                                 MSD_CACHE_SIZE);
@@ -71,7 +67,7 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
 
 
 static msd_size_t 
-msd_cache_flush (msd_t *msd, msd_addr_t addr)
+msd_cache_flush (msd_t *msd)
 {
     msd_size_t bytes;
     int retries;
@@ -79,10 +75,10 @@ msd_cache_flush (msd_t *msd, msd_addr_t addr)
     /* This assumes that the write routine does any erasing if
        necessary and that MSD_CACHE_SIZE is a multiple of the page
        size.  */
-    for (retries = 0; retries < 2; retries++)
+    for (retries = 0; retries < MSD_RETRIES; retries++)
     {
-        bytes = msd->ops->write (msd_cache.msd->handle, addr, msd_cache.data,
-                                 MSD_CACHE_SIZE);
+        bytes = msd->ops->write (msd_cache.msd->handle, msd_cache.addr,
+                                 msd_cache.data, MSD_CACHE_SIZE);
         msd->writes++;
         if (bytes != MSD_CACHE_SIZE)
             msd->write_errors++;
@@ -175,7 +171,7 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
            hits storage.  This is inefficient for many small
            writes and for large page sizes.  */
 
-        bytes = msd_cache_flush (msd, addr);
+        bytes = msd_cache_flush (msd);
         /* Perhaps should return error.  */
         if (bytes != MSD_CACHE_SIZE)
             return total;
@@ -201,6 +197,7 @@ msd_status_get (msd_t *msd)
 void
 msd_shutdown (msd_t *msd)
 {
+    msd_cache_flush (msd);
     if (msd->ops->shutdown)
         msd->ops->shutdown (msd->handle);
 }
