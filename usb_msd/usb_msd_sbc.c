@@ -88,7 +88,7 @@ sbc_inquiry (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         
         // Change additional length field of inquiry data
         pLun->sInquiryData.bAdditionalLength
-            = (unsigned char) (pCommandState->dLength - 5);
+            = (uint8_t) (pCommandState->dLength - 5);
         /* Fall through...  */
 
     case SBC_STATE_WRITE:
@@ -151,8 +151,8 @@ sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState
 
     case SBC_STATE_WRITE:
         // Start the write operation
-        bStatus = usb_bot_write (&pLun->sReadCapacityData, pCommandState->dLength,
-                                 pTransfer);
+        bStatus = usb_bot_write (&pLun->sReadCapacityData,
+                                 pCommandState->dLength, pTransfer);
     
         if (bStatus == USB_BOT_STATUS_SUCCESS)
             sbc_state = SBC_STATE_WAIT_WRITE;
