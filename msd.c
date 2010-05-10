@@ -171,10 +171,9 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
            hits storage.  This is inefficient for many small
            writes and for large page sizes.  */
 
-        bytes = msd_cache_flush (msd);
-        /* Perhaps should return error.  */
-        if (bytes != MSD_CACHE_SIZE)
+        if (msd_cache_flush (msd) != MSD_CACHE_SIZE)
             return total;
+        /* Perhaps should return error.  */
 
         size -= bytes;
         addr += bytes;
