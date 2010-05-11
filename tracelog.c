@@ -21,7 +21,7 @@ void
 tracelog_init (const char *filename)
 {
     tracelog_file = fopen (filename, "a");
-    tracelog_printf (">>>\n");
+    tracelog_printf ("\n>>>\n");
 }
 
 

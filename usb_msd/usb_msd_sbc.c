@@ -145,7 +145,7 @@ sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (USB_MSD_SBC, "SBC:RdCapacity (10)\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:RdCapacity\n");
         sbc_state = SBC_STATE_WRITE;
         /* Fall through...  */
 
@@ -206,9 +206,9 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (USB_MSD_SBC, "SBC:Write (%d) [%u]\n", 
-               (unsigned int) addr,
-               (unsigned int)pCommandState->dLength);
+        TRACE_INFO (USB_MSD_SBC, "SBC:Write %u @%u\n", 
+                    (unsigned int)pCommandState->dLength,
+                    (unsigned int) addr);
         sbc_state = SBC_STATE_READ;
         /* Fall through...  */
 
@@ -334,9 +334,9 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
     switch (sbc_state)
     {
     case SBC_STATE_INIT:
-        TRACE_INFO (USB_MSD_SBC, "SBC:Read (%u) [%u]\n",
-                   (unsigned int)addr,
-                   (unsigned int)pCommandState->dLength);
+        TRACE_INFO (USB_MSD_SBC, "SBC:Read %u @%u\n",
+                    (unsigned int)pCommandState->dLength,
+                    (unsigned int)addr);
         sbc_state = SBC_STATE_READ;
         /* Fall through ...  */
 
@@ -731,7 +731,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     case SBC_VERIFY_10:
-        TRACE_INFO (USB_MSD_SBC, "SBC:Verify (10)\n");
+        TRACE_INFO (USB_MSD_SBC, "SBC:Verify\n");
         // Nothing to do
         bResult = SBC_STATUS_SUCCESS;
         break;
