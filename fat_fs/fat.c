@@ -360,17 +360,16 @@ typedef struct fat_stats_struct
 } fat_stats_t;
 
 
-
 struct fat_struct 
 {
-    fat_fs_t        *fs;
-    int             mode;           //!< File mode
-    uint32_t        file_offset;    //!< File offset
-    uint32_t        file_size;      //!< File size
-    uint32_t        start_cluster;  //!< Starting cluster of file
-    uint32_t        cluster;        //!< Current cluster 
-    uint32_t        de_sector;      //!< Sector for this file's dir entry
-    uint32_t        de_offset;      //!< Offset for this file's dir entry
+    fat_fs_t *fs;
+    int mode;                   //!< File mode
+    uint32_t file_offset;       //!< File offset
+    uint32_t file_size;         //!< File size
+    uint32_t start_cluster;     //!< Starting cluster of file
+    uint32_t cluster;           //!< Current cluster 
+    uint32_t de_sector;         //!< Sector for this file's dir entry
+    uint32_t de_offset;         //!< Offset for this file's dir entry
 };
 
 
@@ -405,24 +404,24 @@ typedef union
 
 
 struct fat_fs_struct
-{
+{                                       
     void *dev;                          //!< Device handle
     fat_dev_read_t dev_read;            //!< Device read function
     fat_dev_write_t dev_write;          //!< Device write function
-    uint8_t     isFAT32;                //!< FAT32 / FAT16 indicator
-    uint16_t    sectors_per_cluster;    //!< Number of sectors in each disk cluster
-    uint32_t    first_data_sector;      //!< LBA index of first sector of the dataarea on the disk
-    uint32_t    first_fat_sector;       //!< LBA index of first FAT sector on the disk
-    uint32_t    first_dir_sector;       //!< LBA index of first Root Directory sector on the disk
-    uint32_t    root_dir_cluster;       //!< First Cluster of Directory (FAT32)
-    uint16_t    root_dir_sectors;       //!< Number of Sectors in Root Dir (FAT16)
-    uint32_t    num_clusters;           //!< Number of data clusters on partition
-    uint32_t    num_fat_sectors;        //!< Number of sectors per FAT
-    uint16_t    bytes_per_sector;       //!< Number of bytes per sector
-    uint16_t    bytes_per_cluster;      //!< Number of bytes per cluster
-    uint32_t    sector;                 //!< Cached sector
-    uint8_t     sector_buffer[FAT_SECTOR_SIZE];
-    bool        dirty;
+    uint8_t isFAT32;                    //!< FAT32 / FAT16 indicator
+    uint16_t sectors_per_cluster;
+    uint32_t first_data_sector; 	//!< First sector of the data area
+    uint32_t first_fat_sector;          //!< First FAT sector
+    uint32_t first_dir_sector;       //!< First Root Directory sector
+    uint32_t root_dir_cluster;       //!< First Cluster of Directory (FAT32)
+    uint16_t root_dir_sectors;       //!< Number of Sectors in Root Dir (FAT16)
+    uint32_t num_clusters;           //!< Number of data clusters on partition
+    uint32_t num_fat_sectors;        //!< Number of sectors per FAT
+    uint16_t bytes_per_sector;       //!< Number of bytes per sector
+    uint16_t bytes_per_cluster;      //!< Number of bytes per cluster
+    uint32_t sector;                 //!< Cached sector
+    uint8_t sector_buffer[FAT_SECTOR_SIZE];
+    bool dirty;
 };
 
 #ifndef FAT_NUM
@@ -495,14 +494,10 @@ fat_sector_cache_write (fat_fs_t *fat_fs, fat_sector_t sector)
 }
 
 
-
 /**
- * Cluster to sector
- * 
- * Converting a cluster number to a LBA sector number.
- * \param clust Cluster number
+ * Converting a cluster number to a sector number.
+ * \param cluster Cluster number
  * \return Sector number
- * 
  */
 static uint32_t
 fat_sector_calc (fat_fs_t *fat_fs, uint32_t cluster)
@@ -518,12 +513,10 @@ fat_sector_calc (fat_fs_t *fat_fs, uint32_t cluster)
 
 
 /**
- *
  * Get FAT entry
  * 
  * \param   cluster     Actual cluster
  * \return  Next cluster in chain
- * 
  */
 static uint32_t 
 fat_entry_get (fat_fs_t *fat_fs, uint32_t cluster)
@@ -697,7 +690,6 @@ starCheck:
  * \param str Filename buffer
  * \param dos DOS filename
  * \param ext Extention
- * 
  */
 static void 
 dos2str (char *str, const char *dos, const char *ext)
@@ -839,7 +831,6 @@ fat_de_attr_dir_p (const fat_de_t *de)
  * 
  * \param name File or directory name
  * \return Error code
- * 
  */
 bool
 fat_dir_search (fat_fs_t *fat_fs, uint32_t dir_cluster, 
@@ -930,7 +921,8 @@ fat_dir_search (fat_fs_t *fat_fs, uint32_t dir_cluster,
 static bool
 fat_search (fat_fs_t *fat_fs, const char *pathname, fat_ff_t *ff)
 {
-    char *p, *q;
+    char *p;
+    char *q;
     char tmp[FAT_MAXLEN_USE];
 
     if (pathname == NULL || !*pathname)
@@ -1012,12 +1004,13 @@ fat_find (fat_t *fat, const char *pathname, fat_ff_t *ff)
 static void
 fat_size_set (fat_t *fat, uint32_t size)
 {
-    fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer
-                                           + fat->de_offset);
+    fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
 
     fat_sector_cache_read (fat->fs, fat->de_sector);
     de->file_size = size;
     fat_sector_cache_write (fat->fs, fat->de_sector);
+
+    // Note, the cache needs flushing for this to take effect.
 }
 
 
@@ -1047,8 +1040,7 @@ fat_close (fat_t *fat)
  * \param fat File handle
  * \param buffer Buffer to store data
  * \param len Number of bytes to read
- * \return Number of bytes successful read.
- * 
+ * \return Number of bytes successfully read.
  */
 ssize_t
 fat_read (fat_t *fat, void *buffer, size_t len)
@@ -1116,7 +1108,6 @@ fat_read (fat_t *fat, void *buffer, size_t len)
  * \param offset Number of bytes to seek
  * \param whence Position from where to start
  * \return New position within file
- * 
  */
 off_t
 fat_lseek (fat_t *fat, off_t offset, int whence)
@@ -1307,7 +1298,8 @@ fat_init (void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write)
     fat_fs->bytes_per_cluster 
         = fat_fs->sectors_per_cluster * fat_fs->bytes_per_sector;
 
-    TRACE_INFO (FAT, "FAT:Bytes/sector = %u\n", (unsigned int)fat_fs->bytes_per_sector);
+    TRACE_INFO (FAT, "FAT:Bytes/sector = %u\n",
+                (unsigned int)fat_fs->bytes_per_sector);
     TRACE_INFO (FAT, "FAT:First sector = %u\n",
                 (unsigned int)first_sector);
     TRACE_INFO (FAT, "FAT:Sectors/cluster = %u\n",
@@ -1509,10 +1501,8 @@ fat_clusters_allocate (fat_fs_t *fat_fs, uint32_t cluster_start, uint32_t size)
         fat_entry_set (fat_fs, cluster_new, CLUST_EOFE);    
 
         if (cluster_next)
-        {
-            // Append to end of chain
             fat_cluster_chain_append (fat_fs, cluster_next, cluster_new);
-        }
+
         cluster_next = cluster_new;
         
         num--;
@@ -1651,7 +1641,7 @@ fat_fs_check_p (fat_fs_t *fat_fs)
  * - O_EXCL Open only if it does not exist. 
  * - O_RDONLY Read only. 
     
- any of the write modes will (potentially) modify the file or directory entry
+ Any of the write modes will (potentially) modify the file or directory entry
 
  * - O_CREAT Create file if it does not exist. 
  * - O_APPEND Always write at the end. 
@@ -1665,8 +1655,7 @@ fat_fs_check_p (fat_fs_t *fat_fs)
 fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
 {
     fat_ff_t ff;
-
-    fat_t *fat = 0;
+    fat_t *fat;
 
     if (!fat_fs_check_p (fat_fs))
     {
@@ -1698,10 +1687,11 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
             return 0;
         }
 
-        if (mode & O_TRUNC && (mode & O_RDWR || mode & O_WRONLY))
+        if ((mode & O_TRUNC) && (mode & O_RDWR || mode & O_WRONLY))
         {
             fat->file_size = 0;
             fat_size_set (fat, fat->file_size);
+            fat_sector_cache_flush (fat->fs);
         }
 
         fat->file_offset = 0;
@@ -1752,19 +1742,16 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
     bytes_left = len;
     while (bytes_left)
     {
-        offset = fat->file_offset % fat->fs->bytes_per_sector;
         sector = fat_sector_calc (fat->fs, fat->cluster);
 
         sector += (fat->file_offset % fat->fs->bytes_per_cluster) 
             / fat->fs->bytes_per_sector;
 
-        // Limit to max one sector
-        nbytes = bytes_left < fat->fs->bytes_per_sector
-            ? bytes_left : fat->fs->bytes_per_sector;
+        offset = fat->file_offset % fat->fs->bytes_per_sector;
 
         // Limit to remaining bytes in a sector
-        if (nbytes > (fat->fs->bytes_per_sector - offset))
-            nbytes = fat->fs->bytes_per_sector - offset;
+        nbytes = bytes_left < fat->fs->bytes_per_sector - offset
+            ? bytes_left : fat->fs->bytes_per_sector - offset;
 
         fat_dev_write (fat->fs, sector, offset, data, nbytes);
 
