@@ -359,7 +359,7 @@ usb_awake_p (usb_t usb)
 void
 usb_poll (usb_t usb)
 {
-    return udp_poll (usb->udp);
+    udp_poll (usb->udp);
 }
 
 
