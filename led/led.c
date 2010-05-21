@@ -16,8 +16,7 @@
 led_t
 led_init (const led_cfg_t *cfg)
 {
-    /* Configure port as output.  */
-    port_pins_config_output (cfg->port, cfg->bitmask);
+    pio_config_set (cfg->pio, PIO_OUTPUT);
 
     return cfg;
 }

@@ -21,6 +21,8 @@ max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
         {
             uint8_t command[1];
 
+            gain = gains[i];
+
             if (i == 0)
                 i = 0x08;
             else
@@ -31,7 +33,7 @@ max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
             if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
                 return 0;
 
-            return gains[i];
+            return gain;
         }
         prev_gain = gains[i];
     }

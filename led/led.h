@@ -10,11 +10,11 @@
 #include "pio.h"
 
 
-#define LED_CFG(PIO) {PIO}
-
 typedef struct 
 {
     pio_t pio;
+    /* True for active high, false for active low.  */
+    bool active;
 } led_cfg_t;
 
 typedef const led_cfg_t led_obj_t;
@@ -25,7 +25,7 @@ typedef led_obj_t *led_t;
 static inline void
 led_set (led_t led, uint8_t state)
 {
-    pio_output (led->pio, state);
+    pio_output_set (led->pio, led->active ? !state : state);
 }
 
 
