@@ -95,6 +95,11 @@ clean-objs:
 # Rebuild the code, don't delete dependencies.
 rebuild: clean-objs $(TARGET_OUT)
 
+# Generate cscope tags file
+.PHONY: cscope
+cscope:
+	cscope -Rb $(INCLUDES)
+
 # Remove non-source files.
 .PHONY: clean
 clean: 
