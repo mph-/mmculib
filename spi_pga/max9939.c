@@ -1,10 +1,44 @@
+#include "bits.h"
 #include "spi_pga.h"
+
+/* The MAX9930 requires data to be sent LSB first (ignoring the
+   contradictory diagram in the datasheet) but most SPI peripeherals
+   send data MSB first.  In this driver, the data is swapped around.
+*/
+
+enum 
+{
+    MAX9930_SHDN = BIT (0),
+    MAX9930_MEAS = BIT (1),
+    MAX9930_GAIN = BIT (7)
+};
+
+
+typedef struct
+{
+    uint16_t gain;
+    uint8_t regval;
+} max9939_gain_map_t;
+
 
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
    Let's assume 3.3 V operation and scale all the gains by 4.  */
-#define MAX9939_GAINS {1, 1 * 4, 10 * 4, 20 * 4, 30 * 4, 40 * 4, 60 * 4, 80 * 4, 120 * 4, 157 * 4}
+#define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, .regval = (REGVAL) >> 1}
 
-static uint16_t gains[] = MAX9939_GAINS;
+static max9939_gain_map_t gain_map[] =
+{
+    GAIN_MAP (0.25, 0x90),
+    GAIN_MAP (1, 0x00),
+    GAIN_MAP (10, 0x80),
+    GAIN_MAP (20, 0x40),
+    GAIN_MAP (30, 0xc0),
+    GAIN_MAP (40, 0x20),
+    GAIN_MAP (60, 0xa0),
+    GAIN_MAP (80, 0x60),
+    GAIN_MAP (120, 0xe0),
+    GAIN_MAP (157, 0x80)
+};
+
 
 /* This will wakeup the PGA from shutdown.  */
 static spi_pga_gain_t
@@ -14,28 +48,23 @@ max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
     uint16_t prev_gain;
 
     prev_gain = 0;
-    for (i = 0; i < ARRAY_SIZE (gains); i++)
+    for (i = 0; i < ARRAY_SIZE (gain_map); i++)
     {
-        if ((i == ARRAY_SIZE (gains) - 1)
-            || (gain > prev_gain && gain <= gains[i]))
+        if ((i == ARRAY_SIZE (gain_map) - 1)
+            || (gain > prev_gain && gain <= gain_map[i].gain))
         {
             uint8_t command[1];
 
-            gain = gains[i];
+            gain = gain_map[i].gain;
 
-            if (i == 0)
-                i = 0x08;
-            else
-                i--;
-
-            command[0] = (i << 1) | 0x01;
+            command[0] = gain_map[i].regval | MAX9930_GAIN;
 
             if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
                 return 0;
 
             return gain;
         }
-        prev_gain = gains[i];
+        prev_gain = gain_map[i].gain;
     }
 
     return 0;
@@ -53,8 +82,16 @@ max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool enable)
 static bool 
 max9939_shutdown_set (spi_pga_t pga, bool enable)
 {
+    uint8_t command[1];
 
-    return 0;
+    if (enable)
+        command[0]= 0;
+    else
+        command[0] = MAX9930_SHDN;
+
+    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
+                return 0;
+    return 1;
 }
 
 
