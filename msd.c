@@ -31,13 +31,41 @@
 
 typedef struct msd_cache_struct
 {
-    uint8_t data[MSD_CACHE_SIZE];
     /* This is the start address of a block.  */
     msd_addr_t addr;
     msd_t *msd;
+    bool dirty;
+    uint8_t data[MSD_CACHE_SIZE];
 } msd_cache_t;
 
 static msd_cache_t msd_cache;
+
+
+static msd_size_t 
+msd_cache_flush (msd_t *msd)
+{
+    msd_size_t bytes;
+    int retries;
+
+    if (!msd_cache.dirty)
+        return MSD_CACHE_SIZE;
+
+    /* This assumes that the write routine does any erasing if
+       necessary and that MSD_CACHE_SIZE is a multiple of the page
+       size.  */
+    for (retries = 0; retries < MSD_RETRIES; retries++)
+    {
+        bytes = msd->ops->write (msd_cache.msd->handle, msd_cache.addr,
+                                 msd_cache.data, MSD_CACHE_SIZE);
+        msd->writes++;
+        if (bytes != MSD_CACHE_SIZE)
+            msd->write_errors++;
+    }
+
+    msd_cache.dirty = 0;
+
+    return bytes;
+}
 
 
 static msd_size_t 
@@ -46,7 +74,7 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
     msd_size_t bytes;
     int retries;
 
-    /* Need to flush write-back cache here if dirty.  */
+    msd_cache_flush (msd_cache.msd);
 
     if (msd_cache.msd == msd && msd_cache.addr == addr)
         return MSD_CACHE_SIZE;
@@ -62,30 +90,6 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
     
     msd_cache.msd = msd;
     msd_cache.addr = addr;
-    return bytes;
-}
-
-
-static msd_size_t 
-msd_cache_flush (msd_t *msd)
-{
-    msd_size_t bytes;
-    int retries;
-
-    /* This assumes that the write routine does any erasing if
-       necessary and that MSD_CACHE_SIZE is a multiple of the page
-       size.  */
-    for (retries = 0; retries < MSD_RETRIES; retries++)
-    {
-        bytes = msd->ops->write (msd_cache.msd->handle, msd_cache.addr,
-                                 msd_cache.data, MSD_CACHE_SIZE);
-        msd->writes++;
-        if (bytes != MSD_CACHE_SIZE)
-            msd->write_errors++;
-    }
-
-    /* Could clear dirty bit here if you a write-back cache.  */
-
     return bytes;
 }
 
@@ -157,7 +161,9 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
         }
         else
         {
-            /* Need to flush cache if dirty.  */
+            if (msd_cache_flush (msd) != MSD_CACHE_SIZE)
+                return total;
+
             msd_cache.msd = msd;
             msd_cache.addr = addr;
 
@@ -166,6 +172,7 @@ msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size)
 
         bytes = MIN (bytes - offset, size);
         memcpy (msd_cache.data + offset, src, bytes);
+        msd_cache.dirty = 1;
 
         /* Implement write-through policy for now to ensure that data
            hits storage.  This is inefficient for many small
