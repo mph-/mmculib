@@ -148,6 +148,9 @@ glcd_config (glcd_t glcd)
     
     /* Set the reference voltage parameter alpha to 24 and the
        resistor regulator ratio to 4.35. 
+
+       Note the charge pump boosts Vss to Vout and this then gets regulated
+       for driving the LCD (9 V max).
        
        Vo = (1 + Rb / Ra) * Vev
        
