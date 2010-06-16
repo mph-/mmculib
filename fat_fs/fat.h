@@ -14,12 +14,12 @@ typedef struct fat_fs_struct fat_fs_t;
 
 typedef struct fat_struct fat_t;
 
-
 typedef uint16_t (*fat_dev_read_t) (void *dev, uint32_t addr,
                                     void *buffer, uint16_t size);
 
 typedef uint16_t (*fat_dev_write_t) (void *dev, uint32_t addr, 
-                                        const void *buffer, uint16_t size);
+                                     const void *buffer, uint16_t size);
+
 
 fat_fs_t *fat_init (void *dev, fat_dev_read_t dev_read, 
                     fat_dev_write_t dev_write);

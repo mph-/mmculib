@@ -5,6 +5,7 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -37,6 +38,8 @@
    a simple read cache for a single sector of the FAT.  However, writes
    are the killer.  We should have a write-back cache to minimise writing
    to flash (and all the attendant page erasing).
+
+   TODO: Mirror the FAT.
 */
 
 
@@ -1014,6 +1017,20 @@ fat_size_set (fat_t *fat, uint32_t size)
 }
 
 
+static void
+fat_cluster_set (fat_t *fat, uint32_t cluster)
+{
+    fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
+
+    fat_sector_cache_read (fat->fs, fat->de_sector);
+    de->cluster_high = cluster >> 16;
+    de->cluster_low = cluster;
+    fat_sector_cache_write (fat->fs, fat->de_sector);
+
+    // Note, the cache needs flushing for this to take effect.
+}
+
+
 /**
  * Close a file.
  * 
@@ -1349,7 +1366,6 @@ fat_cluster_free_find (fat_fs_t *fat_fs, uint32_t cluster_start)
 {
     uint32_t cluster;
 
-    // TODO, should we update the free cluster count in fsinfo?
     // Set the new free cluster hint to unknown
     fat_cluster_next_set (fat_fs, CLUST_EOFE);
 
@@ -1357,7 +1373,10 @@ fat_cluster_free_find (fat_fs_t *fat_fs, uint32_t cluster_start)
     for (cluster = cluster_start; cluster < fat_fs->num_clusters; cluster++)
     {
         if (fat_cluster_free_p (fat_entry_get (fat_fs, cluster)))
+        {
+            // TODO, update the free cluster count in fsinfo
             return cluster;
+        }
     }
     return 0;
 } 
@@ -1574,16 +1593,10 @@ fat_de_add (fat_t *fat, const char *filename,
              
 
 static fat_t *
-fat_create (fat_t *fat, const char *pathname, uint32_t size, fat_ff_t *ff)
+fat_create (fat_t *fat, const char *pathname, fat_ff_t *ff)
 {
     fat_fs_t *fat_fs;
     const char *filename;
-
-#if 0
-    // This routine assumes that the file does not exist
-    if (fat_search (fat->fs, pathname, ff))
-        return NULL;
-#endif
 
     // Check that directory is valid
     // TODO, should we create a directory?
@@ -1591,23 +1604,16 @@ fat_create (fat_t *fat, const char *pathname, uint32_t size, fat_ff_t *ff)
         return NULL;
 
     filename = pathname;
-   while (strchr (filename, '/'))
+    while (strchr (filename, '/'))
         filename = strchr (filename, '/') + 1;
 
     // TODO, what about a trailing slash?
 
     fat_fs = fat->fs;
 
-    // Create the file space for the file
-    fat->file_size = size;
+    fat->file_size = 0;
     fat->file_offset = 0; 
-
-    // Create at least one cluster to start with
-    fat->start_cluster =
-        fat_clusters_allocate (fat_fs, 0,
-                               fat->file_size == 0 ? 1 : fat->file_size);
-    if (!fat->start_cluster)
-        return NULL;
+    fat->start_cluster = 0;
 
     // Add file to directory
     if (!fat_de_add (fat, filename, ff->parent_dir_cluster, 
@@ -1702,7 +1708,7 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
 
     if (mode & O_CREAT)
     {
-        if (fat_create (fat, pathname, 0, &ff))
+        if (fat_create (fat, pathname, &ff))
         {
             fat->file_offset = 0;
             if (mode & O_APPEND)
@@ -1742,6 +1748,22 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
     bytes_left = len;
     while (bytes_left)
     {
+        // Check for cluster boundary
+        if (fat->file_offset % fat->fs->bytes_per_cluster == 0)
+        {
+            uint32_t cluster;
+
+            // Append a new cluster
+            cluster = fat_clusters_allocate (fat->fs, fat->cluster, 1);
+
+            // No more clusters to allocate, out of memory
+            if (!cluster)
+                break;
+            if (!fat->cluster)
+                fat_cluster_set (fat, cluster);
+            fat->cluster = cluster;
+        }
+
         sector = fat_sector_calc (fat->fs, fat->cluster);
 
         sector += (fat->file_offset % fat->fs->bytes_per_cluster) 
@@ -1759,17 +1781,6 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
 
         fat->file_offset += nbytes;
         bytes_left -= nbytes;
-
-        // Check for cluster boundary
-        if (fat->file_offset % fat->fs->bytes_per_cluster == 0)
-        {
-            // Append a new cluster
-            fat->cluster = fat_clusters_allocate (fat->fs, fat->cluster, 1);
-
-            // No more clusters to allocate, out of memory
-            if (!fat->cluster)
-                break;
-        }
     }
     fat->file_size += len - bytes_left;
 
@@ -1889,4 +1900,35 @@ void
 fat_rootdir_dump (fat_fs_t *fat_fs)
 {
     fat_dir_dump (fat_fs, fat_fs->root_dir_cluster);
+}
+
+
+void 
+fat_debug (fat_fs_t *fat_fs, const char *filename)
+{
+    fat_t *fat;
+    uint32_t cluster;
+
+    fat = fat_open (fat_fs, filename, O_RDONLY);
+    if (!fat)
+        return;
+
+    fprintf (stderr, "offset %lu\n", fat->file_offset);
+    fprintf (stderr, "size %lu\n", fat->file_size);
+    fprintf (stderr, "de sector %lu\n", fat->de_sector);
+    fprintf (stderr, "de offset %lu\n", fat->de_offset);
+    fprintf (stderr, "clusters: ");
+
+    cluster = fat->start_cluster;
+    while (1)
+    {
+        fprintf (stderr, "%lu ", cluster);        
+        if (!cluster)
+            break;
+
+        cluster = fat_entry_get_check (fat->fs, cluster);
+        if (fat_cluster_last_p (cluster))
+            break;
+    }
+    fprintf (stderr, "\n");
 }
