@@ -1696,6 +1696,12 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
         if ((mode & O_TRUNC) && (mode & O_RDWR || mode & O_WRONLY))
         {
             fat->file_size = 0;
+
+            /* Remove all the previously allocated clusters.  */
+            fat_cluster_chain_free (fat_fs, fat->start_cluster);
+            fat->start_cluster = 0;
+            fat->cluster = 0;
+
             fat_size_set (fat, fat->file_size);
             fat_sector_cache_flush (fat->fs);
         }
