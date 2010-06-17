@@ -40,34 +40,45 @@ static max9939_gain_map_t gain_map[] =
 };
 
 
-/* This will wakeup the PGA from shutdown.  */
+
+static spi_pga_gain_t
+max9939_gain_set1 (spi_pga_t pga, uint index)
+{
+    spi_pga_gain_t gain;
+    uint8_t command[1];
+    
+    gain = gain_map[index].gain;
+    
+    command[0] = gain_map[index].regval | MAX9930_GAIN;
+    
+    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
+        return 0;
+    
+    return gain;
+}
+
+
+/* Set the desired gain or the next lowest if unavailable.  This will
+   wakeup the PGA from shutdown.  */
 static spi_pga_gain_t
 max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
     unsigned int i;
     uint16_t prev_gain;
 
+    /* TODO:  Ponder.  */
+    if (gain == 0)
+        return 0;
+
     prev_gain = 0;
     for (i = 0; i < ARRAY_SIZE (gain_map); i++)
     {
-        if ((i == ARRAY_SIZE (gain_map) - 1)
-            || (gain > prev_gain && gain <= gain_map[i].gain))
-        {
-            uint8_t command[1];
-
-            gain = gain_map[i].gain;
-
-            command[0] = gain_map[i].regval | MAX9930_GAIN;
-
-            if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
-                return 0;
-
-            return gain;
-        }
+        if (gain >= prev_gain && gain < gain_map[i].gain)
+            return max9939_gain_set1 (pga, i - 1);
         prev_gain = gain_map[i].gain;
     }
-
-    return 0;
+    
+    return max9939_gain_set1 (pga, i - 1);
 }
 
 
