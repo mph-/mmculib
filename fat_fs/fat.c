@@ -368,8 +368,8 @@ struct fat_struct
     fat_fs_t *fs;
     int mode;                   //!< File mode
     uint32_t file_offset;       //!< File offset
-    uint32_t file_size;         //!< File size
-    uint32_t start_cluster;     //!< Starting cluster of file
+    uint32_t file_size;         //!< File size (can be obtained from DE)
+    uint32_t start_cluster;     //!< Starting cluster (can be obtained from DE)
     uint32_t cluster;           //!< Current cluster 
     uint32_t de_sector;         //!< Sector for this file's dir entry
     uint32_t de_offset;         //!< Offset for this file's dir entry
@@ -1005,7 +1005,7 @@ fat_find (fat_t *fat, const char *pathname, fat_ff_t *ff)
 
 
 static void
-fat_size_set (fat_t *fat, uint32_t size)
+fat_de_size_set (fat_t *fat, uint32_t size)
 {
     fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
 
@@ -1018,7 +1018,7 @@ fat_size_set (fat_t *fat, uint32_t size)
 
 
 static void
-fat_cluster_set (fat_t *fat, uint32_t cluster)
+fat_de_cluster_set (fat_t *fat, uint32_t cluster)
 {
     fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
 
@@ -1490,7 +1490,8 @@ fat_de_sfn_create (fat_de_t *de, const char *filename, uint32_t size,
 }
 
 
-// Return first of the allocated clusters or 0 if run out of memory
+// Return first of the allocated clusters to hold size bytes or 0 if run
+// out of memory
 static uint32_t
 fat_clusters_allocate (fat_fs_t *fat_fs, uint32_t cluster_start, uint32_t size)
 {
@@ -1702,7 +1703,7 @@ fat_t *fat_open (fat_fs_t *fat_fs, const char *pathname, int mode)
             fat->start_cluster = 0;
             fat->cluster = 0;
 
-            fat_size_set (fat, fat->file_size);
+            fat_de_size_set (fat, fat->file_size);
             fat_sector_cache_flush (fat->fs);
         }
 
@@ -1740,6 +1741,8 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
     uint32_t sector;
     uint16_t bytes_left;
     uint16_t offset;
+    uint16_t bytes_per_cluster;
+    uint16_t bytes_per_sector;
     const uint8_t *data;
 
     TRACE_INFO (FAT, "FAT:Write %u\n", (unsigned int)len);
@@ -1750,36 +1753,42 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
         return -1;
     }
 
+    bytes_per_cluster = fat->fs->bytes_per_cluster;
+    bytes_per_sector = fat->fs->bytes_per_sector;
+
     data = buffer;
     bytes_left = len;
     while (bytes_left)
     {
         // Check for cluster boundary
-        if (fat->file_offset % fat->fs->bytes_per_cluster == 0)
+        if (fat->file_offset % bytes_per_cluster == 0)
         {
             uint32_t cluster;
 
             // Append a new cluster
-            cluster = fat_clusters_allocate (fat->fs, fat->cluster, 1);
+            cluster = fat_clusters_allocate (fat->fs, fat->cluster,
+                                             bytes_per_cluster);
 
             // No more clusters to allocate, out of memory
             if (!cluster)
                 break;
             if (!fat->cluster)
-                fat_cluster_set (fat, cluster);
+            {
+                fat->start_cluster = cluster;
+                fat_de_cluster_set (fat, cluster);
+            }
             fat->cluster = cluster;
         }
 
         sector = fat_sector_calc (fat->fs, fat->cluster);
 
-        sector += (fat->file_offset % fat->fs->bytes_per_cluster) 
-            / fat->fs->bytes_per_sector;
+        sector += (fat->file_offset % bytes_per_cluster) / bytes_per_sector;
 
-        offset = fat->file_offset % fat->fs->bytes_per_sector;
+        offset = fat->file_offset % bytes_per_sector;
 
         // Limit to remaining bytes in a sector
-        nbytes = bytes_left < fat->fs->bytes_per_sector - offset
-            ? bytes_left : fat->fs->bytes_per_sector - offset;
+        nbytes = bytes_left < bytes_per_sector - offset
+            ? bytes_left : bytes_per_sector - offset;
 
         fat_dev_write (fat->fs, sector, offset, data, nbytes);
 
@@ -1790,7 +1799,7 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
     }
     fat->file_size += len - bytes_left;
 
-    fat_size_set (fat, fat->file_size);
+    fat_de_size_set (fat, fat->file_size);
     fat_sector_cache_flush (fat->fs);
 
     TRACE_INFO (FAT, "FAT:Write %u\n", (unsigned int)len - bytes_left);
