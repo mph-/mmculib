@@ -23,7 +23,8 @@ typedef struct
 
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
    Let's assume 3.3 V operation and scale all the gains by 4.  */
-#define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, .regval = (REGVAL) >> 1}
+#define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, \
+            .regval = ((REGVAL) >> 1) | MAX9930_GAIN}
 
 static max9939_gain_map_t gain_map[] =
 {
@@ -49,7 +50,7 @@ max9939_gain_set1 (spi_pga_t pga, uint index)
     
     gain = gain_map[index].gain;
     
-    command[0] = gain_map[index].regval | MAX9930_GAIN;
+    command[0] = gain_map[index].regval;
     
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
         return 0;
