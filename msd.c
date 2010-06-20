@@ -58,8 +58,9 @@ msd_cache_flush (msd_t *msd)
         bytes = msd->ops->write (msd_cache.msd->handle, msd_cache.addr,
                                  msd_cache.data, MSD_CACHE_SIZE);
         msd->writes++;
-        if (bytes != MSD_CACHE_SIZE)
-            msd->write_errors++;
+        if (bytes == MSD_CACHE_SIZE)
+            break;
+        msd->write_errors++;
     }
 
     msd_cache.dirty = 0;
@@ -84,8 +85,9 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
         bytes = msd->ops->read (msd->handle, addr, msd_cache.data,
                                 MSD_CACHE_SIZE);
         msd->reads++;
-        if (bytes != MSD_CACHE_SIZE)
-            msd->read_errors++;
+        if (bytes == MSD_CACHE_SIZE)
+            break;
+        msd->read_errors++;
     }
     
     msd_cache.msd = msd;
