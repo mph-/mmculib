@@ -44,7 +44,7 @@ dataflash_msd_status_get (void *dev __unused__)
 
 
 static void
-dataflash_shutdown (void *dev)
+dataflash_msd_shutdown (void *dev)
 {
     return spi_dataflash_shutdown (dev);
 }
