@@ -35,6 +35,20 @@ enum {MCP6S2X_INSN_NOP = 0,
 static uint16_t gains[] = {1, 2, 4, 5, 8, 10, 16, 32};
 
 
+static spi_pga_gain_t
+max9939_gain_set1 (spi_pga_t pga, uint index)
+{
+    uint8_t command[] = {MCP6S2X_INSN_GAIN_REGISTER_WRITE, 0};
+
+    command[1] = index;
+
+    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
+        return 0;
+    
+    return gains[index];
+}
+
+
 /* This will wakeup the PGA from shutdown.  */
 static spi_pga_gain_t
 mcp6sx_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
@@ -42,25 +56,19 @@ mcp6sx_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
     unsigned int i;
     uint16_t prev_gain;
 
+    /* TODO:  Ponder.  */
+    if (gain == 0)
+        return 0;
+
     prev_gain = 0;
     for (i = 0; i < ARRAY_SIZE (gains); i++)
     {
-        if ((i == ARRAY_SIZE (gains) - 1)
-            || (gain > prev_gain && gain <= gains[i]))
-        {
-            uint8_t command[] = {MCP6S2X_INSN_GAIN_REGISTER_WRITE, 0};
-
-            command[1] = i;
-
-            if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
-                return 0;
-
-            return gains[i];
-        }
+        if (gain >= prev_gain && gain < gains[i])
+            break;
         prev_gain = gains[i];
     }
-
-    return 0;
+    
+    return max9939_gain_set1 (pga, i - 1);
 }
 
 

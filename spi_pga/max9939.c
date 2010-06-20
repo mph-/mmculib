@@ -41,7 +41,6 @@ static max9939_gain_map_t gain_map[] =
 };
 
 
-
 static spi_pga_gain_t
 max9939_gain_set1 (spi_pga_t pga, uint index)
 {
@@ -75,7 +74,7 @@ max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
     for (i = 0; i < ARRAY_SIZE (gain_map); i++)
     {
         if (gain >= prev_gain && gain < gain_map[i].gain)
-            return max9939_gain_set1 (pga, i - 1);
+            break;
         prev_gain = gain_map[i].gain;
     }
     
