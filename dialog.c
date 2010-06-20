@@ -51,7 +51,7 @@ dialog_display (dialog_t *dialog, const char *string)
 
     dialog_data.display (0, string);
 
-    for (; rows < dialog_data.rows; rows++)
+    for (; rows < dialog_data.rows - 1; rows++)
         dialog_data.display (rows, "\n");        
 
     cols = dialog_data.cols 
