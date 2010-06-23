@@ -35,7 +35,7 @@ spi_pga_channel_set (spi_pga_t pga, spi_pga_channel_t channel);
 
 
 spi_pga_offset_t
-spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool enable);
+spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure);
 
 
 bool

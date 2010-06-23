@@ -1,16 +1,17 @@
 #include "bits.h"
 #include "spi_pga.h"
 
-/* The MAX9930 requires data to be sent LSB first (ignoring the
+/* The MAX9939 requires data to be sent LSB first (ignoring the
    contradictory diagram in the datasheet) but most SPI peripeherals
    send data MSB first.  In this driver, the data is swapped around.
 */
 
 enum 
 {
-    MAX9930_SHDN = BIT (0),
-    MAX9930_MEAS = BIT (1),
-    MAX9930_GAIN = BIT (7)
+    MAX9939_SHDN = BIT (0),
+    MAX9939_MEAS = BIT (1),
+    MAX9939_NEG = BIT (2),
+    MAX9939_GAIN = BIT (7)
 };
 
 
@@ -24,7 +25,7 @@ typedef struct
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
    Let's assume 3.3 V operation and scale all the gains by 4.  */
 #define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, \
-            .regval = ((REGVAL) >> 1) | MAX9930_GAIN}
+            .regval = ((REGVAL) >> 1) | MAX9939_GAIN}
 
 static max9939_gain_map_t gain_map[] =
 {
@@ -41,6 +42,37 @@ static max9939_gain_map_t gain_map[] =
 };
 
 
+typedef struct
+{
+    uint16_t offset;
+    uint8_t regval;
+} max9939_offset_map_t;
+
+
+#define OFFSET_MAP(OFFSET, REGVAL) {.offset = (OFFSET) * 10, \
+            .regval = ((REGVAL) >> 1)}
+
+static max9939_offset_map_t offset_map[] =
+{
+    OFFSET_MAP (0.0, 0x0),
+    OFFSET_MAP (1.3, 0x8),
+    OFFSET_MAP (2.5, 0x4),
+    OFFSET_MAP (3.8, 0xc),
+    OFFSET_MAP (4.9, 0x2),
+    OFFSET_MAP (6.1, 0xa),
+    OFFSET_MAP (7.3, 0x6),
+    OFFSET_MAP (8.4, 0xe),
+    OFFSET_MAP (10.6, 0x1),
+    OFFSET_MAP (11.7, 0x9),
+    OFFSET_MAP (12.7, 0x5),
+    OFFSET_MAP (13.7, 0xd),
+    OFFSET_MAP (14.7, 0x3),
+    OFFSET_MAP (15.7, 0xb),
+    OFFSET_MAP (16.7, 0x7),
+    OFFSET_MAP (17.6, 0xf)
+};
+
+
 static spi_pga_gain_t
 max9939_gain_set1 (spi_pga_t pga, uint index)
 {
@@ -53,20 +85,21 @@ max9939_gain_set1 (spi_pga_t pga, uint index)
     
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
         return 0;
-    
+
+    pga->gain = gain;
     return gain;
 }
 
 
 /* Set the desired gain or the next lowest if unavailable.  This will
-   wakeup the PGA from shutdown.  */
+   wake up the PGA from shutdown.  */
 static spi_pga_gain_t
 max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
     unsigned int i;
     uint16_t prev_gain;
 
-    /* TODO:  Ponder.  */
+    /* TODO:  Ponder.  This probably means something has gone wrong.  */
     if (gain == 0)
         return 0;
 
@@ -83,10 +116,60 @@ max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 
 
 static spi_pga_offset_t
-max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool enable)
+max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
 {
+    spi_pga_offset_t offset;
+    uint8_t command[1];
+    
+    offset = offset_map[index].offset;
+    
+    command[0] = offset_map[index].regval;
 
-    return 0;
+    if (negative)
+    {
+        offset = -offset;
+        command[0] |= MAX9939_NEG;
+    }
+
+    if (measure)
+        command[0] |= MAX9939_MEAS;
+    
+    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
+        return 0;
+
+    pga->offset = offset;
+    return offset;
+}
+
+
+static spi_pga_offset_t
+max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
+{
+    unsigned int i;
+    int16_t prev_offset;
+    bool negative;
+
+    /* Need to measure offset voltage at low(ish) gains otherwise will
+       have saturation.  For example, the worst case correction is
+       17.1 mV and with the maximum gain of 628 this produces 10 V of
+       offset.  Thus the maximum gain to avoid saturation is 80.  Now
+       it appears that the offset also varies with gain but this is
+       probably a secondary effect.  */
+
+    negative = offset < 0;
+    if (negative)
+        offset = -offset;
+
+    /* Perhaps should search for closest value.  */
+    prev_offset = 0;
+    for (i = 0; i < ARRAY_SIZE (offset_map); i++)
+    {
+        if (offset >= prev_offset && offset < offset_map[i].offset)
+            break;
+        prev_offset = offset_map[i].offset;
+    }
+    
+    return max9939_offset_set1 (pga, i - 1, negative, measure);
 }
 
 
@@ -98,7 +181,7 @@ max9939_shutdown_set (spi_pga_t pga, bool enable)
     if (enable)
         command[0]= 0;
     else
-        command[0] = MAX9930_SHDN;
+        command[0] = MAX9939_SHDN;
 
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
                 return 0;

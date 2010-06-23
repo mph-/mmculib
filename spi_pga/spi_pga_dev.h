@@ -14,8 +14,9 @@ typedef struct spi_pga_dev_struct *spi_pga_t;
 
 
 typedef uint16_t spi_pga_gain_t;
+typedef int16_t spi_pga_offset_t;
 typedef uint8_t spi_pga_channel_t;
-typedef uint8_t spi_pga_offset_t;
+
 
 typedef spi_pga_gain_t
 (*spi_pga_gain_set_t)(spi_pga_t pga, spi_pga_gain_t gain);

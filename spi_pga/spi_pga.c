@@ -79,11 +79,11 @@ spi_pga_channel_set (spi_pga_t pga, spi_pga_channel_t channel)
 
 
 spi_pga_offset_t
-spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool enable)
+spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
 {
     if (!pga->ops->offset_set)
         return 0;
-    pga->offset = pga->ops->offset_set (pga, offset, enable);
+    pga->offset = pga->ops->offset_set (pga, offset, measure);
     return pga->offset;
 }
 
