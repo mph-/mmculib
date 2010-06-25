@@ -47,6 +47,7 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
         spi_pga->ops = &max9939_ops;
         break;
 
+    case SPI_PGA_MCP6S21:
     case SPI_PGA_MCP6S2X:
         spi_pga->ops = &mcp6s2x_ops;
         break;
