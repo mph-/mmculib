@@ -335,14 +335,14 @@ typedef struct fat_de_struct
 /* File find structure.  */
 typedef struct fat_ff_struct
 {
-    uint32_t        parent_dir_cluster;
-    uint32_t        cluster;
-    uint32_t        de_sector;
-    uint32_t        de_offset;
-    bool            isdir;       //!< Set to indicate a directory
-    char            short_name[12]; //!< DOS'ified version of the (short) name we're looking for   
-    char            name[FAT_MAXLEN]; //!< Name entry found (long or short) 
-    fat_de_t        de;          //!< Dir entry with file data (short entry)
+    uint32_t parent_dir_cluster;
+    uint32_t cluster;
+    uint32_t file_size;
+    uint32_t de_sector;
+    uint32_t de_offset;
+    char short_name[12];   //!< DOS'ified version of the (short) name
+    char name[FAT_MAXLEN]; //!< Name entry found (long or short) 
+    bool isdir;            //!< Set to indicate a directory
 } fat_ff_t;              
 
 
@@ -371,9 +371,9 @@ struct fat_struct
     fat_fs_t *fs;
     int mode;                   //!< File mode
     uint32_t file_offset;       //!< File offset
-    uint32_t file_size;         //!< File size (can be obtained from DE)
+    uint32_t file_size;         //!< File size
     uint32_t file_alloc;        //!< Bytes allocated for file
-    uint32_t start_cluster;     //!< Starting cluster (can be obtained from DE)
+    uint32_t start_cluster;     //!< Starting cluster
     uint32_t cluster;           //!< Current cluster 
     uint32_t de_sector;         //!< Sector for this file's dir entry
     uint32_t de_offset;         //!< Offset for this file's dir entry
@@ -937,15 +937,16 @@ fat_dir_search (fat_fs_t *fat_fs, uint32_t dir_cluster,
                     /* File found.  */
                     ff->de_sector = de_iter.sector;
                     ff->de_offset = de_iter.offset;
-                    memcpy (&ff->de, de, sizeof (fat_de_t));
+
                     if (!longmatch)
-                    {
                         strcpy (ff->name, matchspace);
-                    }
-                    ff->cluster = (ff->de.cluster_high << 16)
-                        | ff->de.cluster_low;
+
+                    ff->cluster = le16_to_cpu (de->cluster_high << 16)
+                        | le16_to_cpu (de->cluster_low);
+                    ff->file_size = le32_to_cpu (de->file_size);
 
                     ff->isdir = fat_de_attr_dir_p (de);
+
                     return 1;
                 }
             }
@@ -1056,7 +1057,7 @@ fat_find (fat_t *fat, const char *pathname, fat_ff_t *ff)
     fat->file_offset = 0; 
     fat->file_alloc = fat_chain_length (fat->fs, fat->start_cluster)
         * fat->fs->bytes_per_cluster;
-    fat->file_size = ff->de.file_size;
+    fat->file_size = ff->file_size;
     fat->de_sector = ff->de_sector;
     fat->de_offset = ff->de_offset;
     return fat;
@@ -1069,7 +1070,7 @@ fat_de_size_set (fat_t *fat, uint32_t size)
     fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
 
     fat_sector_cache_read (fat->fs, fat->de_sector);
-    de->file_size = size;
+    de->file_size = cpu_to_le32 (size);
     fat_sector_cache_write (fat->fs, fat->de_sector);
 
     /* Note, the cache needs flushing for this to take effect.  */
@@ -1082,8 +1083,8 @@ fat_de_cluster_set (fat_t *fat, uint32_t cluster)
     fat_de_t *de = (fat_de_t *) (fat->fs->sector_buffer + fat->de_offset);
 
     fat_sector_cache_read (fat->fs, fat->de_sector);
-    de->cluster_high = cluster >> 16;
-    de->cluster_low = cluster;
+    de->cluster_high = cpu_to_le16 (cluster >> 16);
+    de->cluster_low = cpu_to_le16 (cluster);
     fat_sector_cache_write (fat->fs, fat->de_sector);
 
     /* Note, the cache needs flushing for this to take effect.  */
@@ -1558,8 +1559,7 @@ fat_filename_entries (const char *filename)
 
 /* Creat short filename entry.  */
 static void
-fat_de_sfn_create (fat_de_t *de, const char *filename, uint32_t size,
-                   uint32_t cluster)
+fat_de_sfn_create (fat_de_t *de, const char *filename)
 {
     int i;
     char *str;
@@ -1602,9 +1602,10 @@ fat_de_sfn_create (fat_de_t *de, const char *filename, uint32_t size,
     
     de->attributes = ATTR_NORMAL;
     
-    de->cluster_high = cluster >> 16;
-    de->cluster_low = cluster;
-    de->file_size = size;
+    /* These fields get filled in when file written to.  */
+    de->cluster_high = 0;
+    de->cluster_low = 0;
+    de->file_size = 0;
 }
 
 
@@ -1668,9 +1669,7 @@ fat_chain_extend (fat_fs_t *fat_fs, uint32_t cluster_start,
 
 
 bool
-fat_de_add (fat_t *fat, const char *filename,
-             uint32_t cluster_dir, uint32_t cluster_start, 
-             uint32_t size)
+fat_de_add (fat_t *fat, const char *filename, uint32_t cluster_dir)
 {
     int entries;
     fat_de_iter_t de_iter;
@@ -1720,7 +1719,7 @@ fat_de_add (fat_t *fat, const char *filename,
     }
 
     /* Create short filename entry.  */
-    fat_de_sfn_create (de, filename, size, cluster_start);
+    fat_de_sfn_create (de, filename);
 
     fat_sector_cache_write (fat->fs, fat->de_sector);
     fat_sector_cache_flush (fat->fs);
@@ -1751,13 +1750,12 @@ fat_create (fat_t *fat, const char *pathname, fat_ff_t *ff)
     fat->file_alloc = 0; 
     fat->file_size = 0;
     fat->start_cluster = 0;
+    fat->cluster = 0;
 
     /* Add file to directory.  */
-    if (!fat_de_add (fat, filename, ff->parent_dir_cluster, 
-                     fat->start_cluster, fat->file_size))
+    if (!fat_de_add (fat, filename, ff->parent_dir_cluster))
         return NULL;
 
-    fat->cluster = fat->start_cluster;
     fat_sector_cache_flush (fat_fs);
 
     return fat;
