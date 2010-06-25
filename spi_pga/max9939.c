@@ -2,7 +2,7 @@
 #include "spi_pga.h"
 
 /* The MAX9939 requires data to be sent LSB first (ignoring the
-   contradictory diagram in the datasheet) but most SPI peripeherals
+   contradictory diagram in the datasheet) but most SPI peripherals
    send data MSB first.  In this driver, the data is swapped around.
 */
 
@@ -27,7 +27,7 @@ typedef struct
 #define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, \
             .regval = ((REGVAL) >> 1) | MAX9939_GAIN}
 
-static max9939_gain_map_t gain_map[] =
+static const max9939_gain_map_t gain_map[] =
 {
     GAIN_MAP (0.25, 0x90),
     GAIN_MAP (1, 0x00),
@@ -50,9 +50,9 @@ typedef struct
 
 
 #define OFFSET_MAP(OFFSET, REGVAL) {.offset = (OFFSET) * 10, \
-            .regval = ((REGVAL) >> 1)}
+            .regval = ((REGVAL) << 3)}
 
-static max9939_offset_map_t offset_map[] =
+static const max9939_offset_map_t offset_map[] =
 {
     OFFSET_MAP (0.0, 0x0),
     OFFSET_MAP (1.3, 0x8),
@@ -142,6 +142,7 @@ max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
 }
 
 
+/* Setting a positive offset (in 0.1 mV steps) makes the output drop.  */
 static spi_pga_offset_t
 max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
 {
