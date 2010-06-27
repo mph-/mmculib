@@ -4,9 +4,6 @@
 #include "max9939.h"
 #include "mcp6s2x.h"
 
-//#ifdef SPI_PGA_MAX9939
-//#endif
-
 
 #ifndef SPI_PGA_DEVICES_NUM
 #define SPI_PGA_DEVICES_NUM 4
@@ -22,7 +19,6 @@ spi_pga_command (spi_pga_t pga, uint8_t *commands, uint8_t len)
 {
     return spi_write (pga->spi, commands, len, 1) == len;
 }
-
 
 
 spi_pga_t
@@ -64,7 +60,30 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
 spi_pga_gain_t 
 spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
-    pga->gain = pga->ops->gain_set (pga, gain);
+    unsigned int i;
+    uint16_t prev_gain;
+    const uint16_t *gains;
+
+    gains = pga->ops->gains_get (pga);
+
+    /* Choose lowest gain.  */ 
+    if (gain == 0)
+    {
+        pga->ops->gain_set (pga, 0);
+        pga->gain = gains [0];
+        return pga->gain;
+    }
+
+    prev_gain = 0;
+    for (i = 0; i < gains[i]; i++)
+    {
+        if (gain >= prev_gain && gain < gains[i])
+            break;
+        prev_gain = gains[i];
+    }
+    
+    pga->ops->gain_set (pga, i - 1);
+    pga->gain = gains [i - 1];
     return pga->gain;
 }
 

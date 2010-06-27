@@ -15,31 +15,42 @@ enum
 };
 
 
-typedef struct
-{
-    uint16_t gain;
-    uint8_t regval;
-} max9939_gain_map_t;
-
-
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
    Let's assume 3.3 V operation and scale all the gains by 4.  */
-#define GAIN_MAP(GAIN, REGVAL) {.gain = (GAIN) * 4, \
-            .regval = ((REGVAL) >> 1) | MAX9939_GAIN}
+#define GAIN_SCALE(GAIN) ((GAIN) * 4)
 
-static const max9939_gain_map_t gain_map[] =
+static const spi_pga_gain_t max9939_gains[] =
 {
-    GAIN_MAP (0.25, 0x90),
-    GAIN_MAP (1, 0x00),
-    GAIN_MAP (10, 0x80),
-    GAIN_MAP (20, 0x40),
-    GAIN_MAP (30, 0xc0),
-    GAIN_MAP (40, 0x20),
-    GAIN_MAP (60, 0xa0),
-    GAIN_MAP (80, 0x60),
-    GAIN_MAP (120, 0xe0),
-    GAIN_MAP (157, 0x80)
+    GAIN_SCALE (0.25),
+    GAIN_SCALE (1),
+    GAIN_SCALE (10),
+    GAIN_SCALE (20),
+    GAIN_SCALE (30),
+    GAIN_SCALE (40),
+    GAIN_SCALE (60),
+    GAIN_SCALE (80),
+    GAIN_SCALE (120),
+    GAIN_SCALE (157),
+    GAIN_SCALE (0)
 };
+
+
+#define GAIN_COMMAND(REGVAL) (((REGVAL) >> 1) | MAX9939_GAIN)
+
+static const uint8_t gain_commands[] =
+{
+    GAIN_COMMAND (0x90),
+    GAIN_COMMAND (0x00),
+    GAIN_COMMAND (0x80),
+    GAIN_COMMAND (0x40),
+    GAIN_COMMAND (0xc0),
+    GAIN_COMMAND (0x20),
+    GAIN_COMMAND (0xa0),
+    GAIN_COMMAND (0x60),
+    GAIN_COMMAND (0xe0),
+    GAIN_COMMAND (0x80)
+};
+
 
 
 typedef struct
@@ -73,45 +84,14 @@ static const max9939_offset_map_t offset_map[] =
 };
 
 
-static spi_pga_gain_t
-max9939_gain_set1 (spi_pga_t pga, uint index)
+static bool
+max9939_gain_set (spi_pga_t pga, uint8_t gain_index)
 {
-    spi_pga_gain_t gain;
     uint8_t command[1];
     
-    gain = gain_map[index].gain;
+    command[0] = gain_commands[gain_index];
     
-    command[0] = gain_map[index].regval;
-    
-    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
-        return 0;
-
-    pga->gain = gain;
-    return gain;
-}
-
-
-/* Set the desired gain or the next lowest if unavailable.  This will
-   wake up the PGA from shutdown.  */
-static spi_pga_gain_t
-max9939_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
-{
-    unsigned int i;
-    uint16_t prev_gain;
-
-    /* TODO:  Ponder.  This probably means something has gone wrong.  */
-    if (gain == 0)
-        return 0;
-
-    prev_gain = 0;
-    for (i = 0; i < ARRAY_SIZE (gain_map); i++)
-    {
-        if (gain >= prev_gain && gain < gain_map[i].gain)
-            break;
-        prev_gain = gain_map[i].gain;
-    }
-    
-    return max9939_gain_set1 (pga, i - 1);
+    return spi_pga_command (pga, command, ARRAY_SIZE (command));
 }
 
 
@@ -190,12 +170,20 @@ max9939_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
+static const spi_pga_gain_t *
+max9939_gains_get (spi_pga_t pga __unused__)
+{
+    return max9939_gains;
+}
+
+
 spi_pga_ops_t max9939_ops =
 {
     .gain_set = max9939_gain_set,   
     .channel_set = 0,
     .offset_set = max9939_offset_set,   
     .shutdown_set = max9939_shutdown_set,   
+    .gains_get = max9939_gains_get
 };
 
 

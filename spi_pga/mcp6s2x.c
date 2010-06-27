@@ -32,43 +32,18 @@ enum {MCP6S2X_INSN_NOP = 0,
    bits, sent while the chip is selected.  */
 
 
-static uint16_t gains[] = {1, 2, 4, 5, 8, 10, 16, 32};
+static const spi_pga_gain_t mcp6sx_gains[] = {1, 2, 4, 5, 8, 10, 16, 32, 0};
 
 
-static spi_pga_gain_t
-max9939_gain_set1 (spi_pga_t pga, uint index)
+static bool
+mcp6sx_gain_set (spi_pga_t pga, uint8_t gain_index)
 {
     uint8_t command[] = {MCP6S2X_INSN_GAIN_REGISTER_WRITE, 0};
 
-    command[1] = index;
+    command[1] = gain_index;
 
-    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
-        return 0;
-    
-    return gains[index];
-}
-
-
-/* This will wakeup the PGA from shutdown.  */
-static spi_pga_gain_t
-mcp6sx_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
-{
-    unsigned int i;
-    uint16_t prev_gain;
-
-    /* TODO:  Ponder.  */
-    if (gain == 0)
-        return 0;
-
-    prev_gain = 0;
-    for (i = 0; i < ARRAY_SIZE (gains); i++)
-    {
-        if (gain >= prev_gain && gain < gains[i])
-            break;
-        prev_gain = gains[i];
-    }
-    
-    return max9939_gain_set1 (pga, i - 1);
+    /* This will wake up the PGA from shutdown.  */
+    return spi_pga_command (pga, command, ARRAY_SIZE (command));
 }
 
 
@@ -95,12 +70,18 @@ mcp6sx_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
+static const spi_pga_gain_t *
+mcp6sx_gains_get (spi_pga_t pga __unused__)
+{
+    return mcp6sx_gains;
+}
+
+
 spi_pga_ops_t mcp6s2x_ops =
 {
     .gain_set = mcp6sx_gain_set,   
     .channel_set = mcp6sx_channel_set,   
     .offset_set = 0,
     .shutdown_set = mcp6sx_shutdown_set,   
+    .gains_get = mcp6sx_gains_get
 };
-
-
