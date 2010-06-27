@@ -52,7 +52,6 @@ static const uint8_t gain_commands[] =
 };
 
 
-
 typedef struct
 {
     uint16_t offset;
@@ -170,20 +169,13 @@ max9939_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
-static const spi_pga_gain_t *
-max9939_gains_get (spi_pga_t pga __unused__)
-{
-    return max9939_gains;
-}
-
-
 spi_pga_ops_t max9939_ops =
 {
     .gain_set = max9939_gain_set,   
     .channel_set = 0,
     .offset_set = max9939_offset_set,   
     .shutdown_set = max9939_shutdown_set,   
-    .gains_get = max9939_gains_get
+    .gains = max9939_gains
 };
 
 

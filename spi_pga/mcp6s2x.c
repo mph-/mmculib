@@ -70,18 +70,11 @@ mcp6sx_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
-static const spi_pga_gain_t *
-mcp6sx_gains_get (spi_pga_t pga __unused__)
-{
-    return mcp6sx_gains;
-}
-
-
 spi_pga_ops_t mcp6s2x_ops =
 {
     .gain_set = mcp6sx_gain_set,   
     .channel_set = mcp6sx_channel_set,   
     .offset_set = 0,
     .shutdown_set = mcp6sx_shutdown_set,   
-    .gains_get = mcp6sx_gains_get
+    .gains = mcp6sx_gains
 };
