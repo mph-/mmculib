@@ -112,10 +112,7 @@ spi_pga_gain_next_get (spi_pga_t pga)
 
     gains = pga->ops->gains;
     if (gains[pga->gain_index])
-    {
         pga->gain_index++;
-        spi_pga_gain_index_set (pga, pga->gain_index);
-    }
     
     return gains[pga->gain_index];
 }
