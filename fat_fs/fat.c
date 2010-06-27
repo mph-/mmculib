@@ -1156,7 +1156,8 @@ fat_read (fat_t *fat, void *buffer, size_t len)
 
         /* Read the data; this does not affect the cache.  */
         ret = fat_dev_read (fat->fs, sector, offset, data, nbytes);
-        if (nbytes != ret)
+        /* Give up if have read error.  */
+        if (ret != nbytes)
             break;
 
         data += nbytes;
@@ -1936,6 +1937,7 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
                 {
                     TRACE_ERROR (FAT, "Trying to write past allocated clusters\n");
                     break;
+                }
             }
         }
 
@@ -1951,7 +1953,7 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
 
         ret = fat_dev_write (fat->fs, sector, offset, data, nbytes);
         /* Give up if have write error.  */
-        (if ret != nbytes)
+        if (ret != nbytes)
             break;
 
         data += nbytes;
