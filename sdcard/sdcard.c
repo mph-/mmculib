@@ -251,7 +251,7 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     uint8_t response[SD_CMD_LEN];
     uint16_t retries;
     
-    /* Wait N_cs clock cyles, min is 0.  */
+    /* Wait N_cs clock cycles, min is 0.  */
     command[0] = 0xff;
     spi_transfer (dev->spi, command, response, 1, 0);
 
@@ -745,6 +745,9 @@ sdcard_csd_parse (sdcard_t dev)
     uint32_t c_size;
     uint16_t read_bl_len;
     uint32_t speed;
+    uint8_t TAAC;
+    uint8_t NSAC;
+    uint32_t Nac;
     int i;
     static const uint8_t mult[] = {10, 12, 13, 15, 20, 25, 30,
                                    35, 40, 45, 50, 55, 60, 70, 80};
@@ -753,7 +756,7 @@ sdcard_csd_parse (sdcard_t dev)
         return 0;
 
     read_bl_len = csd[5] & 0x0f;
-    /* This must be 9 on SDHC cards. */
+    /* This must be 9 on SDHC cards.  */
 
     dev->type = SDCARD_TYPE_SDHC;
 
@@ -774,8 +777,19 @@ sdcard_csd_parse (sdcard_t dev)
     dev->speed = speed;
     speed = spi_clock_speed_set (dev->spi, speed);
 
+    TAAC = csd[1];
+    Nac = ((TAAC >> 3) & 0xf) * speed / 100;
+    for (i = TAAC & 0x07; i < 7; i++)
+        Nac /= 10;
+
+    NSAC = csd[2];
+    Nac += NSAC * 100;
+    /* Nac is in units of clocks so divide by 8 to get units of bytes.  */
+    dev->Nac = Nac / 8;
+#if 0
     /* Set Nac to 100 ms.  */
     dev->Nac = (speed / 10) / 8;
+#endif
 
     /* Set Nbs to 250 ms.  */
     dev->Nbs = (dev->Nac * 25) / 10;
