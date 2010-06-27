@@ -1123,6 +1123,7 @@ ssize_t
 fat_read (fat_t *fat, void *buffer, size_t len)
 {
     uint16_t nbytes;
+    uint16_t ret;
     uint32_t sector;
     uint16_t bytes_left;
     uint16_t offset;
@@ -1154,8 +1155,9 @@ fat_read (fat_t *fat, void *buffer, size_t len)
             nbytes = fat->fs->bytes_per_sector - offset;
 
         /* Read the data; this does not affect the cache.  */
-        nbytes 
-            = fat_dev_read (fat->fs, sector, offset, data, nbytes);
+        ret = fat_dev_read (fat->fs, sector, offset, data, nbytes);
+        if (nbytes != ret)
+            break;
 
         data += nbytes;
 
@@ -1872,6 +1874,7 @@ ssize_t
 fat_write (fat_t *fat, const void *buffer, size_t len)
 {
     uint32_t sector;
+    uint16_t ret;
     uint16_t nbytes;
     uint16_t bytes_left;
     uint16_t offset;
@@ -1927,7 +1930,13 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
             if (!fat->cluster)
                 fat->cluster = fat->start_cluster;
             else
+            {
                 fat->cluster = fat_cluster_next (fat->fs, fat->cluster);
+                if (fat_cluster_last_p (fat->cluster))
+                {
+                    TRACE_ERROR (FAT, "Trying to write past allocated clusters\n");
+                    break;
+            }
         }
 
         sector = fat_sector_calc (fat->fs, fat->cluster);
@@ -1940,9 +1949,10 @@ fat_write (fat_t *fat, const void *buffer, size_t len)
         nbytes = bytes_left < bytes_per_sector - offset
             ? bytes_left : bytes_per_sector - offset;
 
-        nbytes = fat_dev_write (fat->fs, sector, offset, data, nbytes);
-
-        /* \todo, punt if device error.  */
+        ret = fat_dev_write (fat->fs, sector, offset, data, nbytes);
+        /* Give up if have write error.  */
+        (if ret != nbytes)
+            break;
 
         data += nbytes;
         fat->file_offset += nbytes;
