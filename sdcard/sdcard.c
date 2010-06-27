@@ -37,7 +37,7 @@
  
     For write, you multiply the R2W_FACTOR (1 to 4) by the read access
     time.  R2W_FACTOR is 1:4.  This gives a maximum of 4 x 100ms =>
-    400ms for write.  For SD cards the write timeout is 250 ms.
+    400 ms for write.  For SD cards the write timeout is 250 ms.
  
     To get the fastest transfers we need to use the multiple block
     read/write commands.  Some cards have multiple internal buffers
@@ -498,10 +498,10 @@ sdcard_init_poll (sdcard_t dev)
 
     sdcard_deselect (dev);
 
-    /* It appears that if the power supply current limits the card
+    /* It appears that if the power supply current limits, the card
        will just send a continuous stream of 0x00 from this point.
        Presumably sending the initialisation command fires up a charge
-       pump and the increased current draw causes thins to go awry.  */
+       pump and the increased current draw causes things to go awry.  */
 
     return status;
 }
@@ -801,10 +801,9 @@ sdcard_probe (sdcard_t dev)
                          0xff, 0xff, 0xff, 0xff, 0xff};
     uint32_t ocr;
 
-#if 0
-    /* MMC cards need to be initialised with a clock slower than 400 kHz.  */
-    spi_clock_speed_set (dev->spi, 300e3);
-#endif
+    /* MMC cards need to be initialised with a maximum clock speed of
+       400 kHz.  */
+    spi_clock_speed_set (dev->spi, 400e3);
 
     /* Send the card 80 clocks to activate it (at least 74 are
        required).  */
