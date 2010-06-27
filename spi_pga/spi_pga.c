@@ -57,6 +57,14 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
 }
 
 
+static void
+spi_pga_gain_index_set (spi_pga_t pga, uint8_t gain_index)
+{
+    pga->ops->gain_set (pga, gain_index);
+    pga->gain_index = gain_index;
+}
+
+
 spi_pga_gain_t 
 spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
@@ -69,9 +77,8 @@ spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
     /* Choose lowest gain.  */ 
     if (gain == 0)
     {
-        pga->ops->gain_set (pga, 0);
-        pga->gain = gains [0];
-        return pga->gain;
+        spi_pga_gain_index_set (pga, 0);
+        return gains[0];
     }
 
     prev_gain = 0;
@@ -82,9 +89,19 @@ spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
         prev_gain = gains[i];
     }
     
-    pga->ops->gain_set (pga, i - 1);
-    pga->gain = gains [i - 1];
-    return pga->gain;
+    spi_pga_gain_index_set (pga, i - 1);
+    return gains[i - 1];
+}
+
+
+spi_pga_gain_t 
+spi_pga_gain_get (spi_pga_t pga)
+{
+    const uint16_t *gains;
+
+    gains = pga->ops->gains_get (pga);
+    
+    return gains[pga->gain_index];
 }
 
 

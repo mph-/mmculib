@@ -52,7 +52,7 @@ struct spi_pga_dev_struct
 {
     spi_t spi;
     spi_pga_ops_t *ops;
-    spi_pga_gain_t gain;
+    uint8_t gain_index;
     spi_pga_channel_t channel;
     spi_pga_offset_t offset;
 };

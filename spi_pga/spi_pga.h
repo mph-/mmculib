@@ -30,6 +30,10 @@ spi_pga_gain_t
 spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain);
 
 
+spi_pga_gain_t 
+spi_pga_gain_get (spi_pga_t pga);
+
+
 spi_pga_channel_t
 spi_pga_channel_set (spi_pga_t pga, spi_pga_channel_t channel);
 
