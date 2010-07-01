@@ -17,7 +17,7 @@ enum
 
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
    Let's assume 3.3 V operation and scale all the gains by 4.  */
-#define GAIN_SCALE(GAIN) ((GAIN) * 4)
+#define GAIN_SCALE(GAIN) ((GAIN) * 8)
 
 static const spi_pga_gain_t max9939_gains[] =
 {
@@ -35,20 +35,20 @@ static const spi_pga_gain_t max9939_gains[] =
 };
 
 
-#define GAIN_COMMAND(REGVAL) (((REGVAL) >> 1) | MAX9939_GAIN)
+#define GAIN_COMMAND(REGVAL) ((REGVAL))
 
 static const uint8_t gain_commands[] =
 {
-    GAIN_COMMAND (0x90),
-    GAIN_COMMAND (0x00),
+    GAIN_COMMAND (0xc8),
     GAIN_COMMAND (0x80),
-    GAIN_COMMAND (0x40),
     GAIN_COMMAND (0xc0),
-    GAIN_COMMAND (0x20),
     GAIN_COMMAND (0xa0),
-    GAIN_COMMAND (0x60),
     GAIN_COMMAND (0xe0),
-    GAIN_COMMAND (0x80)
+    GAIN_COMMAND (0x90),
+    GAIN_COMMAND (0xd0),
+    GAIN_COMMAND (0xb0),
+    GAIN_COMMAND (0xf0),
+    GAIN_COMMAND (0x88)
 };
 
 
@@ -134,7 +134,31 @@ max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
        17.1 mV and with the maximum gain of 628 this produces 10 V of
        offset.  Thus the maximum gain to avoid saturation is 80.  Now
        it appears that the offset also varies with gain but this is
-       probably a secondary effect.  */
+       probably a secondary effect. 
+       
+       The output offset voltage is a function of the PGA gain G_1 and
+       the output amplifier gain G_2.  When the input is shorted the
+       output voltage is (from the datasheet)
+
+       Vo = ((Voff1 + Voffc) G1 + Voff2) G2 + Vcc / 2,
+          = (Voff1 + Voffc) G1 G_2 + Voff2 G2 + Vcc / 2,
+
+       where Voffc is the programmed offset voltage correction and
+       Voff1 and Voff2 are the inherent offset voltages for the two
+       amplifiers.  Both the amplifiers have a similar offset voltage:
+       1.5 mV typ and 9 mV max at 25 degrees.  This includes the
+       effects of mismatches in ther internal Vcc/2 resistor dividers
+       that bias the output.  At high gains when G1 >> G2, the effect
+       of Voff2 can be neglected.
+
+       It appears that the offset correction is opposite to what appears
+       in the datasheet.  It appears that
+
+       Vo = (Voff1 - Voffc) G1 G_2 + Voff2 G2 + Vcc / 2.
+
+       Thus increasing Voffc causes the output to drop.
+
+    */
 
     negative = offset < 0;
     if (negative)
