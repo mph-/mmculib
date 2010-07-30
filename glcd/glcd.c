@@ -102,7 +102,7 @@ void
 glcd_backlight_enable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT
-    pio_config_set (GLCD_BACKLIGHT, PIO_OUTPUT);
+    pio_config_set (GLCD_BACKLIGHT, PIO_OUTPUT_HIGH);
     pio_output_high (GLCD_BACKLIGHT);
 #endif
 }
@@ -112,7 +112,7 @@ void
 glcd_backlight_disable (glcd_t glcd __UNUSED__)
 {
 #ifdef GLCD_BACKLIGHT
-    pio_config_set (GLCD_BACKLIGHT, PIO_OUTPUT);
+    pio_config_set (GLCD_BACKLIGHT, PIO_OUTPUT_HIGH);
     pio_output_low (GLCD_BACKLIGHT);
 #endif
 }
@@ -122,7 +122,7 @@ static void
 glcd_config (glcd_t glcd)
 {
     /* Configure the RS pin as an output.  */
-    pio_config_set (GLCD_RS, PIO_OUTPUT);
+    pio_config_set (GLCD_RS, PIO_OUTPUT_HIGH);
     
     /* Enter command mode.  */
     glcd_command_mode ();
@@ -215,7 +215,7 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     glcd->spi = spi_init (&spi_cfg);
 
 #ifdef GLCD_RESET
-    pio_config_set (GLCD_RESET, PIO_OUTPUT);
+    pio_config_set (GLCD_RESET, PIO_OUTPUT_HIGH);
     pio_output_high (GLCD_RESET);
     pio_output_low (GLCD_RESET);
     /* Minimum reset pulse is 900 ns but for some reason
@@ -339,7 +339,7 @@ glcd_shutdown (glcd_t glcd)
 {
     spi_shutdown (glcd->spi);
 
-    pio_config_set (GLCD_CS, PIO_OUTPUT);
+    pio_config_set (GLCD_CS, PIO_OUTPUT_HIGH);
 
     pio_output_low (GLCD_CS);
     pio_output_low (GLCD_RS);

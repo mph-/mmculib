@@ -214,10 +214,10 @@ gsm862_init (const gsm862_cfg_t *cfg)
 {
     gsm862_t gsm = &gsm862_dev;
 
-    pio_config_set (cfg->onoff, PIO_OUTPUT);
-    pio_config_set (cfg->reset, PIO_OUTPUT);
+    pio_config_set (cfg->onoff, PIO_OUTPUT_HIGH);
+    pio_config_set (cfg->reset, PIO_OUTPUT_HIGH);
     pio_config_set (cfg->pwrmon, PIO_INPUT);
-    pio_config_set (LEDDEBUG, PIO_OUTPUT);
+    pio_config_set (LEDDEBUG, PIO_OUTPUT_HIGH);
 
     gsm->cfg = cfg;
     gsm->busart = busart_init (cfg->channel, cfg->baud_divisor,

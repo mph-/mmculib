@@ -384,7 +384,7 @@ spi_dataflash_init (const spi_dataflash_cfg_t *cfg)
 
     if (cfg->wp.port)
     {
-        pio_config_set (cfg->wp, PIO_OUTPUT);
+        pio_config_set (cfg->wp, PIO_OUTPUT_HIGH);
         pio_output_low (cfg->wp);
     }
 
