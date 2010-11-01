@@ -127,9 +127,16 @@ glcd_config (glcd_t glcd)
     /* Enter command mode.  */
     glcd_command_mode ();
 
-    /* Set segment and common lines to normal direction.  */
+    /* Set segment lines to normal direction.  */
     glcd_send (glcd, GLCD_CMD_SEGOUTPUT_NORMAL);
-    glcd_send (glcd, GLCD_CMD_COMOUTPUT_NORMAL);
+
+	/* The Sitronix ST7565R used to drive the 64128K LCD on the 7C board needs
+	 * the common lines reversed. */
+#ifdef TREETAP7C
+    glcd_send (glcd, GLCD_CMD_COMOUTPUT_REVERSE);
+#else
+	glcd_send (glcd, GLCD_CMD_COMOUTPUT_NORMAL);
+#endif
 
     /* Set the GLCD bias to 1/9.  With a duty ratio of 1/65 the GLCD
        bias is 1/7 or 1/9.  */
