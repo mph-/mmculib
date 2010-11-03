@@ -1,6 +1,7 @@
 /** @file   glcd.c
     @author M. P. Hayes, UCECE
-    @date   28 January 2008
+    @author B. C. Bonnett, UCECE
+    @date   4 November 2010
     @brief  Simple graphical GLCD driver.
 */
 
@@ -13,6 +14,9 @@
 
 /* This driver controls an S6B1713 GLCD controller via SPI.  The
    S6B1713 is a 65 com / 132 seg driver and controller for STN GLCD.
+
+   The Displaytech 64128K uses the Sitronix S77565 controller
+   with 1/65 duty and 1/9 bias. 
 */
 
 
@@ -162,6 +166,7 @@ glcd_config (glcd_t glcd)
        Vo = (1 + Rb / Ra) * Vev
        
        Vev = (1 - (63 - alpha) / 300) * Vref
+       (The divisor appears to be 162 for the ST7565R).
 
        Now Vref = 2 V so with alpha = 24,
        Vev = (1 - (63 - 24) / 300) * 2 = 1.74 V
@@ -170,7 +175,9 @@ glcd_config (glcd_t glcd)
        require Vo < Vout (where Vout is set by external capacitor
        configuration)  */    
     glcd_send (glcd, GLCD_CMD_REF_VOLTAGE_MODE);
+    /* Send alpha, range 0 to 63.  0 gives the greatest voltage for Vo.    */
     glcd_send (glcd, 50);
+    /* Set Rb / Ra ratio to 5.  Can be in range 0 to 7.  */
     glcd_send (glcd, GLCD_CMD_REG_RESISTOR | 5);
     
     /* Set initial display line to zero.  */
