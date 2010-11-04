@@ -144,7 +144,11 @@ glcd_config (glcd_t glcd)
 
     /* Set the GLCD bias to 1/9.  With a duty ratio of 1/65 the GLCD
        bias is 1/7 or 1/9.  */
+#ifdef TREETAP7C
+    glcd_send (glcd, GLCD_CMD_BIAS0);
+#else
     glcd_send (glcd, GLCD_CMD_BIAS1);
+#endif
 
     /* Bring the power circuits online in stages, pausing between each.  */
     glcd_send (glcd, GLCD_CMD_POWER | GLCD_VOLT_CONVERTER);
