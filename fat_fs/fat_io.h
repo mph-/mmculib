@@ -9,6 +9,8 @@
 
 #include "fat.h"
 
+typedef uint32_t fat_sector_t;
+
 
 uint16_t
 fat_io_read (fat_t *fat, fat_sector_t sector,

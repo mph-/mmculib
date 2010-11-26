@@ -34,8 +34,8 @@
 #define LCASE_BASE      0x08      //!< Filename base in lower case 
 #define LCASE_EXT       0x10      //!< Filename extension in lower case 
 
-#define WIN_LAST        0x40        //!< Last sequence indicator
-#define WIN_CNT         0x3f        //!< Sequence number mask
+#define WIN_LAST        0x40      //!< Last sequence indicator
+#define WIN_CNT         0x3f      //!< Sequence number mask
 
 
 
@@ -54,7 +54,7 @@ struct fat_de_struct
     uint8_t         MTime[2];     //!< Last update time 
     uint8_t         MDate[2];     //!< Last update date 
     uint16_t        cluster_low;  //!< Starting cluster of file 
-    uint32_t        file_size;    //!< Size of file in bytes 
+    uint32_t        size;         //!< Size of file in bytes 
 } __packed__;
 
 
@@ -288,7 +288,7 @@ fat_de_sfn_create (fat_de_t *de, const char *filename)
     /* These fields get filled in when file written to.  */
     de->cluster_high = 0;
     de->cluster_low = 0;
-    de->file_size = 0;
+    de->size = 0;
 }
 
 
@@ -369,7 +369,7 @@ fat_de_find (fat_t *fat, uint32_t dir_cluster,
                     ff->cluster = le16_to_cpu (de->cluster_high << 16)
                         | le16_to_cpu (de->cluster_low);
 
-                    ff->file_size = le32_to_cpu (de->file_size);
+                    ff->size = le32_to_cpu (de->size);
 
                     ff->isdir = fat_de_attr_dir_p (de);
 
@@ -397,7 +397,7 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
             fat_de_dir_dump (fat,
                              (de->cluster_high << 16) | de->cluster_low);
         else
-            TRACE_ERROR (FAT, "%s %d\n", de->name, (unsigned int)de->file_size);
+            TRACE_ERROR (FAT, "%s %d\n", de->name, (unsigned int)de->size);
     }
 }
 
@@ -410,7 +410,7 @@ fat_de_size_set (fat_t *fat, fat_dir_t *dir, uint32_t size)
 
     buffer = fat_io_cache_read (fat, dir->sector);
     de = (fat_de_t *) (buffer + dir->offset);
-    de->file_size = cpu_to_le32 (size);
+    de->size = cpu_to_le32 (size);
     fat_io_cache_write (fat, dir->sector);
 
     /* Note, the cache needs flushing for this to take effect.  */

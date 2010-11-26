@@ -28,7 +28,7 @@ struct fat_ff_struct
 {
     uint32_t parent_dir_cluster;
     uint32_t cluster;
-    uint32_t file_size;
+    uint32_t size;
     struct fat_dir_struct dir;
     uint8_t  short_name[12];     //!< DOS version of the (short) name
     char     name[FAT_NAME_LEN]; //!< Name entry (long or short) 

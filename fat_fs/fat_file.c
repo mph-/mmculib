@@ -5,7 +5,6 @@
 */
 
 #include <sys/fcntl.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -17,9 +16,9 @@ struct fat_file_struct
 {
     fat_t *fat;
     int mode;         
-    uint32_t file_offset;
-    uint32_t file_size;  
-    uint32_t file_alloc; 
+    uint32_t offset;
+    uint32_t size;  
+    uint32_t alloc; 
     uint32_t start_cluster;
     uint32_t cluster;
     fat_dir_t dir;
@@ -45,9 +44,9 @@ fat_create (fat_file_t *file, const char *pathname, fat_ff_t *ff)
 
     fat = file->fat;
 
-    file->file_offset = 0; 
-    file->file_alloc = 0; 
-    file->file_size = 0;
+    file->offset = 0; 
+    file->alloc = 0; 
+    file->size = 0;
     file->start_cluster = 0;
     file->cluster = 0;
 
@@ -139,10 +138,10 @@ fat_find (fat_file_t *file, const char *pathname, fat_ff_t *ff)
 
     file->start_cluster = ff->cluster;
     file->cluster = file->start_cluster;
-    file->file_offset = 0; 
-    file->file_alloc = fat_chain_length (file->fat, file->start_cluster)
+    file->offset = 0; 
+    file->alloc = fat_chain_length (file->fat, file->start_cluster)
         * file->fat->bytes_per_cluster;
-    file->file_size = ff->file_size;
+    file->size = ff->size;
     file->dir = ff->dir;
     return file;
 }
@@ -207,21 +206,21 @@ fat_open (fat_t *fat, const char *pathname, int mode)
 
         if ((mode & O_TRUNC) && (mode & O_RDWR || mode & O_WRONLY))
         {
-            file->file_size = 0;
-            file->file_alloc = 0;
+            file->size = 0;
+            file->alloc = 0;
 
             /* Remove all the previously allocated clusters.  */
             fat_cluster_chain_free (fat, file->start_cluster);
             file->start_cluster = 0;
             file->cluster = 0;
 
-            fat_de_size_set (file->fat, &file->dir, file->file_size);
+            fat_de_size_set (file->fat, &file->dir, file->size);
             fat_io_cache_flush (file->fat);
         }
 
-        file->file_offset = 0;
+        file->offset = 0;
         if (mode & O_APPEND)
-            file->file_offset = file->file_size;        
+            file->offset = file->size;        
         return file;
     }
 
@@ -230,7 +229,7 @@ fat_open (fat_t *fat, const char *pathname, int mode)
         if (fat_create (file, pathname, &ff))
         {
             if (mode & O_APPEND)
-                file->file_offset = file->file_size;        
+                file->offset = file->size;        
             return file;
         }
         TRACE_INFO (FAT, "FAT:%s not created\n", pathname);
@@ -311,16 +310,16 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
     bytes_per_sector = file->fat->bytes_per_sector;
     newfile = 0;
 
-    if (file->file_alloc < len + file->file_size)
+    if (file->alloc < len + file->size)
     {
         uint32_t cluster;
         uint32_t num_clusters;
 
-        num_clusters = (len + file->file_size - file->file_alloc
+        num_clusters = (len + file->size - file->alloc
                         + bytes_per_cluster - 1) / bytes_per_cluster;    
         
         cluster = fat_chain_extend (file->fat, file->cluster, num_clusters);
-        file->file_alloc += num_clusters * bytes_per_cluster;
+        file->alloc += num_clusters * bytes_per_cluster;
 
         if (!file->start_cluster)
         {
@@ -334,7 +333,7 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
     while (bytes_left)
     {
         /* If at cluster boundary find next cluster.  */
-        if (file->file_offset % bytes_per_cluster == 0)
+        if (file->offset % bytes_per_cluster == 0)
         {
             if (!file->cluster)
                 file->cluster = file->start_cluster;
@@ -351,9 +350,9 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
 
         sector = fat_sector_calc (file->fat, file->cluster);
 
-        sector += (file->file_offset % bytes_per_cluster) / bytes_per_sector;
+        sector += (file->offset % bytes_per_cluster) / bytes_per_sector;
 
-        offset = file->file_offset % bytes_per_sector;
+        offset = file->offset % bytes_per_sector;
 
         /* Limit to remaining bytes in a sector.  */
         nbytes = bytes_left < bytes_per_sector - offset
@@ -365,13 +364,13 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
             break;
 
         data += nbytes;
-        file->file_offset += nbytes;
-        file->file_size += nbytes;
+        file->offset += nbytes;
+        file->size += nbytes;
         bytes_left -= nbytes;
     }
 
     /* Update directory entry.  */
-    fat_de_size_set (file->fat, &file->dir, file->file_size);
+    fat_de_size_set (file->fat, &file->dir, file->size);
     if (newfile)
         fat_de_cluster_set (file->fat, &file->dir, file->start_cluster);
 
@@ -395,9 +394,9 @@ fat_debug (fat_t *fat, const char *filename)
     if (!file)
         return;
 
-    fprintf (stderr, "Offset %lu\n", file->file_offset);
-    fprintf (stderr, "Size %lu\n", file->file_size);
-    fprintf (stderr, "Alloc %lu\n", file->file_alloc);
+    fprintf (stderr, "Offset %lu\n", file->offset);
+    fprintf (stderr, "Size %lu\n", file->size);
+    fprintf (stderr, "Alloc %lu\n", file->alloc);
     fprintf (stderr, "DE sector %lu\n", file->dir.sector);
     fprintf (stderr, "DE offset %u\n", file->dir.offset);
     fprintf (stderr, "Clusters ");
@@ -458,18 +457,18 @@ fat_read (fat_file_t *file, void *buffer, size_t len)
     TRACE_INFO (FAT, "FAT:Read %u\n", (unsigned int)len);
     
     /* Limit max read to size of file.  */
-    if ((uint32_t)len > (file->file_size - file->file_offset))
-        len = file->file_size - file->file_offset;
+    if ((uint32_t)len > (file->size - file->offset))
+        len = file->size - file->offset;
     
     data = buffer;
     bytes_left = len;
     while (bytes_left)
     {
-        offset = file->file_offset % file->fat->bytes_per_sector;
+        offset = file->offset % file->fat->bytes_per_sector;
         sector = fat_sector_calc (file->fat, file->cluster);
 
         /* Add local sector within a cluster .  */
-        sector += (file->file_offset % file->fat->bytes_per_cluster) 
+        sector += (file->offset % file->fat->bytes_per_cluster) 
             / file->fat->bytes_per_sector;
 
         /* Limit to max one sector.  */
@@ -488,11 +487,11 @@ fat_read (fat_file_t *file, void *buffer, size_t len)
 
         data += nbytes;
 
-        file->file_offset += nbytes;
+        file->offset += nbytes;
         bytes_left -= nbytes;
 
         /* Cluster boundary.  */
-        if (file->file_offset % file->fat->bytes_per_cluster == 0)
+        if (file->offset % file->fat->bytes_per_cluster == 0)
         {
             /* Need to move to next cluster in chain.  */
             file->cluster = fat_cluster_next (file->fat, file->cluster);
@@ -526,20 +525,20 @@ fat_lseek (fat_file_t *file, off_t offset, int whence)
     {
     case SEEK_SET : fpos = offset;
         break;
-    case SEEK_CUR : fpos = file->file_offset + offset;
+    case SEEK_CUR : fpos = file->offset + offset;
         break;
-    case SEEK_END : fpos = file->file_size + offset;
+    case SEEK_END : fpos = file->size + offset;
         break;
     }
     
     /* Apply limits.  */
     if (fpos < 0)
         fpos = 0;
-    if ((uint32_t)fpos > file->file_size)
-        fpos = file->file_size;
+    if ((uint32_t)fpos > file->size)
+        fpos = file->size;
 
     /* Set the new position.  */
-    file->file_offset = fpos;
+    file->offset = fpos;
 
     /* Calculate how many clusters from start cluster.  */
     num = fpos / file->fat->bytes_per_cluster;

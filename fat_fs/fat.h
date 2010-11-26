@@ -35,8 +35,6 @@ typedef uint16_t (*fat_dev_write_t) (void *dev, uint32_t addr,
                                      const void *buffer, uint16_t size);
 
 
-typedef uint32_t fat_sector_t;
-
 struct fat_io_cache_struct
 {
     uint32_t sector;                 //!< Cached sector number
@@ -48,6 +46,7 @@ struct fat_io_cache_struct
 typedef struct fat_io_cache_struct fat_io_cache_t;
 
 
+/** Supported FAT types.  */
 typedef enum {FAT_FAT16, FAT_FAT32} fat_fs_type_t;
 
 
