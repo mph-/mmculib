@@ -7,14 +7,12 @@
 #include "fat.h"
 #include "fat_de.h"
 #include "fat_io.h"
+#include "fat_fsinfo.h"
 
 /*
    For a simplified description of FAT32 see 
    http://www.pjrc.com/tech/8051/ide/fat32.html
 */
-
-
-#include "fat_common.h"
 
 
 #define FAT12_MASK      0x00000fff      //!< Mask for 12 bit cluster numbers 
@@ -46,33 +44,6 @@
 #define PART_TYPE_DBFS      0xE0
 #define PART_TYPE_BBT       0xFF
 //@}
-
-
-/**
- * This is the format of the contents of the deTime field in the direntry
- * structure.
- * We don't use bitfields because we don't know how compilers for
- * arbitrary machines will lay them out.
- * 
- */
-#define DT_2SECONDS_MASK        0x1F    //!< seconds divided by 2 
-#define DT_2SECONDS_SHIFT       0       //!< -
-#define DT_MINUTES_MASK         0x7E0   //!< minutes 
-#define DT_MINUTES_SHIFT        5       //!< -
-#define DT_HOURS_MASK           0xF800  //!< hours 
-#define DT_HOURS_SHIFT          11      //!< -
-
-
-/**
- * This is the format of the contents of the deDate field in the direntry
- * structure.
- */
-#define DD_DAY_MASK             0x1F    //!< day of month 
-#define DD_DAY_SHIFT            0       //!< -
-#define DD_MONTH_MASK           0x1E0   //!< month 
-#define DD_MONTH_SHIFT          5       //!< -
-#define DD_YEAR_MASK            0xFE00  //!< year - 1980 
-#define DD_YEAR_SHIFT           9       //!< -
 
 
 /** @struct partrecord 
@@ -197,35 +168,12 @@ struct bootsector710
 } __packed__;
 
 
-/** @struct fsinfo
- *  FAT32 FSInfo block (note this spans several sectors).
- */
-struct fsinfo
-{
-    uint32_t fsisig1;           //!< 0x41615252
-    uint8_t fsifill1[480];      //!< Reserved
-    uint32_t fsisig2;           //!< 0x61417272
-    uint32_t fsinfree;          //!< Last known free cluster count
-    uint32_t fsinxtfree;        //!< Last free cluster
-    uint8_t fsifill2[12];       //!< Reserved 
-    uint8_t fsisig3[4];         //!< Trail signature
-    uint8_t fsifill3[508];      //!< Reserved
-    uint8_t fsisig4[4];         //!< Sector signature 0xAA55
-} __packed__;
-
-
 #define CLUST_FREE      0               //!< Cluster 0 also means a free cluster
 #define CLUST_FIRST     2               //!< First legal cluster number 
 #define CLUST_RSRVD     0xfffffff6u     //!< Reserved cluster range 
 #define CLUST_BAD       0xfffffff7u     //!< A cluster with a defect 
 #define CLUST_EOFS      0xfffffff8u     //!< Start of eof cluster range 
 #define CLUST_EOFE      0xffffffffu     //!< End of eof cluster range 
-
-
-#define FAT_FSINFO_SIG1	0x41615252
-#define FAT_FSINFO_SIG2	0x61417272
-#define FAT_FSINFO_P(x)	(le32_to_cpu ((x)->signature1) == FAT_FSINFO_SIG1 \
-			 && le32_to_cpu ((x)->signature2) == FAT_FSINFO_SIG2)
 
 
 
@@ -579,63 +527,6 @@ fat_init (void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write)
 }
 
 
-void
-fat_fsinfo_read (fat_t *fat)
-{
-    struct fsinfo *fsinfo = (void *)fat->cache.buffer;
-
-    fat_io_cache_read (fat, fat->fsinfo_sector);
-    /* Should check signatures.  */
-
-    /* These fields are not necessarily correct.  */
-    fat->free_clusters = le32_to_cpu (fsinfo->fsinfree);
-    if (fat->free_clusters > fat->num_clusters)
-        fat->free_clusters = ~0u;
-    
-    fat->prev_free_cluster = le32_to_cpu (fsinfo->fsinxtfree);
-    if (fat->prev_free_cluster < CLUST_FIRST
-        || fat->prev_free_cluster >= fat->num_clusters)
-        fat->prev_free_cluster = CLUST_FIRST;
-
-    fat->fsinfo_dirty = 0;
-}
-
-
-static void
-fat_fsinfo_write (fat_t *fat)
-{
-    struct fsinfo *fsinfo = (void *)fat->cache.buffer;
-
-    if (!fat->fsinfo_dirty)
-        return;
-
-    fat_io_cache_read (fat, fat->fsinfo_sector);
-    fsinfo->fsinfree = cpu_to_le32 (fat->free_clusters);
-    fsinfo->fsinxtfree = cpu_to_le32 (fat->prev_free_cluster);
-    fat_io_cache_write (fat, fat->fsinfo_sector);
-}
-
-
-static void
-fat_free_clusters_update (fat_t *fat, int count)
-{
-    /* Do nothing if free clusters invalid.  */
-    if (fat->free_clusters == ~0u)
-        return;
-
-    fat->free_clusters += count;
-    fat->fsinfo_dirty = 1;
-}
-
-
-static void
-fat_prev_free_cluster_set (fat_t *fat, uint32_t cluster)
-{
-    fat->prev_free_cluster = cluster;
-    fat->fsinfo_dirty = 1;
-}
-
-
 uint32_t
 fat_cluster_free_search (fat_t *fat, uint32_t start, uint32_t stop)
 {
@@ -659,7 +550,7 @@ fat_cluster_free_find (fat_t *fat)
     uint32_t cluster;
     uint32_t cluster_start;
 
-    cluster_start = fat->prev_free_cluster + 1;
+    cluster_start = fat_fsinfo_prev_free_cluster_get (fat) + 1;
 
     cluster = fat_cluster_free_search (fat, cluster_start, 
                                        fat->num_clusters);
@@ -671,8 +562,8 @@ fat_cluster_free_find (fat_t *fat)
     if (!cluster)
         return 0;
 
-    fat_free_clusters_update (fat, -1);
-    fat_prev_free_cluster_set (fat, cluster);
+    fat_fsinfo_free_clusters_update (fat, -1);
+    fat_fsinfo_prev_free_cluster_set (fat, cluster);
     return cluster;
 }
 
@@ -709,8 +600,8 @@ fat_cluster_chain_free (fat_t *fat, uint32_t cluster_start)
         fat_entry_set (fat, cluster_last, 0x00000000);
         count++;
     }
-    fat_free_clusters_update (fat, count);
 
+    fat_fsinfo_free_clusters_update (fat, count);
     fat_fsinfo_write (fat);
 } 
 
@@ -840,9 +731,10 @@ void
 fat_fsinfo_fix (fat_t *fat)
 {
     uint32_t cluster;
+    uint32_t free_clusters;
     bool found;
 
-    fat->free_clusters = 0;
+    free_clusters = 0;
     found = 0;
 
     /* Iterate over all clusters.  */
@@ -850,7 +742,7 @@ fat_fsinfo_fix (fat_t *fat)
     {
         if (fat_cluster_free_p (fat_entry_get (fat, cluster)))
         {
-            fat->free_clusters++;
+            free_clusters++;
             if (!found)
             {
                 /* This is not quite correct; it should be the last
@@ -860,10 +752,9 @@ fat_fsinfo_fix (fat_t *fat)
             }
         }
     }
-    fat->fsinfo_dirty = 1;
+
+    fat_fsinfo_free_clusters_set (free_clusters);
     fat_fsinfo_write (fat);
-    fat_io_cache_flush (fat);
-    fat->fsinfo_dirty = 0;
 }
 
 

@@ -38,6 +38,33 @@
 #define WIN_CNT         0x3f      //!< Sequence number mask
 
 
+/**
+ * This is the format of the contents of the deTime field in the direntry
+ * structure.
+ * We don't use bitfields because we don't know how compilers for
+ * arbitrary machines will lay them out.
+ * 
+ */
+#define DT_2SECONDS_MASK        0x1F    //!< seconds divided by 2 
+#define DT_2SECONDS_SHIFT       0       //!< -
+#define DT_MINUTES_MASK         0x7E0   //!< minutes 
+#define DT_MINUTES_SHIFT        5       //!< -
+#define DT_HOURS_MASK           0xF800  //!< hours 
+#define DT_HOURS_SHIFT          11      //!< -
+
+
+/**
+ * Format of the contents of the deDate field in the direntry
+ * structure.
+ */
+#define DD_DAY_MASK             0x1F    //!< day of month 
+#define DD_DAY_SHIFT            0       //!< -
+#define DD_MONTH_MASK           0x1E0   //!< month 
+#define DD_MONTH_SHIFT          5       //!< -
+#define DD_YEAR_MASK            0xFE00  //!< year - 1980 
+#define DD_YEAR_SHIFT           9       //!< -
+
+
 
 /** FAT directory entry structure.  */
 struct fat_de_struct

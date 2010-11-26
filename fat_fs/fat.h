@@ -15,6 +15,7 @@
 /* Size of a FAT sector.  */
 #define FAT_SECTOR_SIZE 512
 
+
 /* The maximum length of a file or directory name to use.  */
 #ifndef FAT_NAME_LEN_USE
 #define FAT_NAME_LEN_USE 32
