@@ -29,7 +29,7 @@ uint32_t
 fat_fsinfo_free_clusters_get (fat_t *fat);
 
 
-void
+bool
 fat_fsinfo_read (fat_t *fat);
 
 

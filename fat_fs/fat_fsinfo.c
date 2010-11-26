@@ -90,13 +90,15 @@ fat_fsinfo_free_clusters_get (fat_t *fat)
 }
 
 
-void
+bool
 fat_fsinfo_read (fat_t *fat)
 {
-    struct fsinfo *fsinfo = (void *)fat->cache.buffer;
+    struct fsinfo *fsinfo;
 
     /* Read the first sector of the fsinfo.  */
-    fat_io_cache_read (fat, fat->fsinfo_sector);
+    fsinfo = (void *)fat_io_cache_read (fat, fat->fsinfo_sector);
+    if (!fsinfo)
+        return 0;
 
     /* TODO: Should check signatures.  */
 
@@ -111,18 +113,19 @@ fat_fsinfo_read (fat_t *fat)
         fat->prev_free_cluster = CLUST_FIRST;
 
     fat->fsinfo_dirty = 0;
+    return 1;
 }
 
 
 void
 fat_fsinfo_write (fat_t *fat)
 {
-    struct fsinfo *fsinfo = (void *)fat->cache.buffer;
+    struct fsinfo *fsinfo;
 
     if (!fat->fsinfo_dirty)
         return;
 
-    fat_io_cache_read (fat, fat->fsinfo_sector);
+    fsinfo = (void *)fat_io_cache_read (fat, fat->fsinfo_sector);
     fsinfo->fsinfree = cpu_to_le32 (fat->free_clusters);
     fsinfo->fsinxtfree = cpu_to_le32 (fat->prev_free_cluster);
     fat_io_cache_write (fat, fat->fsinfo_sector);
