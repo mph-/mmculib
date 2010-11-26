@@ -5,7 +5,9 @@
 */
 
 #include "fat.h"
+#include "fat_cluster.h"
 #include "fat_io.h"
+
 
 /* This implements handling of the fields in the file system info
    (fsinfo) sectors, in particular, the number of free clusters and
@@ -130,4 +132,19 @@ fat_fsinfo_write (fat_t *fat)
 
     fat->fsinfo_dirty = 0;
 }
+
+
+void
+fat_fsinfo_fix (fat_t *fat)
+{
+    fat_cluster_stats_t stats;
+
+    fat_cluster_stats (fat, &stats);
+
+    fat_fsinfo_prev_free_cluster_set (fat, stats.prev_free_cluster);
+    fat_fsinfo_free_clusters_set (fat, stats.free);
+
+    fat_fsinfo_write (fat);
+}
+
 

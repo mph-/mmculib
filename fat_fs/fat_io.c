@@ -4,10 +4,10 @@
     @brief  FAT filesystem I/O operations.
 */
 
+
 /*  Note, FAT is horrendous in terms of efficiency.  Here we implement
     a simple write-back cache for a single sector.  This helps to cache the
-    FAT, fsinfo, and directory entries.  Data sectors are not cached.
-*/
+    FAT, fsinfo, and directory entries.  Data sectors are not cached.   */
 
 
 #include "fat_io.h"

@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include "fat.h"
 #include "fat_de.h"
+#include "fat_cluster.h"
 #include "fat_io.h"
 
 /* Size of a winentry.  */
@@ -121,7 +122,7 @@ fat_de_first (fat_t *fat, uint32_t cluster, fat_de_iter_t *de_iter)
 {
     de_iter->fs = fat;
     de_iter->cluster = cluster;
-    de_iter->dir.sector = fat_sector_calc (fat, cluster);
+    de_iter->dir.sector = fat_cluster_to_sector (fat, cluster);
     de_iter->dir.offset = 0;
     de_iter->sectors = fat_dir_sector_count (fat, cluster);    
 
@@ -169,9 +170,9 @@ fat_de_next (fat_de_iter_t *de_iter)
                 /* Have reached end of chain.  Normally we will have
                    found the empty slot terminator.  If we get here we
                    want another cluster added to the directory.  */
-                cluster_next = fat_chain_extend (fat, de_iter->cluster, 1);
+                cluster_next = fat_cluster_chain_extend (fat, de_iter->cluster, 1);
 
-                de_iter->dir.sector = fat_sector_calc (fat, cluster_next);
+                de_iter->dir.sector = fat_cluster_to_sector (fat, cluster_next);
                 buffer = fat_io_cache_read (fat, de_iter->dir.sector);
                 memset (buffer, 0, FAT_SECTOR_SIZE);
 
@@ -184,7 +185,7 @@ fat_de_next (fat_de_iter_t *de_iter)
             }
 
             de_iter->cluster = cluster_next;
-            de_iter->dir.sector = fat_sector_calc (fat, de_iter->cluster);
+            de_iter->dir.sector = fat_cluster_to_sector (fat, de_iter->cluster);
         }
 
         buffer = fat_io_cache_read (fat, de_iter->dir.sector);

@@ -138,7 +138,7 @@ fat_find (fat_file_t *file, const char *pathname, fat_ff_t *ff)
     file->start_cluster = ff->cluster;
     file->cluster = file->start_cluster;
     file->offset = 0; 
-    file->alloc = fat_chain_length (file->fat, file->start_cluster)
+    file->alloc = fat_cluster_chain_length (file->fat, file->start_cluster)
         * file->fat->bytes_per_cluster;
     file->size = ff->size;
     file->dir = ff->dir;
@@ -312,7 +312,7 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
         num_clusters = (len + file->size - file->alloc
                         + bytes_per_cluster - 1) / bytes_per_cluster;    
         
-        cluster = fat_chain_extend (file->fat, file->cluster, num_clusters);
+        cluster = fat_cluster_chain_extend (file->fat, file->cluster, num_clusters);
         file->alloc += num_clusters * bytes_per_cluster;
 
         if (!file->start_cluster)
@@ -342,7 +342,7 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
             }
         }
 
-        sector = fat_sector_calc (file->fat, file->cluster);
+        sector = fat_cluster_to_sector (file->fat, file->cluster);
 
         sector += (file->offset % bytes_per_cluster) / bytes_per_sector;
 
@@ -459,7 +459,7 @@ fat_read (fat_file_t *file, void *buffer, size_t len)
     while (bytes_left)
     {
         offset = file->offset % file->fat->bytes_per_sector;
-        sector = fat_sector_calc (file->fat, file->cluster);
+        sector = fat_cluster_to_sector (file->fat, file->cluster);
 
         /* Add local sector within a cluster .  */
         sector += (file->offset % file->fat->bytes_per_cluster) 

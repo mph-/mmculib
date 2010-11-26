@@ -12,6 +12,7 @@
 #include "fat_trace.h"
 #include "fat_endian.h"
 
+
 /* Size of a FAT sector.  */
 #define FAT_SECTOR_SIZE 512
 
@@ -74,27 +75,7 @@ struct fat_struct
 typedef struct fat_struct fat_t;
 
 
-uint32_t fat_sector_calc (fat_t *fat, uint32_t cluster);
-
-
-uint32_t fat_chain_extend (fat_t *fat, uint32_t cluster_start, 
-                           uint32_t num_clusters);
-
-
 int fat_dir_sector_count (fat_t *fat, uint32_t cluster);
-
-
-uint16_t fat_chain_length (fat_t *fat, uint32_t cluster);
-
-
-void fat_cluster_chain_free (fat_t *fat, uint32_t cluster_start);
-
-
-uint32_t fat_cluster_next (fat_t *fat, uint32_t cluster);
-
-
-/* Return true if cluster is the last in the chain.  */
-bool fat_cluster_last_p (uint32_t cluster);
 
 
 bool fat_check_p (fat_t *fat);
