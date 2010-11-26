@@ -32,7 +32,6 @@ fat_create (fat_file_t *file, const char *pathname, fat_ff_t *ff)
     const char *filename;
 
     /* Check that directory is valid.  */
-    /* TODO, should we create a directory?.  */
     if (!ff->parent_dir_cluster)
         return NULL;
 
@@ -153,21 +152,16 @@ fat_find (fat_file_t *file, const char *pathname, fat_ff_t *ff)
  * @param name File name
  * @param mode Mode to open file
  * 
- * - O_BINARY Raw mode.
- * - O_TEXT End of line translation. 
- * - O_EXCL Open only if it does not exist. 
+ * - O_EXCL Open only if it does not exist (TODO). 
  * - O_RDONLY Read only. 
-    
- Any of the write modes will (potentially) modify the file or directory entry
-
  * - O_CREAT Create file if it does not exist. 
  * - O_APPEND Always write at the end. 
  * - O_RDWR Read and write. 
  * - O_WRONLY Write only.
-
  * - O_TRUNC Truncate file if it exists. 
  *
  * @return File handle 
+ * @note Any of the write modes may modify the file or directory entry
  */
 fat_file_t *
 fat_open (fat_t *fat, const char *pathname, int mode)
@@ -547,7 +541,7 @@ fat_lseek (fat_file_t *file, off_t offset, int whence)
     file->cluster = file->start_cluster;
 
     /* Follow chain.  I wonder if it would be better to mark
-       file->cluster being invalid and then fix it up when read or
+       file->cluster as invalid and then fix it up when read or
        write is called?.  */
     while (num--)
     {
@@ -565,3 +559,9 @@ fat_lseek (fat_file_t *file, off_t offset, int whence)
 }
 
 
+int
+fat_mkdir (fat_t *fat, const char *pathname, mode_t mode)
+{
+    /* TODO.  */
+    return -EACCES;
+}

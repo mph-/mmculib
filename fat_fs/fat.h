@@ -10,6 +10,7 @@
 #include "config.h"
 #include <unistd.h>
 #include "fat_trace.h"
+#include "fat_endian.h"
 
 /* Size of a FAT sector.  */
 #define FAT_SECTOR_SIZE 512
@@ -18,14 +19,6 @@
 #ifndef FAT_NAME_LEN_USE
 #define FAT_NAME_LEN_USE 32
 #endif
-
-
-#define CLUST_FREE      0               //!< Cluster 0 also means a free cluster
-#define CLUST_FIRST     2               //!< First legal cluster number 
-#define CLUST_RSRVD     0xfffffff6u     //!< Reserved cluster range 
-#define CLUST_BAD       0xfffffff7u     //!< A cluster with a defect 
-#define CLUST_EOFS      0xfffffff8u     //!< Start of eof cluster range 
-#define CLUST_EOFE      0xffffffffu     //!< End of eof cluster range 
 
 
 typedef uint16_t (*fat_dev_read_t) (void *dev, uint32_t addr,
@@ -37,8 +30,10 @@ typedef uint16_t (*fat_dev_write_t) (void *dev, uint32_t addr,
 
 struct fat_io_cache_struct
 {
-    uint32_t sector;                 //!< Cached sector number
-    uint8_t buffer[FAT_SECTOR_SIZE]; //!< Cached sector data
+    /* Cached sector number.  */
+    uint32_t sector;
+    /* Cached sector data.  */
+    uint8_t buffer[FAT_SECTOR_SIZE];
     bool dirty;
 };
 
@@ -78,100 +73,41 @@ struct fat_struct
 typedef struct fat_struct fat_t;
 
 
-
-static inline uint16_t le16_to_cpu (uint16_t val)
-{
-    return val;
-}
+uint32_t fat_sector_calc (fat_t *fat, uint32_t cluster);
 
 
-static inline uint32_t le32_to_cpu (uint32_t val)
-{
-    return val;
-}
+uint32_t fat_chain_extend (fat_t *fat, uint32_t cluster_start, 
+                           uint32_t num_clusters);
 
 
-static inline uint16_t cpu_to_le16 (uint16_t val)
-{
-    return val;
-}
+int fat_dir_sector_count (fat_t *fat, uint32_t cluster);
 
 
-static inline uint32_t cpu_to_le32 (uint32_t val)
-{
-    return val;
-}
+uint16_t fat_chain_length (fat_t *fat, uint32_t cluster);
 
 
-static inline uint16_t le16_get (void *ptr)
-{
-    return le16_to_cpu (*(uint16_t *)ptr);
-}
+void fat_cluster_chain_free (fat_t *fat, uint32_t cluster_start);
 
 
-static inline uint32_t le32_get (void *ptr)
-{
-    return le32_to_cpu (*(uint32_t *)ptr);
-}
-
-
-static inline void le16_set (void *ptr, uint16_t val)
-{
-    *(uint16_t *)ptr = cpu_to_le16 (val);
-}
-
-
-static inline void le32_set (void *ptr, uint32_t val)
-{
-    *(uint32_t *)ptr = cpu_to_le32 (val);
-}
-
-
-fat_t *fat_init (void *dev, fat_dev_read_t dev_read, 
-                    fat_dev_write_t dev_write);
-
-uint32_t
-fat_sector_calc (fat_t *fat, uint32_t cluster);
-
-
-uint32_t
-fat_chain_extend (fat_t *fat, uint32_t cluster_start, 
-                  uint32_t num_clusters);
-
-int
-fat_dir_sector_count (fat_t *fat, uint32_t cluster);
-
-
-uint16_t 
-fat_chain_length (fat_t *fat, uint32_t cluster);
-
-
-void
-fat_cluster_chain_free (fat_t *fat, uint32_t cluster_start);
-
-
-uint32_t 
-fat_cluster_next (fat_t *fat, uint32_t cluster);
+uint32_t fat_cluster_next (fat_t *fat, uint32_t cluster);
 
 
 /* Return true if cluster is the last in the chain.  */
-static inline bool
-fat_cluster_last_p (uint32_t cluster)
-{
-    return cluster >= CLUST_EOFS;
-}
+bool fat_cluster_last_p (uint32_t cluster);
 
 
-bool
-fat_check_p (fat_t *fat);
+bool fat_check_p (fat_t *fat);
 
 
-uint16_t
-fat_sector_size (fat_t *fat);
+uint16_t fat_sector_size (fat_t *fat);
 
 
-uint16_t
-fat_root_dir_cluster (fat_t *fat);
+uint16_t fat_root_dir_cluster (fat_t *fat);
+
+
+fat_t *fat_init (void *dev, fat_dev_read_t dev_read, 
+                 fat_dev_write_t dev_write);
+
 
 #endif
 

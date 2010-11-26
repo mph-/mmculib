@@ -214,6 +214,14 @@ struct fsinfo
 } __packed__;
 
 
+#define CLUST_FREE      0               //!< Cluster 0 also means a free cluster
+#define CLUST_FIRST     2               //!< First legal cluster number 
+#define CLUST_RSRVD     0xfffffff6u     //!< Reserved cluster range 
+#define CLUST_BAD       0xfffffff7u     //!< A cluster with a defect 
+#define CLUST_EOFS      0xfffffff8u     //!< Start of eof cluster range 
+#define CLUST_EOFE      0xffffffffu     //!< End of eof cluster range 
+
+
 #define FAT_FSINFO_SIG1	0x41615252
 #define FAT_FSINFO_SIG2	0x61417272
 #define FAT_FSINFO_P(x)	(le32_to_cpu ((x)->signature1) == FAT_FSINFO_SIG1 \
@@ -247,6 +255,15 @@ fat_cluster_free_p (uint32_t cluster)
 {
     return cluster == CLUST_FREE;
 }
+
+
+/* Return true if cluster is the last in the chain.  */
+bool
+fat_cluster_last_p (uint32_t cluster)
+{
+    return cluster >= CLUST_EOFS;
+}
+
 
 
 /**
