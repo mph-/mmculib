@@ -83,6 +83,20 @@ typedef enum
 } sdcard_write_response_t;
 
 
+/* R1 response bits.  Note, the MSB of the byte is always zero.  */
+typedef enum
+{
+    SD_STATUS_IDLE = BIT (0),
+    SD_STATUS_ERASE_RESET = BIT (1),
+    SD_STATUS_ILLEGAL_COMMAND = BIT (2),
+    SD_STATUS_CRC_ERROR = BIT (3),
+    SD_STATUS_ERASE_SEQUENCE_ERROR = BIT (4),
+    /* Misaligned address for block size.  */
+    SD_STATUS_ADDRESS_ERROR = BIT (5),
+    SD_STATUS_PARAMETER_ERROR = BIT (6)
+} sdcard_R1_format_t; 
+
+
 enum
 {
     SD_START_TOKEN = 0xfe
@@ -578,7 +592,7 @@ sdcard_block_read (sdcard_t dev, sdcard_addr_t addr, void *buffer)
     uint8_t status;
 
     status = sdcard_command_read (dev, SD_OP_READ_SINGLE_BLOCK,
-                                  addr >> SDCARD_BLOCK_BITS, buffer,
+                                  addr >> dev->addr_shift, buffer,
                                   SDCARD_BLOCK_SIZE);
     if (status)
         return 0;
@@ -625,7 +639,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     uint8_t command[3];
     uint8_t response[3];
 
-    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr >> SDCARD_BLOCK_BITS);
+    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr >> dev->addr_shift);
     if (status != 0)
     {
         sdcard_deselect (dev);
@@ -799,6 +813,7 @@ sdcard_csd_parse (sdcard_t dev)
        enumerates the fields in a big-endian manner so the first byte
        is bits 127:120.  */
 
+    /* Maximum read block size.  */
     read_bl_len = csd[5] & 0x0f;
     block_size = 1 << read_bl_len;
 
@@ -806,6 +821,12 @@ sdcard_csd_parse (sdcard_t dev)
     switch (csd_structure)
     {
     case 0:
+        /* Standard capacity memory cards.  */
+        dev->type = SDCARD_TYPE_SD;
+
+        /* With 2 GB cards block_size is set to 1024 even though the
+           maximum block size for reading/writing is 512 bytes.  */
+
         /* The capacity (bytes) is given by
            (c_size + 1) * (1 << (c_size_mult + 2)) * block_size  */
 
@@ -815,30 +836,31 @@ sdcard_csd_parse (sdcard_t dev)
         c_size_mult = ((uint32_t)(csd[9] & 0x3) << 1)
             | ((uint32_t)csd[10] >> 7);
 
-        dev->sectors = (c_size + 1) << (c_size_mult + 2); 
-        dev->blocks = dev->sectors * (block_size / SDCARD_BLOCK_SIZE);
+        dev->blocks = (c_size + 1) << (c_size_mult + 2)
+            * (block_size / SDCARD_BLOCK_SIZE);
+        /* Addresses are in bytes.  */
+        dev->addr_shift = 0;
 
-        dev->type = SDCARD_TYPE_SD;
-        /* A Kingston 2 GB card responds with read_bl_len = 10
-           corresponding to a block size of 1024 bytes.  */        
-
-        sdcard_block_size_set (dev, SDCARD_BLOCK_SIZE);
-
+        //sdcard_block_size_set (dev, SDCARD_BLOCK_SIZE);
         break;
         
     case 1:
+        /* High capacity memory cards.  */
+        dev->type = SDCARD_TYPE_SDHC;
+
         /* read_bl_len = 9 on SDHC cards corresponding to a block size
-           of 512 bytes.  */
+           of 512 bytes.  partial reads and writes are prohibited and
+           all read/writes must be 512 bytes.  */
         c_size = ((uint32_t)(csd[7] & 0x3F) << 16)
             | ((uint32_t)csd[8] << 8) | csd[9];
-        c_size_mult = 7;
-        dev->sectors = (c_size + 1) << 10;
-        dev->blocks = dev->sectors;
-        dev->type = SDCARD_TYPE_SDHC;
+
+        dev->blocks = (c_size + 1) << 10;
+        /* Addresses are in blocks.  */
+        dev->addr_shift = 9;
 
         if (c_size > 0x00ffff)
         {
-            /* If capacity is bigger than 32 GB, its a SDXC-card.  */
+            /* If capacity is bigger than 32 GB, its an SDXC-card.  */
             dev->type = SDCARD_TYPE_SDXC;
         }
         break;

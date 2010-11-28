@@ -10,8 +10,7 @@
 #include "config.h"
 #include "spi.h"
 
-enum {SDCARD_BLOCK_BITS = 9};
-enum {SDCARD_BLOCK_SIZE = 1 << SDCARD_BLOCK_BITS};
+enum {SDCARD_BLOCK_SIZE = 512};
 enum {SDCARD_PAGE_BLOCKS = 32};
 enum {SDCARD_PAGE_SIZE = SDCARD_BLOCK_SIZE * SDCARD_PAGE_BLOCKS};
 
@@ -39,7 +38,6 @@ typedef struct
 typedef struct
 {
     spi_t spi;
-    uint32_t sectors;
     uint32_t blocks;
     uint32_t Nac;
     uint32_t Nbs;
@@ -49,6 +47,7 @@ typedef struct
     uint16_t write_rejects;
     uint16_t write_errors;
     sdcard_status_t write_status;
+    uint8_t addr_shift;
     uint8_t status;
     sdcard_type_t type;
     bool crc_enabled;
