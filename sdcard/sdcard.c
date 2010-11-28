@@ -824,9 +824,6 @@ sdcard_csd_parse (sdcard_t dev)
         /* Standard capacity memory cards.  */
         dev->type = SDCARD_TYPE_SD;
 
-        /* With 2 GB cards block_size is set to 1024 even though the
-           maximum block size for reading/writing is 512 bytes.  */
-
         /* The capacity (bytes) is given by
            (c_size + 1) * (1 << (c_size_mult + 2)) * block_size  */
 
@@ -836,12 +833,15 @@ sdcard_csd_parse (sdcard_t dev)
         c_size_mult = ((uint32_t)(csd[9] & 0x3) << 1)
             | ((uint32_t)csd[10] >> 7);
 
-        dev->blocks = (c_size + 1) << (c_size_mult + 2)
-            * (block_size / SDCARD_BLOCK_SIZE);
+        dev->blocks = (c_size + 1) << (c_size_mult + 2);
+
+        /* With 2 GB cards block_size is set to 1024 even though the
+           maximum block size for reading/writing is 512 bytes.  */
+        if (block_size == 1024)
+            dev->blocks *= 2;
+
         /* Addresses are in bytes.  */
         dev->addr_shift = 0;
-
-        //sdcard_block_size_set (dev, SDCARD_BLOCK_SIZE);
         break;
         
     case 1:
@@ -849,7 +849,7 @@ sdcard_csd_parse (sdcard_t dev)
         dev->type = SDCARD_TYPE_SDHC;
 
         /* read_bl_len = 9 on SDHC cards corresponding to a block size
-           of 512 bytes.  partial reads and writes are prohibited and
+           of 512 bytes.  Partial reads and writes are prohibited and
            all read/writes must be 512 bytes.  */
         c_size = ((uint32_t)(csd[7] & 0x3F) << 16)
             | ((uint32_t)csd[8] << 8) | csd[9];

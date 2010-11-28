@@ -42,7 +42,6 @@ typedef struct
     uint32_t Nac;
     uint32_t Nbs;
     uint32_t speed;
-    uint16_t sector_size;
     uint16_t timeouts;
     uint16_t write_rejects;
     uint16_t write_errors;
