@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "fat_cluster.h"
 #include "fat_file.h"
 #include "fat_de.h"
 #include "fat_io.h"

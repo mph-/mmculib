@@ -34,6 +34,7 @@ struct fsinfo
     uint32_t fsinxtfree;        //!< Last free cluster
     uint8_t fsifill2[12];       //!< Reserved 
     uint8_t fsisig3[4];         //!< Trailing signature
+
     uint8_t fsifill3[508];      //!< Reserved
     uint8_t fsisig4[4];         //!< Sector signature 0xAA55
 } __packed__;

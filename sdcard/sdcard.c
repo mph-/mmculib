@@ -1,7 +1,9 @@
 /** @file   sdcard.c
     @author Michael Hayes
     @date   1 May 2010
-    @brief  Secure digital card driver.  */
+    @brief  Secure digital card driver.
+    @note   This has only been tested with a SanDisk 4 GB microSDHC card.
+    To support older cards the probe routine needs modifying.  */
 
 #include <string.h>
 #include "sdcard.h"
@@ -42,7 +44,15 @@
     To get the fastest transfers we need to use the multiple block
     read/write commands.  Some cards have multiple internal buffers
     an an internal parallel reading/writing scheme.
- */
+
+Kingston 2 GB CSD
+0x0, 0x2e, 0x0, 0x32, 0x5b, 0x5a, 0x83, 0xa9, 0xff, 0xff, 0xff, 0x80, 
+0x16, 0x80, 0x0, 0x91
+
+Sandisk 4 GB CSD
+0x40, 0xe, 0x0, 0x32, 0x5b, 0x59, 0x0, 0x0, 0x1e, 0x5c, 0x7f, 0x80,
+0xa, 0x40, 0x40, 0xdf
+*/
 
 enum {SD_CMD_LEN = 6};
 
@@ -102,6 +112,34 @@ enum
 
 static uint8_t sdcard_devices_num = 0;
 static sdcard_dev_t sdcard_devices[SDCARD_DEVICES_NUM];
+
+
+#if 0
+static inline uint32_t 
+sdcard_csd_bits (uint8_t *csd, unsigned int bytes,
+                 unsigned int first, unsigned int size)
+{		
+    unsigned int last = first + size - 1;
+    unsigned int last_byte = bytes - (first / 8) - 1;
+    unsigned int first_byte = bytes - (last / 8) - 1;
+    unsigned int shift = first % 8;
+    uint32_t mask = (1 << (((first + size) % 8) ? ((first + size) % 8) : 8)) - 1;
+    uint32_t result = 0;
+	
+    while (1)
+    {
+        result = (result << 8) | csd[first_byte];
+        if (last_byte == first_byte)
+            break;
+        first_byte++;
+        mask = mask << 8 | 0xFF;
+    }
+    result = (result & mask) >> shift;
+    
+    return result;
+}
+#endif
+
 
 /* The 16-bit CRC uses a standard CCIT generator polynomial:
    x^16 + x^12 + x^5 + 1   */
@@ -339,7 +377,6 @@ sdcard_block_size_set (sdcard_t dev, uint16_t bytes)
     if (status)
         return 0;
 
-    dev->block_size = bytes;
     return bytes;
 }
 
@@ -530,7 +567,7 @@ sdcard_init_wait (sdcard_t dev)
 sdcard_addr_t
 sdcard_capacity_get (sdcard_t dev)
 {
-    return dev->sectors * dev->block_size;
+    return dev->blocks * SDCARD_BLOCK_SIZE;
 }
 
 
@@ -541,12 +578,12 @@ sdcard_block_read (sdcard_t dev, sdcard_addr_t addr, void *buffer)
     uint8_t status;
 
     status = sdcard_command_read (dev, SD_OP_READ_SINGLE_BLOCK,
-                                  addr >> dev->addr_shift, buffer,
-                                  dev->block_size);
+                                  addr >> SDCARD_BLOCK_BITS, buffer,
+                                  SDCARD_BLOCK_SIZE);
     if (status)
         return 0;
 
-    return dev->block_size;
+    return SDCARD_BLOCK_SIZE;
 }
 
 
@@ -560,10 +597,10 @@ sdcard_read (sdcard_t dev, sdcard_addr_t addr, void *buffer, sdcard_size_t size)
     uint8_t *dst;
 
     /* Ignore partial reads.  */
-    if (addr % dev->block_size || size % dev->block_size)
+    if (addr % SDCARD_BLOCK_SIZE || size % SDCARD_BLOCK_SIZE)
         return 0;
 
-    blocks = size / dev->block_size;
+    blocks = size / SDCARD_BLOCK_SIZE;
     dst = buffer;
     total = 0;
     for (i = 0; i < blocks; i++)
@@ -588,7 +625,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     uint8_t command[3];
     uint8_t response[3];
 
-    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr >> dev->addr_shift);
+    status = sdcard_command (dev, SD_OP_WRITE_BLOCK, addr >> SDCARD_BLOCK_BITS);
     if (status != 0)
     {
         sdcard_deselect (dev);
@@ -596,7 +633,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     }
 
     if (dev->crc_enabled)
-        crc = sdcard_crc16 (0, buffer, dev->block_size);
+        crc = sdcard_crc16 (0, buffer, SDCARD_BLOCK_SIZE);
     else
         crc = 0xffff;
     
@@ -606,7 +643,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     spi_write (dev->spi, command, 2, 0);
 
     /* Send the data.  */
-    spi_write (dev->spi, buffer, dev->block_size, 0);
+    spi_write (dev->spi, buffer, SDCARD_BLOCK_SIZE, 0);
 
     command[0] = crc >> 8;
     command[1] = crc & 0xff;
@@ -642,7 +679,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
         return 0;
     }
     
-    return dev->block_size;
+    return SDCARD_BLOCK_SIZE;
 }
 
 
@@ -657,10 +694,10 @@ sdcard_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer,
     const uint8_t *src;
 
     /* Ignore partial writes.  */
-    if (addr % dev->block_size || size % dev->block_size)
+    if (addr % SDCARD_BLOCK_SIZE || size % SDCARD_BLOCK_SIZE)
         return 0;
 
-    blocks = size / dev->block_size;
+    blocks = size / SDCARD_BLOCK_SIZE;
     src = buffer;
     total = 0;
     for (i = 0; i < blocks; i++)
@@ -683,30 +720,30 @@ sdcard_test (sdcard_t dev)
     uint8_t tmp[SDCARD_BLOCK_SIZE];
     unsigned int i;
 
-    if (!dev->block_size)
+    if (!dev->blocks)
         return 0;
 
-    addr = (dev->sectors - 1) * dev->block_size;
+    addr = (dev->blocks - 1) * SDCARD_BLOCK_SIZE;
 
     for (i = 0; i < sizeof (tmp); i++)
         tmp[i] = 0;
 
     if (sdcard_read (dev, addr, tmp, sizeof (tmp))
-        != dev->block_size)
+        != SDCARD_BLOCK_SIZE)
         return 1;
 
     for (i = 0; i < sizeof (tmp); i++)
         tmp[i] = i & 0xff;
 
     if (sdcard_write (dev, addr, tmp, sizeof (tmp))
-        != dev->block_size)
+        != SDCARD_BLOCK_SIZE)
         return 2;
 
     for (i = 0; i < sizeof (tmp); i++)
         tmp[i] = 0;
 
     if (sdcard_read (dev, addr, tmp, sizeof (tmp))
-        != dev->block_size)
+        != SDCARD_BLOCK_SIZE)
         return 3;
         
     for (i = 0; i < sizeof (tmp); i++)
@@ -719,14 +756,14 @@ sdcard_test (sdcard_t dev)
         tmp[i] = ~(i & 0xff);
 
     if (sdcard_write (dev, addr, tmp, sizeof (tmp))
-        != dev->block_size)
+        != SDCARD_BLOCK_SIZE)
         return 5;
 
     for (i = 0; i < sizeof (tmp); i++)
         tmp[i] = 0;
 
     if (sdcard_read (dev, addr, tmp, sizeof (tmp))
-        != dev->block_size)
+        != SDCARD_BLOCK_SIZE)
         return 6;
 
     for (i = 0; i < sizeof (tmp); i++)
@@ -743,11 +780,14 @@ sdcard_csd_parse (sdcard_t dev)
 {
     uint8_t csd[16];
     uint32_t c_size;
-    uint16_t read_bl_len;
+    uint32_t c_size_mult;
+    uint16_t block_size;
     uint32_t speed;
+    uint8_t read_bl_len;
     uint8_t TAAC;
     uint8_t NSAC;
     uint32_t Nac;
+    uint8_t csd_structure;
     int i;
     static const uint8_t mult[] = {10, 12, 13, 15, 20, 25, 30,
                                    35, 40, 45, 50, 55, 60, 70, 80};
@@ -755,23 +795,63 @@ sdcard_csd_parse (sdcard_t dev)
     if (sdcard_csd_read (dev, csd, sizeof (csd)))
         return 0;
 
+    /* The CSD register size is 128 bits (16 octets).  The documentation
+       enumerates the fields in a big-endian manner so the first byte
+       is bits 127:120.  */
+
     read_bl_len = csd[5] & 0x0f;
-    /* This must be 9 on SDHC cards.  */
+    block_size = 1 << read_bl_len;
 
-    dev->type = SDCARD_TYPE_SDHC;
+    csd_structure = csd[0] >> 6;
+    switch (csd_structure)
+    {
+    case 0:
+        /* The capacity (bytes) is given by
+           (c_size + 1) * (1 << (c_size_mult + 2)) * block_size  */
 
-    c_size = ((uint32_t)(csd[7] & 0x3F) << 16)
-        | ((uint32_t)csd[8] << 8) | csd[9];
-   
-    dev->block_size = 1 << read_bl_len;
-    dev->sectors = (c_size + 1) << 10;
-    dev->addr_shift = 9;
+        c_size = ((uint32_t)(csd[6] & 0x3) << 10)
+            | ((uint32_t)csd[7] << 2)
+            | ((uint32_t)csd[8] >> 6);
+        c_size_mult = ((uint32_t)(csd[9] & 0x3) << 1)
+            | ((uint32_t)csd[10] >> 7);
+
+        dev->sectors = (c_size + 1) << (c_size_mult + 2); 
+        dev->blocks = dev->sectors * (block_size / SDCARD_BLOCK_SIZE);
+
+        dev->type = SDCARD_TYPE_SD;
+        /* A Kingston 2 GB card responds with read_bl_len = 10
+           corresponding to a block size of 1024 bytes.  */        
+
+        sdcard_block_size_set (dev, SDCARD_BLOCK_SIZE);
+
+        break;
+        
+    case 1:
+        /* read_bl_len = 9 on SDHC cards corresponding to a block size
+           of 512 bytes.  */
+        c_size = ((uint32_t)(csd[7] & 0x3F) << 16)
+            | ((uint32_t)csd[8] << 8) | csd[9];
+        c_size_mult = 7;
+        dev->sectors = (c_size + 1) << 10;
+        dev->blocks = dev->sectors;
+        dev->type = SDCARD_TYPE_SDHC;
+
+        if (c_size > 0x00ffff)
+        {
+            /* If capacity is bigger than 32 GB, its a SDXC-card.  */
+            dev->type = SDCARD_TYPE_SDXC;
+        }
+        break;
+        
+    default:
+        return 0;
+    }
 
     speed = 1;
     for (i = csd[3] & 0x07; i > 0; i--)
         speed *= 10;
 
-    /*  (TRAN_SPEED_tu * 10) * (TRAN_SPEED_tv * 10) * 10000 (Hz).  */
+    /* (TRAN_SPEED_tu * 10) * (TRAN_SPEED_tv * 10) * 10000 (Hz).  */
     speed *= (mult[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
 
     dev->speed = speed;
@@ -794,11 +874,8 @@ sdcard_csd_parse (sdcard_t dev)
     /* Set Nbs to 250 ms.  */
     dev->Nbs = (dev->Nac * 25) / 10;
 
-    if (c_size > 0x00ffff)
+    if (dev->type == SDCARD_TYPE_SDXC)
     {
-        /* If capacity is bigger than 32GB, its a SDXC-card.  */
-        dev->type = SDCARD_TYPE_SDXC;
-
         /* Set Nbs to 500 ms.  */
         dev->Nbs *= 2;
     }

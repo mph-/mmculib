@@ -57,7 +57,10 @@ fat_io_cache_read (fat_t *fat, fat_sector_t sector)
     if (fat_io_read (fat, fat->cache.sector, 0, 
                      fat->cache.buffer, fat->bytes_per_sector)
         != fat->bytes_per_sector)
+    {
+        TRACE_ERROR (FAT, "FAT:Cannot read sector = %ld\n", sector);
         return 0;
+    }
     
     return fat->cache.buffer;
 }

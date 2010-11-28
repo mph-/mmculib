@@ -1,9 +1,8 @@
-/** @file   sdcard.c
+/** @file   sdcard.h
     @author Michael Hayes
     @date   1 May 2010
     @brief  Secure digital card driver. 
-    @note   This has only been tested with a SanDisk 4 GB microSDHC card.
-    To support older cards the probe routine needs modifying.  */
+*/
 
 #ifndef SDCARD_H
 #define SDCARD_H
@@ -11,7 +10,8 @@
 #include "config.h"
 #include "spi.h"
 
-enum {SDCARD_BLOCK_SIZE = 512};
+enum {SDCARD_BLOCK_BITS = 9};
+enum {SDCARD_BLOCK_SIZE = 1 << SDCARD_BLOCK_BITS};
 enum {SDCARD_PAGE_BLOCKS = 32};
 enum {SDCARD_PAGE_SIZE = SDCARD_BLOCK_SIZE * SDCARD_PAGE_BLOCKS};
 
@@ -19,7 +19,8 @@ typedef enum
 {
     SDCARD_TYPE_SDHC = 1,
     SDCARD_TYPE_SDXC,
-    SDCARD_TYPE_SD
+    SDCARD_TYPE_SD,
+    SDCARD_TYPE_MMC
 } sdcard_type_t;
 
 
@@ -39,15 +40,15 @@ typedef struct
 {
     spi_t spi;
     uint32_t sectors;
+    uint32_t blocks;
     uint32_t Nac;
     uint32_t Nbs;
     uint32_t speed;
-    uint16_t block_size;
+    uint16_t sector_size;
     uint16_t timeouts;
     uint16_t write_rejects;
     uint16_t write_errors;
     sdcard_status_t write_status;
-    uint8_t addr_shift;
     uint8_t status;
     sdcard_type_t type;
     bool crc_enabled;

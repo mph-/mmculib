@@ -249,7 +249,8 @@ fat_partition_read (fat_t *fat)
     /* Check for a jump instruction marking start of MBR.  */
     if (*buffer == 0xE9 || *buffer == 0xEB)
     {
-        /* Have a boot sector but no partition sector.  */
+        /* Have a boot sector but no partition sector.  Thus there is only
+         a single partition (like with a floppy disk).*/
         fat->first_sector = 0;
         TRACE_ERROR (FAT, "FAT:Found MBR, fixme\n");
         return 0;

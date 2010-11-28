@@ -44,7 +44,7 @@ typedef struct fat_io_cache_struct fat_io_cache_t;
 
 
 /** Supported FAT types.  */
-typedef enum {FAT_FAT16, FAT_FAT32} fat_fs_type_t;
+typedef enum {FAT_UNKNOWN, FAT_FAT16, FAT_FAT32} fat_fs_type_t;
 
 
 struct fat_struct
@@ -52,6 +52,7 @@ struct fat_struct
     void *dev;                       //!< Device handle
     fat_dev_read_t dev_read;         //!< Device read function
     fat_dev_write_t dev_write;       //!< Device write function
+    fat_fs_type_t type;
     uint32_t first_sector;           //!< First sector
     uint32_t fsinfo_sector;          //!< File system info sector
     uint32_t first_fat_sector;       //!< First FAT sector
@@ -67,7 +68,6 @@ struct fat_struct
     uint16_t bytes_per_cluster;      //!< Number of bytes per cluster
     uint16_t sectors_per_cluster;
     fat_io_cache_t cache;
-    fat_fs_type_t type;
     bool fsinfo_dirty;
 };
 
