@@ -1,8 +1,13 @@
+/** @file   fat_fs.c
+    @author Michael Hayes
+    @date   7 January 2009
+    @brief  Wrapper for FAT file system.
+*/
+
 #include "fat_file.h"
-#include "fat_partition.h"
-#include "fat_io.h"
 #include "msd.h"
 #include "sys.h"
+
 
 /* Number of concurrent FAT file systems that can be supported.  */
 #ifndef FAT_FS_NUM
@@ -59,9 +64,7 @@ fat_fs_init (msd_t *msd, sys_fs_t *fat_fs)
 
     fat = &fat_fs_info[fat_fs_num];
 
-    fat_io_init (fat, msd, fat_fs_dev_read, fat_fs_dev_write);
-
-    if (!fat_partition_read (fat))
+    if (!fat_init (fat, msd, fat_fs_dev_read, fat_fs_dev_write))
         return 0;
 
     fat_fs_num++;

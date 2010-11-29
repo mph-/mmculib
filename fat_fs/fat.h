@@ -75,9 +75,5 @@ struct fat_struct
 typedef struct fat_struct fat_t;
 
 
-fat_t *fat_init (void *dev, fat_dev_read_t dev_read, 
-                 fat_dev_write_t dev_write);
-
-
 #endif
 

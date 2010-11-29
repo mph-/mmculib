@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "fat_partition.h"
 #include "fat_cluster.h"
 #include "fat_file.h"
 #include "fat_de.h"
@@ -567,4 +568,16 @@ fat_mkdir (fat_t *fat, const char *pathname, mode_t mode)
 {
     /* TODO.  */
     return -EACCES;
+}
+
+
+bool
+fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write)
+{
+    fat_io_init (fat, dev, dev_read, dev_write);
+
+    if (!fat_partition_read (fat))
+        return 0;
+
+    return 1;
 }
