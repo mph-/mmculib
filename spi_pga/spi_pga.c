@@ -133,8 +133,16 @@ spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
 {
     if (!pga->ops->offset_set)
         return 0;
-    pga->offset = pga->ops->offset_set (pga, offset, measure);
-    return pga->offset;
+    return pga->ops->offset_set (pga, offset, measure);
+}
+
+
+bool
+spi_pga_input_short_set (spi_pga_t pga, bool enable)
+{
+    if (!pga->ops->input_short_set)
+        return 0;
+    return pga->ops->input_short_set (pga, enable);
 }
 
 

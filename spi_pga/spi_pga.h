@@ -47,6 +47,10 @@ spi_pga_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure);
 
 
 bool
+spi_pga_input_short_set (spi_pga_t pga, bool enable);
+
+
+bool
 spi_pga_shutdown (spi_pga_t pga);
 
 

@@ -116,7 +116,7 @@ max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
         return 0;
 
-    pga->offset = offset;
+    pga->offset_index = index;
     return offset;
 }
 
@@ -193,11 +193,29 @@ max9939_shutdown_set (spi_pga_t pga, bool enable)
 }
 
 
+
+static bool 
+max9939_input_short_set (spi_pga_t pga, bool enable)
+{
+    uint8_t command[1];
+
+    command[0] = offset_map[pga->offset_index].regval;
+
+    if (enable)
+        command[0] |= MAX9939_MEAS;
+
+    if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
+        return 0;
+    return 1;
+}
+
+
 spi_pga_ops_t max9939_ops =
 {
     .gain_set = max9939_gain_set,   
     .channel_set = 0,
     .offset_set = max9939_offset_set,   
+    .input_short_set = max9939_input_short_set,   
     .shutdown_set = max9939_shutdown_set,   
     .gains = max9939_gains
 };
