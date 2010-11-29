@@ -59,20 +59,6 @@ fat_checksum_calc (const char *filename)
 #endif
 
 
-void
-fat_dir_dump (fat_t *fat, uint32_t dir_cluster)
-{
-    fat_de_dir_dump (fat, dir_cluster);
-}
-
-
-void
-fat_rootdir_dump (fat_t *fat)
-{
-    fat_dir_dump (fat, fat->root_dir_cluster);
-}
-
-
 bool
 fat_check_p (fat_t *fat)
 {
