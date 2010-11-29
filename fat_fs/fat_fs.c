@@ -14,7 +14,7 @@ static fat_t fat_fs_info[FAT_FS_NUM];
 static uint8_t fat_fs_num;
 
 
-static const sys_devops_t fat_devops =
+static const sys_file_ops_t fat_file_ops =
 {
     .open = (void *)fat_open,
     .read = (void *)fat_read,
@@ -24,7 +24,7 @@ static const sys_devops_t fat_devops =
 };
 
 
-static const sys_fsops_t fat_fsops =
+static const sys_fs_ops_t fat_fs_ops =
 {
     .unlink = (void *)fat_unlink,
     .rename = 0
@@ -66,8 +66,8 @@ fat_fs_init (msd_t *msd, sys_fs_t *fat_fs)
 
     fat_fs_num++;
 
-    fat_fs->devops = &fat_devops;
-    fat_fs->fsops = &fat_fsops;
+    fat_fs->file_ops = &fat_file_ops;
+    fat_fs->fs_ops = &fat_fs_ops;
     fat_fs->private = fat;
     return 1;
 }
