@@ -35,7 +35,6 @@ fat_io_cache_flush (fat_t *fat);
 
 
 void
-fat_io_cache_init (fat_t *fat);
-
+fat_io_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write);
 
 #endif

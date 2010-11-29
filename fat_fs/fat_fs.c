@@ -1,9 +1,17 @@
 #include "fat_file.h"
+#include "fat_partition.h"
+#include "fat_io.h"
 #include "msd.h"
 #include "sys.h"
 
-/* This file is a wrapper for fat.c to keep fat.c more general and
-   have fewer dependencies.  */
+/* Number of concurrent FAT file systems that can be supported.  */
+#ifndef FAT_FS_NUM
+#define FAT_FS_NUM 1
+#endif
+
+
+static fat_t fat_fs_info[FAT_FS_NUM];
+static uint8_t fat_fs_num;
 
 
 static const sys_devops_t fat_devops =
@@ -44,15 +52,23 @@ fat_fs_dev_write (void *arg, uint32_t addr, const void *buffer, uint16_t size)
 bool
 fat_fs_init (msd_t *msd, sys_fs_t *fat_fs)
 {
-    void *arg;
+    fat_t *fat;
 
-    arg = fat_init (msd, fat_fs_dev_read, fat_fs_dev_write);
-    if (!arg)
+    if (fat_fs_num >= FAT_FS_NUM)
         return 0;
+
+    fat = &fat_fs_info[fat_fs_num];
+
+    fat_io_init (fat, msd, fat_fs_dev_read, fat_fs_dev_write);
+
+    if (!fat_partition_read (fat))
+        return 0;
+
+    fat_fs_num++;
 
     fat_fs->devops = &fat_devops;
     fat_fs->fsops = &fat_fsops;
-    fat_fs->private = arg;
+    fat_fs->private = fat;
     return 1;
 }
 

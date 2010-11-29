@@ -75,18 +75,6 @@ struct fat_struct
 typedef struct fat_struct fat_t;
 
 
-int fat_dir_sector_count (fat_t *fat, uint32_t cluster);
-
-
-bool fat_check_p (fat_t *fat);
-
-
-uint16_t fat_sector_size (fat_t *fat);
-
-
-uint16_t fat_root_dir_cluster (fat_t *fat);
-
-
 fat_t *fat_init (void *dev, fat_dev_read_t dev_read, 
                  fat_dev_write_t dev_write);
 

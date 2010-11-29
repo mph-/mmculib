@@ -6,6 +6,13 @@
 
 #include "fat.h"
 #include "fat_io.h"
+#include "fat_fsinfo.h"
+
+
+/*
+   For a simplified description of FAT32 see 
+   http://www.pjrc.com/tech/8051/ide/fat32.html
+*/
 
 
 /**
@@ -289,6 +296,9 @@ fat_partition_read (fat_t *fat)
     }
 
     if (!fat_partition_boot_record_read (fat))
+        return 0;
+
+    if (!fat_fsinfo_read (fat))
         return 0;
     
     return 1;

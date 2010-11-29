@@ -77,9 +77,20 @@ fat_io_cache_write (fat_t *fat, fat_sector_t sector)
 }
 
 
-void
+static void
 fat_io_cache_init (fat_t *fat)
 {
     fat->cache.sector = -1;
     fat->cache.dirty = 0;
+}
+
+
+void
+fat_io_init (fat_t *fat, void * dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write)
+{
+    fat->dev = dev;
+    fat->dev_read = dev_read;
+    fat->dev_write = dev_write;
+
+    fat_io_cache_init (fat);
 }

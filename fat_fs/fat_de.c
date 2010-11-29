@@ -116,6 +116,16 @@ struct fat_de_iter_struct
 typedef struct fat_de_iter_struct fat_de_iter_t;
 
 
+/** Return number of sectors for a directory.  */
+static int
+fat_dir_sector_count (fat_t *fat, uint32_t cluster)
+{
+    if (fat->type == FAT_FAT16 && cluster == fat->root_dir_cluster)
+        return fat->root_dir_sectors; 
+    else
+        return fat->sectors_per_cluster;
+}
+
 
 static fat_de_t *
 fat_de_first (fat_t *fat, uint32_t cluster, fat_de_iter_t *de_iter)
@@ -150,7 +160,7 @@ fat_de_next (fat_de_iter_t *de_iter)
 
     buffer = fat_io_cache_read (fat, de_iter->dir.sector);
 
-    if (de_iter->dir.offset >= fat_sector_size (fat))
+    if (de_iter->dir.offset >= fat->bytes_per_sector)
     {
         de_iter->dir.offset = 0;
         de_iter->dir.sector++;

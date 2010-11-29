@@ -74,7 +74,7 @@ fat_search (fat_t *fat, const char *pathname, fat_ff_t *ff)
 
     p = pathname;
 
-    ff->parent_dir_cluster = fat_root_dir_cluster (fat);
+    ff->parent_dir_cluster = fat->root_dir_cluster;
     
     while (*p)
     {
@@ -170,7 +170,9 @@ fat_open (fat_t *fat, const char *pathname, int mode)
     fat_ff_t ff;
     fat_file_t *file;
 
-    if (!fat_check_p (fat))
+    /* Check for corrupt filesystem.  */
+    if (fat->bytes_per_cluster == 0
+         || fat->bytes_per_sector == 0)
     {
         errno = EFAULT;
         return 0;
