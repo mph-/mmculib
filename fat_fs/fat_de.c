@@ -159,6 +159,9 @@ fat_de_next (fat_de_iter_t *de_iter)
     de_iter->dir.offset += sizeof (fat_de_t);
 
     buffer = fat_io_cache_read (fat, de_iter->dir.sector);
+    /* Something has gone wrong so give up.  */
+    if (!buffer)
+        return 0;
 
     if (de_iter->dir.offset >= fat->bytes_per_sector)
     {
@@ -184,6 +187,11 @@ fat_de_next (fat_de_iter_t *de_iter)
 
                 de_iter->dir.sector = fat_cluster_to_sector (fat, cluster_next);
                 buffer = fat_io_cache_read (fat, de_iter->dir.sector);
+
+                /* Something has gone wrong so give up.  */
+                if (!buffer)
+                    return 0;
+
                 memset (buffer, 0, FAT_SECTOR_SIZE);
 
                 de = (fat_de_t *) buffer;
