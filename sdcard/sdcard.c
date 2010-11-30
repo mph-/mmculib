@@ -120,6 +120,7 @@ enum
 #define SDCARD_DEVICES_NUM 4
 #endif 
 
+/* The command response time Ncr is 0 to 8 bytes for SDC and 1 to 8 bytes for MMC.  */
 #define SDCARD_NCR 8
 
 
@@ -290,7 +291,9 @@ sdcard_deselect (sdcard_t dev)
        provide 8 clock cycles for the card to complete the operation
        before shutting down the clock. Throughout this 8-clock period,
        the state of the CS signal is irrelevant.  It can be asserted
-       or de-asserted.  */
+       or de-asserted.  Some sources say that these clocks must come
+       after the CS being deasserted for the DO signal to be released
+       from its half Vcc state.  */
 
     spi_transfer (dev->spi, dummy, dummy, sizeof (dummy), 1);
 }
@@ -932,12 +935,14 @@ sdcard_probe (sdcard_t dev)
                          0xff, 0xff, 0xff, 0xff, 0xff};
     uint32_t ocr;
 
-    /* MMC cards need to be initialised with a maximum clock speed of
-       400 kHz.  */
+    /* Need to wait until supply voltage reaches 2.2 V then wait 1 ms. */
+
+    /* MMC cards need to be initialised with a clock speed between 100
+       and 400 kHz.  */
     spi_clock_speed_set (dev->spi, 400e3);
 
     /* Send the card 80 clocks to activate it (at least 74 are
-       required).  */
+       required) with DI and CS high.  */
     spi_cs_disable (dev->spi);
     spi_write (dev->spi, dummy, sizeof (dummy), 1);
     spi_cs_enable (dev->spi);
