@@ -4,6 +4,7 @@
     @brief  FAT filesystem routines for reading the partition record.
 */
 
+#include <string.h>
 #include "fat.h"
 #include "fat_io.h"
 #include "fat_fsinfo.h"
@@ -172,6 +173,7 @@ fat_partition_boot_record_read (fat_t *fat)
     struct extboot *bsext;
     uint32_t tot_sectors;
     uint32_t data_sectors;
+    char label[12];
 
     /* Read partition boot record (Volume ID).  */
     buffer = fat_io_cache_read (fat, fat->first_sector); 
@@ -182,7 +184,9 @@ fat_partition_boot_record_read (fat_t *fat)
     pb = (struct bootsector710 *) buffer;
     bpb = &pb->bsBPB;
     bsext = &pb->bsExt;
-    TRACE_INFO (FAT, "FAT:%s\n", bsext->exVolumeLabel);
+    strncpy (label, bsext->exVolumeLabel, 11);
+    label[11] = 0;
+    TRACE_INFO (FAT, "FAT:%s\n", label);
 
     /* Number of bytes per sector.  */
     fat->bytes_per_sector = le16_to_cpu (bpb->bpbBytesPerSec);

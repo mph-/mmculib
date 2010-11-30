@@ -420,6 +420,19 @@ fat_de_find (fat_t *fat, uint32_t dir_cluster,
 }
 
 
+static void
+fat_de_dump (fat_de_t *de)
+{
+    char filename[14];
+
+    fat_de_filename_make (filename, de->name, de->ext);
+
+    TRACE_ERROR (FAT, "%s %d %ld\n", filename, (unsigned int)de->size,
+                 (de->cluster_high << 16) | de->cluster_low);
+                 
+}
+
+
 void
 fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
 {
@@ -435,7 +448,7 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
             fat_de_dir_dump (fat,
                              (de->cluster_high << 16) | de->cluster_low);
         else
-            TRACE_ERROR (FAT, "%s %d\n", de->name, (unsigned int)de->size);
+            fat_de_dump (de);
     }
 }
 

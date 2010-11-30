@@ -540,12 +540,31 @@ fat_mkdir (fat_t *fat, const char *pathname, mode_t mode)
 }
 
 
-uint32_t
-fat_file_start_cluster (fat_file_t *file)
+void
+fat_file_debug (fat_file_t *file)
 {
-    return file->start_cluster;
-}
+    uint32_t cluster;
 
+    TRACE_INFO (FAT, "Offset %lu\n", file->offset);
+    TRACE_INFO (FAT, "Size %lu\n", file->size);
+    TRACE_INFO (FAT, "Alloc %lu\n", file->alloc);
+    TRACE_INFO (FAT, "DE sector %lu\n", file->dir.sector);
+    TRACE_INFO (FAT, "DE offset %u\n", file->dir.offset);
+    TRACE_INFO (FAT, "Clusters ");
+
+    cluster = file->start_cluster;
+    while (1)
+    {
+        TRACE_INFO (FAT, "%lu ", cluster);        
+        if (!cluster)
+            break;
+
+        cluster = fat_cluster_next (file->fat, cluster);
+        if (fat_cluster_last_p (cluster))
+            break;
+    }
+    TRACE_INFO (FAT, "\n");
+}
 
 
 bool

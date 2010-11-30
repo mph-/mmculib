@@ -876,6 +876,9 @@ sdcard_csd_parse (sdcard_t dev)
     /* (TRAN_SPEED_tu * 10) * (TRAN_SPEED_tv * 10) * 10000 (Hz).  */
     speed *= (mult[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
 
+    /* MPH hack. */
+    speed /= 2;
+
     dev->speed = speed;
     speed = spi_clock_speed_set (dev->spi, speed);
 

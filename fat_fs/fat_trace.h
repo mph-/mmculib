@@ -11,12 +11,12 @@
 
 
 #ifndef TRACE_FAT_ERROR
-#define TRACE_FAT_ERROR(...)
+#define TRACE_FAT_ERROR TRACE_PRINTF
 #endif
 
 
 #ifndef TRACE_FAT_INFO
-#define TRACE_FAT_INFO(...)
+#define TRACE_FAT_INFO  TRACE_PRINTF
 #endif
 
 

@@ -27,7 +27,7 @@ int fat_unlink (fat_t *fat, const char *pathname);
 
 int fat_mkdir (fat_t *fat, const char *pathname, mode_t mode);
 
-uint32_t fat_file_start_cluster (fat_file_t *file);
+void fat_file_debug (fat_file_t *file);
 
 bool fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, 
                fat_dev_write_t dev_write);
