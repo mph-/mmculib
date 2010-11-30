@@ -8,7 +8,7 @@
 #define FAT_FILE_H
 
 #include "fat.h"
-
+#include <sys/types.h>
 
 typedef struct fat_file_struct fat_file_t;
 
@@ -26,6 +26,8 @@ off_t fat_lseek (fat_file_t *file, off_t offset, int whence);
 int fat_unlink (fat_t *fat, const char *pathname);
 
 int fat_mkdir (fat_t *fat, const char *pathname, mode_t mode);
+
+uint32_t fat_file_start_cluster (fat_file_t *file);
 
 bool fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, 
                fat_dev_write_t dev_write);

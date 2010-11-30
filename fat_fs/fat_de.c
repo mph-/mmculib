@@ -510,7 +510,7 @@ fat_de_add (fat_t *fat, fat_dir_t *dir, const char *filename,
 
     fat_io_cache_write (fat, dir->sector);
     fat_io_cache_flush (fat);
-    return true;
+    return 1;
 }
 
 

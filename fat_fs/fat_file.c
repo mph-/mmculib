@@ -382,37 +382,6 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
 }
 
 
-void 
-fat_debug (fat_t *fat, const char *filename)
-{
-    fat_file_t *file;
-    uint32_t cluster;
-
-    file = fat_open (fat, filename, O_RDONLY);
-    if (!file)
-        return;
-
-    fprintf (stderr, "Offset %lu\n", file->offset);
-    fprintf (stderr, "Size %lu\n", file->size);
-    fprintf (stderr, "Alloc %lu\n", file->alloc);
-    fprintf (stderr, "DE sector %lu\n", file->dir.sector);
-    fprintf (stderr, "DE offset %u\n", file->dir.offset);
-    fprintf (stderr, "Clusters ");
-
-    cluster = file->start_cluster;
-    while (1)
-    {
-        fprintf (stderr, "%lu ", cluster);        
-        if (!cluster)
-            break;
-
-        cluster = fat_cluster_next (file->fat, cluster);
-        if (fat_cluster_last_p (cluster))
-            break;
-    }
-    fprintf (stderr, "\n");
-}
-
 
 /**
  * Close a file.
@@ -569,6 +538,14 @@ fat_mkdir (fat_t *fat, const char *pathname, mode_t mode)
     /* TODO.  */
     return -EACCES;
 }
+
+
+uint32_t
+fat_file_start_cluster (fat_file_t *file)
+{
+    return file->start_cluster;
+}
+
 
 
 bool
