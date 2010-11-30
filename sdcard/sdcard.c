@@ -414,7 +414,7 @@ sdcard_command_read (sdcard_t dev, sdcard_op_t op, uint32_t param,
     switch (op)
     {
     case SD_OP_READ_SINGLE_BLOCK:
-        timeout = dev->Nac;
+        timeout = dev->read_timeout;
         break;
         
     default:
@@ -677,7 +677,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     }
     
     /* Wait for card to complete write cycle.  */
-    if (!sdcard_response_not_match (dev, 0x00, dev->Nbs))
+    if (!sdcard_response_not_match (dev, 0x00, dev->write_timeout))
     {
         sdcard_deselect (dev);
         return 0;
@@ -876,33 +876,48 @@ sdcard_csd_parse (sdcard_t dev)
     /* (TRAN_SPEED_tu * 10) * (TRAN_SPEED_tv * 10) * 10000 (Hz).  */
     speed *= (mult[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
 
-    /* MPH hack. */
-    speed /= 2;
-
     dev->speed = speed;
     speed = spi_clock_speed_set (dev->spi, speed);
 
-    TAAC = csd[1];
-    Nac = ((TAAC >> 3) & 0xf) * speed / 100;
-    for (i = TAAC & 0x07; i < 7; i++)
-        Nac /= 10;
-
-    NSAC = csd[2];
-    Nac += NSAC * 100;
-    /* Nac is in units of clocks so divide by 8 to get units of bytes.  */
-    dev->Nac = Nac / 8;
-#if 0
-    /* Set Nac to 100 ms.  */
-    dev->Nac = (speed / 10) / 8;
-#endif
-
-    /* Set Nbs to 250 ms.  */
-    dev->Nbs = (dev->Nac * 25) / 10;
-
-    if (dev->type == SDCARD_TYPE_SDXC)
+    switch (dev->type)
     {
+    case SDCARD_TYPE_MMC:
+        /* FIXME.  */
+
+    case SDCARD_TYPE_SD:
+        /* Read timeout 100 times longer than typical access time with a max of
+           100 ms.  Write timeout 100 times longer than typical program time with a max of
+           250 ms.  */
+        TAAC = csd[1];
+        Nac = ((TAAC >> 3) & 0xf) * speed / 100;
+        for (i = TAAC & 0x07; i < 7; i++)
+            Nac /= 10;
+        
+        NSAC = csd[2];
+        Nac += NSAC * 100;
+
+        /* Nac is in units of clocks so divide by 8 to get units of bytes.  */
+        dev->read_timeout = Nac / 8;
+        
+        /* FIXME, need to use R2WFACTOR.  */
+        dev->write_timeout = dev->read_timeout;
+        break;
+
+    case SDCARD_TYPE_SDHC:
+        /* Set Nac to 100 ms.  */
+        dev->read_timeout = (speed / 10) / 8;
+        
+        /* Set Nbs to 250 ms.  */
+        dev->write_timeout = (speed / 4) / 8;
+        break;
+
+    case SDCARD_TYPE_SDXC:
+        /* Set Nac to 100 ms.  */
+        dev->read_timeout = (speed / 10) / 8;
+        
         /* Set Nbs to 500 ms.  */
-        dev->Nbs *= 2;
+        dev->write_timeout = (speed / 2) / 8;
+        break;
     }
 
     return 1;
@@ -982,7 +997,7 @@ sdcard_init (const sdcard_cfg_t *cfg)
     spi_cs_negate_delay_set (dev->spi, 16);    
    
     /* This will change when CSD read.  */
-    dev->Nac = 8;
+    dev->read_timeout = 8;
 
     return dev;
 }

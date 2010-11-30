@@ -39,8 +39,8 @@ typedef struct
 {
     spi_t spi;
     uint32_t blocks;
-    uint32_t Nac;
-    uint32_t Nbs;
+    uint32_t read_timeout;
+    uint32_t write_timeout;
     uint32_t speed;
     uint16_t timeouts;
     uint16_t write_rejects;
