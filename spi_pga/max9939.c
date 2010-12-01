@@ -16,7 +16,7 @@ enum
 
 
 /* The minimum gain is 0.2 for Vcc = 5 V or 0.25 for Vcc = 3.3 V.
-   Let's assume 3.3 V operation and scale all the gains by 4.  */
+   Let's assume 3.3 V operation and scale all the gains by 8.  */
 #define GAIN_SCALE(GAIN) ((GAIN) * 8)
 
 static const spi_pga_gain_t max9939_gains[] =
