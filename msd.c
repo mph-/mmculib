@@ -24,7 +24,7 @@
 #endif
 
 #ifndef MSD_RETRIES
-#define MSD_RETRIES 2
+#define MSD_RETRIES 5
 #endif
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

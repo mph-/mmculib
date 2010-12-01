@@ -294,6 +294,8 @@ sdcard_deselect (sdcard_t dev)
 {
     uint8_t dummy[1] = {0xff};
 
+    spi_cs_disable (dev->spi);
+
     /* After the last SPI bus transaction, the host is required to
        provide 8 clock cycles for the card to complete the operation
        before shutting down the clock. Throughout this 8-clock period,
@@ -303,6 +305,8 @@ sdcard_deselect (sdcard_t dev)
        from its half Vcc state.  */
 
     spi_transfer (dev->spi, dummy, dummy, sizeof (dummy), 1);
+
+    spi_cs_enable (dev->spi);
 }
 
 
@@ -312,10 +316,12 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
     uint8_t command[SD_CMD_LEN];
     uint8_t response[SD_CMD_LEN];
     uint16_t retries;
-    
+
+#if 0    
     /* Wait N_cs clock cycles, min is 0.  */
     command[0] = 0xff;
     spi_transfer (dev->spi, command, response, 1, 0);
+#endif
 
     command[0] = op | SD_HOST_BIT;
     command[1] = param >> 24;
@@ -887,6 +893,8 @@ sdcard_csd_parse (sdcard_t dev)
     speed *= (mult[((csd[3] >> 3) & 0x0F) - 1]) * 10000;
 
     dev->speed = speed;
+    /* MPH Hack.  */
+    speed = speed / 4;
     speed = spi_clock_speed_set (dev->spi, speed);
 
     switch (dev->type)
