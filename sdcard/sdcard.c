@@ -57,6 +57,8 @@
     Vil = 0.8 V for Vdd = 3.3 V
     Voh = 2.4 V for Vdd = 3.3 V
     Vol = 0.4 V for Vdd = 3.3 V
+
+    Clock 2.6 V with 100 ohm pulldown on AT91SAM7S256.
 */
 
 enum {SD_CMD_LEN = 6};
@@ -260,7 +262,7 @@ sdcard_response_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] == desired)
             return 1;
     }
-    dev->timeouts++;
+    dev->read_timeouts++;
     return 0;
 }
 
@@ -282,7 +284,7 @@ sdcard_response_not_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] != desired)
             return 1;
     }
-    dev->timeouts++;
+    dev->write_timeouts++;
     return 0;
 }
 
@@ -365,7 +367,7 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
         }
     }
 
-    dev->timeouts++;
+    dev->command_timeouts++;
     return dev->status;
 }
 

@@ -42,7 +42,9 @@ typedef struct
     uint32_t read_timeout;
     uint32_t write_timeout;
     uint32_t speed;
-    uint16_t timeouts;
+    uint16_t command_timeouts;
+    uint16_t read_timeouts;
+    uint16_t write_timeouts;
     uint16_t write_rejects;
     uint16_t write_errors;
     sdcard_status_t write_status;
