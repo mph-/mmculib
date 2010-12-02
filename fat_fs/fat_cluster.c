@@ -67,7 +67,7 @@ fat_cluster_to_sector (fat_t *fat, uint32_t cluster)
  * @return  Next cluster in chain
  */
 static uint32_t 
-fat_entry_get (fat_t *fat, uint32_t cluster)
+fat_cluster_entry_get (fat_t *fat, uint32_t cluster)
 {
     uint32_t sector, offset, cluster_new, mask;
     uint8_t *buffer;
@@ -115,7 +115,7 @@ fat_cluster_next (fat_t *fat, uint32_t cluster)
 {
     uint32_t cluster_new;
 
-   cluster_new = fat_entry_get (fat, cluster);
+   cluster_new = fat_cluster_entry_get (fat, cluster);
 
    if (fat_cluster_free_p (cluster_new))
    {
@@ -128,7 +128,7 @@ fat_cluster_next (fat_t *fat, uint32_t cluster)
 
 /* Set a FAT entry.  */
 static void
-fat_entry_set (fat_t *fat, uint32_t cluster, uint32_t cluster_new)
+fat_cluster_entry_set (fat_t *fat, uint32_t cluster, uint32_t cluster_new)
 {
     uint32_t sector, offset;
     uint8_t *buffer;
@@ -195,7 +195,7 @@ fat_cluster_free_search (fat_t *fat, uint32_t start, uint32_t stop)
     /* Linearly search through the FAT looking for a free cluster.  */
     for (cluster = start; cluster < stop; cluster++)
     {
-        if (fat_cluster_free_p (fat_entry_get (fat, cluster)))
+        if (fat_cluster_free_p (fat_cluster_entry_get (fat, cluster)))
             return cluster;
     }
     
@@ -232,10 +232,10 @@ static uint32_t
 fat_cluster_chain_append (fat_t *fat, uint32_t cluster_start,
                           uint32_t cluster_new)
 {
-    if (!fat_cluster_last_p (fat_entry_get (fat, cluster_start)))
+    if (!fat_cluster_last_p (fat_cluster_entry_get (fat, cluster_start)))
         TRACE_ERROR (FAT, "FAT:Bad chain\n");
 
-    fat_entry_set (fat, cluster_start, cluster_new);
+    fat_cluster_entry_set (fat, cluster_start, cluster_new);
 
     return cluster_new;
 }
@@ -257,7 +257,7 @@ fat_cluster_chain_free (fat_t *fat, uint32_t cluster_start)
         cluster = fat_cluster_next (fat, cluster);
 
         /* Mark cluster as free.  */
-        fat_entry_set (fat, cluster_last, 0x00000000);
+        fat_cluster_entry_set (fat, cluster_last, 0x00000000);
         count++;
     }
 
@@ -281,7 +281,7 @@ fat_cluster_allocate (fat_t *fat, uint32_t cluster_start)
         return 0;
 
     /* Mark cluster as the end of a chain.  */
-    fat_entry_set (fat, cluster, CLUST_EOFE);    
+    fat_cluster_entry_set (fat, cluster, CLUST_EOFE);    
 
     /* Append to cluster chain.  */
     if (cluster_start)
@@ -339,7 +339,7 @@ fat_cluster_stats (fat_t *fat, fat_cluster_stats_t *stats)
     /* Iterate over all clusters counting allocated clusters.  */
     for (cluster = CLUST_FIRST; cluster < fat->num_clusters; cluster++)
     {
-        if (fat_cluster_free_p (fat_entry_get (fat, cluster)))
+        if (fat_cluster_free_p (fat_cluster_entry_get (fat, cluster)))
         {
             free_clusters++;
             if (!found)
