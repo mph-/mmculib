@@ -332,7 +332,8 @@ fat_de_sfn_create (fat_de_t *de, const char *filename)
     
     de->lowerCase = 0;
 
-    de->attr = ATTR_NORMAL;
+    /* Has been changed since last backup.  */
+    de->attr = ATTR_ARCHIVE;
     
     /* These fields get filled in when file written to.  */
     de->cluster_high = 0;
