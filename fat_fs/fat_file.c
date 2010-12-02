@@ -543,8 +543,6 @@ fat_mkdir (fat_t *fat, const char *pathname, mode_t mode)
 void
 fat_file_debug (fat_file_t *file)
 {
-    uint32_t cluster;
-
     TRACE_INFO (FAT, "Offset %lu\n", file->offset);
     TRACE_INFO (FAT, "Size %lu\n", file->size);
     TRACE_INFO (FAT, "Alloc %lu\n", file->alloc);
