@@ -181,6 +181,7 @@ fat_de_next (fat_de_iter_t *de_iter)
             if (fat_cluster_last_p (cluster_next))
             {
                 fat_de_t *de;
+                uint32_t sector;
 
                 /* Have reached end of chain.  Normally we will have
                    found the empty slot terminator.  If we get here we
@@ -188,20 +189,25 @@ fat_de_next (fat_de_iter_t *de_iter)
                 cluster_next = fat_cluster_chain_extend (fat, de_iter->cluster, 1);
 
                 de_iter->dir.sector = fat_cluster_to_sector (fat, cluster_next);
-                buffer = fat_io_cache_read (fat, de_iter->dir.sector);
 
-                /* Something has gone wrong so give up.  */
-                if (!buffer)
-                    return 0;
-
-                memset (buffer, 0, FAT_SECTOR_SIZE);
-
+                /* Linux (see linux/fs/fat/dir.c searches all the
+                   directory entries in the cluster chain and does not
+                   stop when it finds a zero entry.  So we zero all
+                   the sectors for this cluster creating empty slots;
+                   in reverse order so the last one we want is in the
+                   cache.  */
+                for (sector = de_iter->sectors; sector > 0; sector--)
+                {
+                    buffer = fat_io_cache_read (fat, de_iter->dir.sector 
+                                                + sector - 1);
+                    /* Something has gone wrong so give up.  */
+                    if (!buffer)
+                        return 0;
+                    memset (buffer, 0, FAT_SECTOR_SIZE);
+                    fat_io_cache_write (fat, de_iter->dir.sector 
+                                        + sector - 1);                    
+                }
                 de = (fat_de_t *) buffer;
-
-                /* Create an empty slot.  */
-                de->name[0] = SLOT_EMPTY;
-
-                fat_io_cache_write (fat, de_iter->dir.sector);
             }
 
             de_iter->cluster = cluster_next;
