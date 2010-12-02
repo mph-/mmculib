@@ -45,7 +45,8 @@ mdraw_line (mdraw_t this, uint8_t x_end, uint8_t y_end, uint8_t val);
 void
 mdraw_update (mdraw_t this);
 
+
 extern void 
-mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t val);
+mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t offset, uint8_t val);
 
 #endif

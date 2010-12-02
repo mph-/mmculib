@@ -103,11 +103,11 @@ mdraw_update (mdraw_t this)
 
 
 void 
-mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t val)
+mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t offset, uint8_t val)
 {
     uint8_t x;
 
-    mdraw_move (this, 0, data[0]);
+    mdraw_move (this, offset, data[0]);
     for (x = 1; x < size; x++)
         mdraw_line (this, x, data[x], val);
 }
