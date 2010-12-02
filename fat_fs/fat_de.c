@@ -7,10 +7,10 @@
 
 #include <string.h>
 #include <ctype.h>
-#include "fat.h"
 #include "fat_de.h"
 #include "fat_cluster.h"
 #include "fat_io.h"
+
 
 /* Size of a winentry.  */
 #define WIN_CHARS 13
@@ -158,6 +158,8 @@ fat_de_next (fat_de_iter_t *de_iter)
 
     de_iter->dir.offset += sizeof (fat_de_t);
 
+    /* There is a chance that will read wrong sector if need
+       to read next sector but we fix this up later.  */
     buffer = fat_io_cache_read (fat, de_iter->dir.sector);
     /* Something has gone wrong so give up.  */
     if (!buffer)
@@ -168,7 +170,7 @@ fat_de_next (fat_de_iter_t *de_iter)
         de_iter->dir.offset = 0;
         de_iter->dir.sector++;
 
-        if (de_iter->dir.sector >= de_iter->sectors)
+        if (de_iter->dir.sector % de_iter->sectors == 0)
         {
             uint32_t cluster_next;
 
@@ -285,7 +287,6 @@ fat_de_filename_make (char *str, const char *name, const char *ext)
     *str = 0;
 }
 
-
 /** Create short filename entry.  */
 static void
 fat_de_sfn_create (fat_de_t *de, const char *filename)
@@ -329,6 +330,8 @@ fat_de_sfn_create (fat_de_t *de, const char *filename)
     de->MDate[1] = 0x00;
     de->MDate[0] = 0x20;	
     
+    de->lowerCase = 0;
+
     de->attr = ATTR_NORMAL;
     
     /* These fields get filled in when file written to.  */
@@ -358,7 +361,7 @@ fat_de_find (fat_t *fat, uint32_t dir_cluster,
     uint8_t n;
     uint8_t nameoffset;
 
-    TRACE_INFO (FAT, "FAT:Dir search for %s\n", name);
+    TRACE_INFO (FAT, "FAT:Search %s\n", name);
 
     memset (ff->name, 0, sizeof (ff->name));
     memset (ff->short_name, 0, sizeof (ff->short_name));
@@ -429,15 +432,19 @@ fat_de_find (fat_t *fat, uint32_t dir_cluster,
 
 
 static void
-fat_de_dump (fat_de_t *de)
+fat_de_dump (fat_t *fat, fat_de_t *de)
 {
     char filename[14];
+    uint32_t cluster;
 
     fat_de_filename_make (filename, de->name, de->ext);
 
-    TRACE_ERROR (FAT, "%s %d %ld\n", filename, (unsigned int)de->size,
-                 (de->cluster_high << 16) | de->cluster_low);
-                 
+    cluster = (de->cluster_high << 16) | de->cluster_low;
+
+    TRACE_ERROR (FAT, "%s attr %02x size %d clusters ",
+                 filename, de->attr, (unsigned int)de->size);
+
+    fat_cluster_chain_dump (fat, cluster);
 }
 
 
@@ -447,6 +454,7 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
     fat_de_iter_t de_iter;
     fat_de_t *de;
 
+    TRACE_ERROR (FAT, "Dir cluster %d\n", dir_cluster);            
     for (de = fat_de_first (fat, dir_cluster, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
@@ -456,7 +464,7 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
             fat_de_dir_dump (fat,
                              (de->cluster_high << 16) | de->cluster_low);
         else
-            fat_de_dump (de);
+            fat_de_dump (fat, de);
     }
 }
 
