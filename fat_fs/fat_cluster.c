@@ -70,6 +70,7 @@ static uint32_t
 fat_entry_get (fat_t *fat, uint32_t cluster)
 {
     uint32_t sector, offset, cluster_new, mask;
+    uint8_t *buffer;
     
     /* Calculate the sector number and sector offset in the FAT for
        this cluster number.  */
@@ -89,14 +90,14 @@ fat_entry_get (fat_t *fat, uint32_t cluster)
     
     /* Read sector of FAT1 for desired cluster entry.  */
     sector = fat->first_fat_sector + offset / fat->bytes_per_sector;
-    fat_io_cache_read (fat, sector);
+    buffer = fat_io_cache_read (fat, sector);
     
     /* Get the data for desired FAT entry.  */
     offset = offset % fat->bytes_per_sector;
     if (fat->type == FAT_FAT32)
-        cluster_new = le32_get (fat->cache.buffer + offset);
+        cluster_new = le32_get (buffer + offset);
     else
-        cluster_new = le16_get (fat->cache.buffer + offset);
+        cluster_new = le16_get (buffer + offset);
 
     /* A value of zero in the FAT indicates a free cluster.  A value
        greater than or equal to 0xFFFFFFF8 marks the end of a chain.  */
@@ -130,6 +131,7 @@ static void
 fat_entry_set (fat_t *fat, uint32_t cluster, uint32_t cluster_new)
 {
     uint32_t sector, offset;
+    uint8_t *buffer;
     
     /* Calculate the sector number and sector offset in the FAT for
        this cluster number.  */
@@ -147,18 +149,18 @@ fat_entry_set (fat_t *fat, uint32_t cluster, uint32_t cluster_new)
 
     /* Read sector of FAT for desired cluster entry.  */
     sector = fat->first_fat_sector + offset / fat->bytes_per_sector;
-    fat_io_cache_read (fat, sector);
+    buffer = fat_io_cache_read (fat, sector);
 
     /* Set the data for desired FAT entry.  */
     offset = offset % fat->bytes_per_sector;
 
     if (fat->type == FAT_FAT32)
     {
-        le32_set (fat->cache.buffer + offset, cluster_new);
+        le32_set (buffer + offset, cluster_new);
     }
     else
     {
-        le16_set (fat->cache.buffer + offset, cluster_new);        
+        le16_set (buffer + offset, cluster_new);        
     }
 
     fat_io_cache_write (fat, sector);
@@ -369,3 +371,18 @@ fat_cluster_stats_dump (fat_t *fat)
 }
 
 
+void
+fat_cluster_chain_dump (fat_t *fat, uint32_t cluster)
+{
+    while (1)
+    {
+        TRACE_INFO (FAT, "%lu ", cluster);        
+        if (!cluster)
+            break;
+
+        cluster = fat_cluster_next (fat, cluster);
+        if (fat_cluster_last_p (cluster))
+            break;
+    }
+    TRACE_INFO (FAT, "\n");
+}

@@ -44,7 +44,7 @@ typedef struct fat_io_cache_struct fat_io_cache_t;
 
 
 /** Supported FAT types.  */
-typedef enum {FAT_UNKNOWN, FAT_FAT16, FAT_FAT32} fat_fs_type_t;
+typedef enum {FAT_UNKNOWN, FAT_FAT12, FAT_FAT16, FAT_FAT32} fat_fs_type_t;
 
 
 struct fat_struct

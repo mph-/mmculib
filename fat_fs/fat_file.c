@@ -289,7 +289,7 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
     const uint8_t *data;
     bool newfile;
 
-    TRACE_INFO (FAT, "FAT:Write %u\n", (unsigned int)len);
+    TRACE_INFO (FAT, "FAT:Writing %u\n", (unsigned int)len);
 
     if (! ((file->mode & O_RDWR) || (file->mode & O_WRONLY)))
     {
@@ -377,7 +377,7 @@ fat_write (fat_file_t *file, const void *buffer, size_t len)
     fat_io_cache_flush (file->fat);
     file->fat->fsinfo_dirty = 0;
 
-    TRACE_INFO (FAT, "FAT:Write %u\n", (unsigned int)len - bytes_left);
+    TRACE_INFO (FAT, "FAT:Wrote %u\n", (unsigned int)len - bytes_left);
     return len - bytes_left;
 }
 
@@ -421,7 +421,7 @@ fat_read (fat_file_t *file, void *buffer, size_t len)
     uint16_t offset;
     uint8_t *data;
 
-    TRACE_INFO (FAT, "FAT:Read %u\n", (unsigned int)len);
+    TRACE_INFO (FAT, "FAT:Reading %u\n", (unsigned int)len);
     
     /* Limit max read to size of file.  */
     if ((uint32_t)len > (file->size - file->offset))
@@ -552,18 +552,7 @@ fat_file_debug (fat_file_t *file)
     TRACE_INFO (FAT, "DE offset %u\n", file->dir.offset);
     TRACE_INFO (FAT, "Clusters ");
 
-    cluster = file->start_cluster;
-    while (1)
-    {
-        TRACE_INFO (FAT, "%lu ", cluster);        
-        if (!cluster)
-            break;
-
-        cluster = fat_cluster_next (file->fat, cluster);
-        if (fat_cluster_last_p (cluster))
-            break;
-    }
-    TRACE_INFO (FAT, "\n");
+    fat_cluster_chain_dump (file->fat, file->start_cluster);
 }
 
 

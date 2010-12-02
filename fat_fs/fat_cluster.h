@@ -47,4 +47,7 @@ bool fat_cluster_free_p (uint32_t cluster);
 
 void fat_cluster_stats (fat_t *fat, fat_cluster_stats_t *stats);
 
+
+void fat_cluster_chain_dump (fat_t *fat, uint32_t cluster);
+
 #endif

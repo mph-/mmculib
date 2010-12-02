@@ -43,6 +43,8 @@ int main (int argc, char **argv)
 
     fat_debug_partition (fat);
 
+    fat_test1 (fat, 50, 17);
+
     fat_debug_rootdir_dump (fat);
 
     fclose (fs);
