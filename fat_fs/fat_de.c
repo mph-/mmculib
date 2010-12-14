@@ -502,7 +502,7 @@ fat_de_add (fat_t *fat, fat_dir_t *dir, const char *filename,
     /* With 512 bytes per sector, 1 sector per cluster, and 32 bytes.  */
     /* per dir entry then there 16 slots per cluster.  */
 
-    TRACE_INFO (FAT, "FAT:Add dir %s\n", filename);
+    TRACE_INFO (FAT, "FAT:Add %s\n", filename);
 
     /* Iterate over direntry in current directory looking for a free slot.  */
     for (de = fat_de_first (fat, cluster_dir, &de_iter);

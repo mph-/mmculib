@@ -276,6 +276,14 @@ fat_unlink (fat_t *fat, const char *pathname)
 }
 
 
+/**
+ * Write specific number of bytes to file
+ * 
+ * @param file File handle
+ * @param buffer Buffer to read from
+ * @param len Number of bytes to read
+ * @return Number of bytes successfully written.
+ */
 ssize_t
 fat_write (fat_file_t *file, const void *buffer, size_t len)
 {
@@ -554,8 +562,19 @@ fat_file_debug (fat_file_t *file)
 }
 
 
+/**
+ * Register I/O functions for reading/writing filesystem
+ * and if FAT file system found then initialise a new instance.
+ * 
+ * @param fat Pointer to FAT file system structure
+ * @param dev Private argument for I/O routines
+ * @param dev_read Function for reading
+ * @param dev_write Function for writing
+ * @return true if FAT file system found
+ */
 bool
-fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write)
+fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read,
+          fat_dev_write_t dev_write)
 {
     fat_io_init (fat, dev, dev_read, dev_write);
 
