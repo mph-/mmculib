@@ -223,7 +223,7 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
         .channel = GLCD_SPI_CHANNEL,
         .clock_divisor = GLCD_SPI_DIVISOR,
         .cs = GLCD_CS,
-        .mode = SPI_MODE_0,
+        .mode = SPI_MODE_3,
         .bits = 8
     };
 
