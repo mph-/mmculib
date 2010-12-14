@@ -12,7 +12,7 @@
 
 
 /* Cluster statistics structure.  */
-typedef struct fat_stats_struct
+typedef struct fat_cluster_stats_struct
 {
     uint32_t total;
     uint32_t free;

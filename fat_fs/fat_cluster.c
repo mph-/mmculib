@@ -5,7 +5,7 @@
 */
 
 
-#include "fat_fat.h"
+#include "fat.h"
 #include "fat_fsinfo.h"
 #include "fat_cluster.h"
 #include "fat_io.h"

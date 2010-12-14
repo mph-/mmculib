@@ -13,6 +13,15 @@
 typedef struct fat_file_struct fat_file_t;
 
 
+/* FAT statistics structure (kB).  */
+typedef struct fat_stats_struct
+{
+    uint32_t total;
+    uint32_t free;
+    uint32_t alloc;
+} fat_stats_t;
+
+
 fat_file_t *fat_open (fat_t *fat, const char *pathname, int mode);
 
 int fat_close (fat_file_t *file);
