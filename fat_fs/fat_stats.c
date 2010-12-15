@@ -1,4 +1,12 @@
+/** @file   fat_stats.c
+    @author Michael Hayes
+    @date   23 November 2010
+    @brief  FAT filesystem statistics.
+*/
+
 #include "fat_stats.h"
+#include "fat_cluster.h"
+
 
 void fat_stats (fat_t *fat, fat_stats_t *stats)
 {
