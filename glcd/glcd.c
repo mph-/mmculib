@@ -260,6 +260,7 @@ glcd_origin_set (glcd_t glcd, uint16_t x, uint16_t y)
 }
 
 
+/* This has no effect until glcd_update called.  */
 void 
 glcd_pixel_set (glcd_t glcd, uint16_t x, uint16_t y, uint8_t val)
 {

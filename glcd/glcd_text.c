@@ -17,6 +17,7 @@ display_pixel (glcd_text_t *info, font_t *font __UNUSED__,
 }
 
 
+/* This has no effect until glcd_update called.  */
 void
 glcd_text (glcd_t glcd, font_t *font, uint8_t col, uint8_t row, const char *str)
 {
@@ -42,5 +43,4 @@ glcd_text (glcd_t glcd, font_t *font, uint8_t col, uint8_t row, const char *str)
 
         info.col += font->width + 1;
     }
-    glcd_update (glcd);
 }

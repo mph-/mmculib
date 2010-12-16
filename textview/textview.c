@@ -3,6 +3,7 @@
     @date   16 February 2008
     @brief  Simple text viewing routines for GLCD.  This module implements
             a scrolling character display.
+    @note   Only a single fixed sized font is supported.
 */
 
 #include "textview.h"
@@ -12,6 +13,8 @@
 
 
 enum {TEXTVIEW_FLAG_WRAP = BIT (0)};
+#define TEXTVIEW_HSPACE_PIXELS 1
+#define TEXTVIEW_VSPACE_PIXELS 1
 
 
 void
@@ -101,6 +104,20 @@ textview_font_set (textview_t this, font_t *font)
 }
 
 
+static void
+textview_char_draw (textview_t this, uint8_t col, uint8_t row, char ch)
+{
+    char buffer[2];
+
+    buffer[0] = ch;
+    buffer[1] = '\0';
+
+    glcd_text (this->data, this->font, 
+               col * (this->font->width + TEXTVIEW_HSPACE_PIXELS),
+               row * (this->font->height + TEXTVIEW_VSPACE_PIXELS), buffer);
+}
+
+
 void
 textview_redraw (textview_t this)
 {
@@ -108,24 +125,20 @@ textview_redraw (textview_t this)
     uint8_t col;
 
     for (row = 0; row < this->rows; row++)
+    {
         for (col = 0; col < this->cols; col++)
         {
-            char buffer[2];
-
-            buffer[0] = this->screen[row * this->cols + col];
-            buffer[1] = '\0';
-            glcd_text (this->data, this->font, col * (this->font->width + 1),
-                       row * (this->font->height + 1), buffer);
+            textview_char_draw (this, col, row, this->screen[row * this->cols + col]);
         }
+    }
 }
 
 
+/* Display a single character without updating the GLCD.  */
 static void
 textview_putc_1 (textview_t this, char ch)
 {
-    char buffer[2];
-
-    if (this->row >= this->rows)
+    while (this->row >= this->rows)
         textview_scroll (this);
 
     switch (ch)
@@ -156,21 +169,32 @@ textview_putc_1 (textview_t this, char ch)
         /* Force character to uppercase if no font support for lowercase.  */
         if (ch > this->font->offset + this->font->size)
             ch -= 'a' - 'A';
-        buffer[0] = ch;
-        buffer[1] = '\0';
+        
+        /* If the screen does not change then we could avoid calling glcd_text to
+           draw the character.   However, this might cause problems when we try to
+           alternate graphics with characters.  */
         this->screen[this->row * this->cols + this->col] = ch;
-        glcd_text (this->data, this->font, this->col * (this->font->width + 1),
-                   this->row * (this->font->height + 1), buffer);
+        
+        textview_char_draw (this, this->col, this->row, ch);
+
         this->col++;
         break;
     }
 }
 
 
+/* Display a single character and update the GLCD.  */
 void
 textview_putc (textview_t this, char ch)
 {
     textview_putc_1 (this, ch);
+//    glcd_update (this->data);
+}
+
+
+void
+textview_update (textview_t this)
+{
     glcd_update (this->data);
 }
 

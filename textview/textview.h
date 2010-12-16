@@ -35,33 +35,35 @@ typedef textview_private_t textview_obj_t;
 typedef textview_obj_t *textview_t;
 
 
-extern textview_t
+textview_t
 textview_init (textview_obj_t *obj, char *screen, uint8_t cols, uint8_t rows, 
                font_t *font,
                textview_pixel_set_t pixel_set,
                textview_update_t update, void *data);
 
 
-extern void
+void
 textview_goto (textview_t this, uint8_t col, uint8_t row);
 
-extern void
+void
 textview_clear (textview_t this);
 
-extern void
+void
 textview_redraw (textview_t this);
 
-extern void
+void
 textview_font_set (textview_t this, font_t *font);
 
-extern void
+void
 textview_putc (textview_t this, char ch);
 
-extern void
+void
 textview_puts (textview_t this, const char *string);
 
-extern void
+void
 textview_wrap_set (textview_t this, uint8_t enable);
 
+void
+textview_update (textview_t this);
 
 #endif
