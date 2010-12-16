@@ -309,7 +309,7 @@ glcd_update_page (glcd_t glcd, uint8_t page)
     commands[2] = GLCD_CMD_COL_ADDRESS_LSB_SET | 0;
     spi_write (glcd->spi, commands, sizeof (commands), 1);
 
-    DELAY_US (1);
+    DELAY_US (5);
 
     /* Write page.  */
     glcd_data_mode ();            
