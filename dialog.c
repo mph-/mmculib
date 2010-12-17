@@ -71,19 +71,23 @@ dialog_display (dialog_t *dialog, const char *string)
 }
 
 
-void 
+/** Return non-zero if the dialog has finished.  */
+bool
 dialog_right (void)
 {
-    if (dialog_data.current->right_action)
-        dialog_data.current->right_action ();
+    if (!dialog_data.current->right_action)
+        return 1;
+    return dialog_data.current->right_action ();
 }
 
 
-void 
+/** Return non-zero if the dialog has finished.  */
+bool
 dialog_left (void)
 {
-    if (dialog_data.current->left_action)
-        dialog_data.current->left_action ();
+    if (!dialog_data.current->left_action)
+        return 1;
+    return dialog_data.current->left_action ();
 }
 
 

@@ -27,20 +27,20 @@ typedef struct dialog_struct
 } dialog_t;
 
 
-extern void
+bool
 dialog_left (void);
 
 
-extern void
+bool
 dialog_right (void);
 
 
 /* Display a new dialog.  */
-extern void
+void
 dialog_display (dialog_t *dialog, const char *message);
 
 
-extern void 
+void 
 dialog_init (uint8_t rows, uint8_t cols,
              void (*display)(uint8_t row, const char *str));
 
