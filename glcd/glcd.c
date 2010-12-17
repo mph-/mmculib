@@ -214,6 +214,17 @@ glcd_contrast_set (glcd_t glcd __UNUSED__, uint8_t contrast)
 }
 
 
+void
+glcd_mode_set (glcd_t glcd, glcd_mode_t mode)
+{
+	glcd_command_mode ();
+	if (mode == GLCD_MODE_INVERT)
+		glcd_send (glcd, GLCD_CMD_DISPLAY_REVERSE);
+	else
+		glcd_send (glcd, GLCD_CMD_DISPLAY_NORMAL);
+}
+
+
 glcd_t
 glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
 {

@@ -59,6 +59,13 @@ typedef glcd_private_t glcd_dev_t;
 typedef glcd_dev_t *glcd_t;
 
 
+typedef enum
+{
+	GLCD_MODE_NORMAL = 0,
+	GLCD_MODE_INVERT = 1
+} glcd_mode_t;
+
+
 extern void 
 glcd_pixel_set (glcd_t glcd, uint16_t x, uint16_t y, uint8_t val);
 
@@ -77,6 +84,10 @@ glcd_clear (glcd_t glcd);
 
 extern void 
 glcd_contrast_set (glcd_t glcd, uint8_t contrast);
+
+
+extern void
+glcd_mode_set (glcd_t glcd, glcd_mode_t mode);
 
 
 extern void
