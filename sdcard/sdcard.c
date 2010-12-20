@@ -115,6 +115,7 @@ typedef enum
     SDCARD_ERROR_COMMAND_TIMEOUT, 
     SDCARD_ERROR_WRITE_TIMEOUT,
     SDCARD_ERROR_READ_TIMEOUT,
+    SDCARD_ERROR_READ,
     SDCARD_ERROR_WRITE,
     SDCARD_ERROR_WRITE_REJECT
 } sdcard_error_t;
@@ -271,6 +272,11 @@ sdcard_error (sdcard_t dev, sdcard_error_t error, sdcard_status_t status)
         dev->read_status = status;
         break;
 
+    case SDCARD_ERROR_READ:
+        dev->read_errors++;
+        dev->read_status = status;
+        break;
+
     case SDCARD_ERROR_WRITE:
         dev->write_errors++;
         dev->write_status = status;
@@ -338,7 +344,8 @@ sdcard_deselect (sdcard_t dev)
 {
     uint8_t dummy[1] = {0xff};
 
-    spi_cs_disable (dev->spi);
+    /* Force CS high early.  */
+    spi_cs_negate (dev->spi);
 
     /* After the last SPI bus transaction, the host is required to
        provide 8 clock cycles for the card to complete the operation
@@ -349,8 +356,6 @@ sdcard_deselect (sdcard_t dev)
        from its half Vcc state.  */
 
     spi_transfer (dev->spi, dummy, dummy, sizeof (dummy), 1);
-
-    spi_cs_enable (dev->spi);
 }
 
 
@@ -655,7 +660,10 @@ sdcard_block_read (sdcard_t dev, sdcard_addr_t addr, void *buffer)
                                   addr >> dev->addr_shift, buffer,
                                   SDCARD_BLOCK_SIZE);
     if (status)
+    {
+        sdcard_error (dev, SDCARD_ERROR_READ, status);
         return 0;
+    }
 
     return SDCARD_BLOCK_SIZE;
 }
@@ -1000,9 +1008,10 @@ sdcard_probe (sdcard_t dev)
 
     /* Send the card 80 clocks to activate it (at least 74 are
        required) with DI and CS high.  */
-    spi_cs_disable (dev->spi);
+    spi_cs_mode_set (dev->spi, SPI_CS_MODE_HIGH);
     spi_write (dev->spi, dummy, sizeof (dummy), 1);
-    spi_cs_enable (dev->spi);
+
+    spi_cs_mode_set (dev->spi, SPI_CS_MODE_FRAME);
 
     /* Send software reset.  */
     status = sdcard_command (dev, SD_OP_GO_IDLE_STATE, 0);
