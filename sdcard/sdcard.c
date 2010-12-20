@@ -110,6 +110,16 @@ enum
 };
 
 
+typedef enum 
+{
+    SDCARD_ERROR_COMMAND_TIMEOUT, 
+    SDCARD_ERROR_WRITE_TIMEOUT,
+    SDCARD_ERROR_READ_TIMEOUT,
+    SDCARD_ERROR_WRITE,
+    SDCARD_ERROR_WRITE_REJECT
+} sdcard_error_t;
+
+
 /* The command format is 6 bytes:
    start bit (0)
    host bit (1)
@@ -245,6 +255,40 @@ sdcard_crc7 (uint8_t crc, const void *buffer, uint8_t size)
 }
 
 
+/* All errors come through here to simplify debugging.  */
+void
+sdcard_error (sdcard_t dev, sdcard_error_t error, sdcard_status_t status)
+{
+    switch (error)
+    {
+    case SDCARD_ERROR_COMMAND_TIMEOUT:
+        dev->command_timeouts++;
+        dev->command_status = status;
+        break;
+
+    case SDCARD_ERROR_READ_TIMEOUT:
+        dev->read_timeouts++;
+        dev->read_status = status;
+        break;
+
+    case SDCARD_ERROR_WRITE:
+        dev->write_errors++;
+        dev->write_status = status;
+        break;
+
+    case SDCARD_ERROR_WRITE_TIMEOUT:
+        dev->write_timeouts++;
+        dev->write_status = status;
+        break;
+
+    case SDCARD_ERROR_WRITE_REJECT:
+        dev->write_rejects++;
+        dev->write_status = status;
+        break;
+    }
+}
+
+
 /*  Keeps polling the SD card until the desired byte is returned.  */
 bool
 sdcard_response_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
@@ -262,7 +306,7 @@ sdcard_response_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] == desired)
             return 1;
     }
-    dev->read_timeouts++;
+    sdcard_error (dev, SDCARD_ERROR_READ_TIMEOUT, response[0]);
     return 0;
 }
 
@@ -284,7 +328,7 @@ sdcard_response_not_match (sdcard_t dev, uint8_t desired, uint32_t timeout)
         if (response[0] != desired)
             return 1;
     }
-    dev->write_timeouts++;
+    sdcard_error (dev, SDCARD_ERROR_READ_TIMEOUT, response[0]);
     return 0;
 }
 
@@ -372,8 +416,8 @@ sdcard_command (sdcard_t dev, sdcard_op_t op, uint32_t param)
                 return dev->status;
         }
     }
-
-    dev->command_timeouts++;
+    
+    sdcard_error (dev, SDCARD_ERROR_COMMAND_TIMEOUT, dev->status);
     return dev->status;
 }
 
@@ -685,9 +729,8 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     /* Check to see if the data was accepted.  */
     if ((response[2] & 0x1F) != SD_WRITE_OK)
     {
-        dev->write_rejects++;
         sdcard_deselect (dev);
-        dev->write_status = response[2];
+        sdcard_error (dev, SDCARD_ERROR_WRITE_REJECT, response[2]);
         // dev->write_status = sdcard_status_read (dev);
         return 0;
     }
@@ -704,8 +747,7 @@ sdcard_block_write (sdcard_t dev, sdcard_addr_t addr, const void *buffer)
     /* Look for a write error; should flag the type of error.  */
     if ((wstatus = sdcard_status_read (dev)))
     {
-        dev->write_errors++;
-        dev->write_status = wstatus;
+        sdcard_error (dev, SDCARD_ERROR_WRITE, wstatus);
         return 0;
     }
     

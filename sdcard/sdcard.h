@@ -47,6 +47,8 @@ typedef struct
     uint16_t write_timeouts;
     uint16_t write_rejects;
     uint16_t write_errors;
+    sdcard_status_t command_status;
+    sdcard_status_t read_status;
     sdcard_status_t write_status;
     uint8_t addr_shift;
     uint8_t status;
