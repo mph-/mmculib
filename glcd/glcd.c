@@ -17,11 +17,14 @@
 
    The Displaytech 64128K uses the Sitronix S77565 controller
    with 1/65 duty and 1/9 bias. 
+
+   The maximum clock speed is 20 MHz.
+
 */
 
 
 #ifndef GLCD_SPI_DIVISOR
-#define GLCD_SPI_DIVISOR 2
+#define GLCD_SPI_DIVISOR SPI_CLOCK_DIVISOR (20e6)
 #endif
 
 
