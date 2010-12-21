@@ -1063,9 +1063,9 @@ sdcard_init (const sdcard_cfg_t *cfg)
     spi_cs_mode_set (dev->spi, SPI_CS_MODE_FRAME);
 
     /* Ensure chip select isn't asserted too soon.  */
-    spi_cs_assert_delay_set (dev->spi, 16);    
+    spi_cs_setup_set (dev->spi, 16);    
     /* Ensure chip select isn't negated too soon.  */
-    spi_cs_negate_delay_set (dev->spi, 16);    
+    spi_cs_hold_set (dev->spi, 16);    
    
     /* This will change when CSD read.  */
     dev->read_timeout = 8;
