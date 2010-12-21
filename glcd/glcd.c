@@ -18,7 +18,7 @@
    The Displaytech 64128K uses the Sitronix S77565 controller
    with 1/65 duty and 1/9 bias. 
 
-   The maximum clock speed is 20 MHz.
+   The maximum clock speed is 20 MHz at 3.3 V, 10 MHz at 2.7 V.
 
 */
 
@@ -248,12 +248,12 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
 
 #ifdef GLCD_RESET
     pio_config_set (GLCD_RESET, PIO_OUTPUT_HIGH);
-    pio_output_high (GLCD_RESET);
     pio_output_low (GLCD_RESET);
-    /* Minimum reset pulse is 900 ns but for some reason
-       the signal is slow (probably because of 47 k series resistor.  */
-    DELAY_US (5);
+    /* Minimum reset pulse is 1 us.  */
+    DELAY_US (2);
     pio_output_high (GLCD_RESET);
+    /* Need to wait 2 us for reset complete.  */
+    DELAY_US (2);
 #endif
 
     glcd_origin_set (glcd, 0, 0);
