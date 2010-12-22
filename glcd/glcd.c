@@ -137,14 +137,14 @@ glcd_config (glcd_t glcd)
     /* Set segment lines to normal direction.  */
     glcd_send (glcd, GLCD_CMD_SEGOUTPUT_NORMAL);
 
-	/* The Sitronix ST7565R used to drive the 64128K LCD on the 7C board needs
-	 * the common lines reversed. */
+    /* The Sitronix ST7565R used to drive the 64128K LCD on the 7C board needs
+       the common lines reversed. */
 #ifdef TREETAP7C
     glcd_send (glcd, GLCD_CMD_COMOUTPUT_REVERSE);
 #else
-	glcd_send (glcd, GLCD_CMD_COMOUTPUT_NORMAL);
+    glcd_send (glcd, GLCD_CMD_COMOUTPUT_NORMAL);
 #endif
-
+    
     /* Set the GLCD bias to 1/9.  With a duty ratio of 1/65 the GLCD
        bias is 1/7 or 1/9.  */
 #ifdef TREETAP7C
@@ -220,11 +220,11 @@ glcd_contrast_set (glcd_t glcd __UNUSED__, uint8_t contrast)
 void
 glcd_mode_set (glcd_t glcd, glcd_mode_t mode)
 {
-	glcd_command_mode ();
-	if (mode == GLCD_MODE_INVERT)
-		glcd_send (glcd, GLCD_CMD_DISPLAY_REVERSE);
-	else
-		glcd_send (glcd, GLCD_CMD_DISPLAY_NORMAL);
+    glcd_command_mode ();
+    if (mode == GLCD_MODE_INVERT)
+        glcd_send (glcd, GLCD_CMD_DISPLAY_REVERSE);
+    else
+        glcd_send (glcd, GLCD_CMD_DISPLAY_NORMAL);
 }
 
 
@@ -245,6 +245,9 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     glcd->cfg = cfg;
 
     glcd->spi = spi_init (&spi_cfg);
+
+    spi_cs_setup_set (glcd->spi, 2);
+    spi_cs_hold_set (glcd->spi, 0);
 
 #ifdef GLCD_RESET
     pio_config_set (GLCD_RESET, PIO_OUTPUT_HIGH);
