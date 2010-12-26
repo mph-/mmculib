@@ -15,9 +15,9 @@
 
 typedef enum {MENU_STYLE_ROTATE, MENU_STYLE_SCROLL} menu_style_t;
 
-#define MENU_ITEM(NAME, ACTION) {(NAME), (ACTION)}
+#define MENU_ITEM(NAME, ACTION) {NAME, ACTION}
 
-#define MENU(NAME, MENU_ITEMS) {(NAME), (MENU_ITEMS), ARRAY_SIZE (MENU_ITEMS), 0, 0, 0}
+#define MENU(NAME, MENU_ITEMS) {NAME, MENU_ITEMS, ARRAY_SIZE (MENU_ITEMS), 0, 0, 0}
 
 typedef struct menu_item_struct
 {
