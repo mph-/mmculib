@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "bits.h"
 #include "spi_pga.h"
 
@@ -128,7 +130,6 @@ static spi_pga_offset_t
 max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
 {
     unsigned int i;
-    int16_t prev_offset;
     bool negative;
 
     /* Need to measure offset voltage at low(ish) gains otherwise will
@@ -166,13 +167,19 @@ max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
     if (negative)
         offset = -offset;
 
-    /* Perhaps should search for closest value.  */
-    prev_offset = 0;
-    for (i = 0; i < ARRAY_SIZE (offset_map); i++)
+    /* Searching for bracketing range.  */
+    for (i = 1; i < ARRAY_SIZE (offset_map); i++)
     {
-        if (offset >= prev_offset && offset < offset_map[i].offset)
+        if (offset < offset_map[i].offset)
             break;
-        prev_offset = offset_map[i].offset;
+    }
+
+    if (i != ARRAY_SIZE (offset_map))
+    {
+        /* Choose closest value.  */
+        if (abs (offset - offset_map[i].offset)
+            < abs (offset - offset_map[i - 1].offset))
+            i++;
     }
     
     return max9939_offset_set1 (pga, i - 1, negative, measure);
