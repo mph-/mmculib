@@ -83,4 +83,7 @@ bool usb_awake_p (usb_t usb);
 usb_t usb_init (const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler);
 
+
+void usb_shutdown (void);
+
 #endif

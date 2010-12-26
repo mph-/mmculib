@@ -332,5 +332,5 @@ void
 usb_msd_shutdown (void)
 {
     usb_shutdown ();
-    state = USB_MSD_STATE_UNINIT,
+    state = USB_MSD_STATE_UNINIT;
 }
