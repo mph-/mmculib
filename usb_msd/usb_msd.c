@@ -331,5 +331,6 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
 void 
 usb_msd_shutdown (void)
 {
-
+    usb_shutdown ();
+    state = USB_MSD_STATE_UNINIT,
 }
