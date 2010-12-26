@@ -37,6 +37,8 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
     if (!spi_pga->spi)
         return 0;
 
+    spi_cs_setup_set (spi_pga->spi, 4);
+
     switch (cfg->type)
     {
     case SPI_PGA_MAX9939:

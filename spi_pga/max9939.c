@@ -4,6 +4,8 @@
 /* The MAX9939 requires data to be sent LSB first (ignoring the
    contradictory diagram in the datasheet) but most SPI peripherals
    send data MSB first.  In this driver, the data is swapped around.
+
+   The CS setup time is 80 ns.
 */
 
 enum 

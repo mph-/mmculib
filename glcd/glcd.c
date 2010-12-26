@@ -247,7 +247,6 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     glcd->spi = spi_init (&spi_cfg);
 
     spi_cs_setup_set (glcd->spi, 2);
-    spi_cs_hold_set (glcd->spi, 0);
 
 #ifdef GLCD_RESET
     pio_config_set (GLCD_RESET, PIO_OUTPUT_HIGH);
