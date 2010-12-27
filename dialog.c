@@ -17,6 +17,35 @@ typedef struct
 static dialog_data_t dialog_data;
 
 
+
+void
+dialog_display_options (dialog_t *dialog, int rows)
+{
+    int i;
+    int cols;
+    char *str;
+    char buffer[64];
+
+    for (; rows < dialog_data.rows - 1; rows++)
+        dialog_data.display (rows, "\n");        
+
+    cols = dialog_data.cols 
+        - (strlen (dialog->left_name) + strlen (dialog->right_name));
+    
+    str = buffer;
+    for (i = 0; dialog->left_name[i]; i++)
+        *str++ = dialog->left_name[i];
+    for (i = 0; i < cols; i++)
+        *str++ = ' ';
+    for (i = 0; dialog->right_name[i]; i++)
+        *str++ = dialog->right_name[i];    
+    *str = '\0';
+    dialog_data.display (rows - 1, buffer);        
+
+    dialog_data.current = dialog;
+}
+
+
 /* Display a new dialog, saving previous dialog to return to later.  */
 void
 dialog_display (dialog_t *dialog, const char *string)
@@ -24,8 +53,6 @@ dialog_display (dialog_t *dialog, const char *string)
     int i;
     int rows;
     int cols;
-    char buffer[64];
-    char *str;
 
     rows = 1;
     cols = 0;
@@ -51,23 +78,7 @@ dialog_display (dialog_t *dialog, const char *string)
 
     dialog_data.display (0, string);
 
-    for (; rows < dialog_data.rows - 1; rows++)
-        dialog_data.display (rows, "\n");        
-
-    cols = dialog_data.cols 
-        - (strlen (dialog->left_name) + strlen (dialog->right_name));
-    
-    str = buffer;
-    for (i = 0; dialog->left_name[i]; i++)
-        *str++ = dialog->left_name[i];
-    for (i = 0; i < cols; i++)
-        *str++ = ' ';
-    for (i = 0; dialog->right_name[i]; i++)
-        *str++ = dialog->right_name[i];    
-    *str = '\0';
-    dialog_data.display (rows - 1, buffer);        
-
-    dialog_data.current = dialog;
+    dialog_display_options (dialog, rows);
 }
 
 

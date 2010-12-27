@@ -35,6 +35,11 @@ bool
 dialog_right (void);
 
 
+/* Display dialog options.  */
+void
+dialog_display_options (dialog_t *dialog, int rows);
+
+
 /* Display a new dialog.  */
 void
 dialog_display (dialog_t *dialog, const char *message);
