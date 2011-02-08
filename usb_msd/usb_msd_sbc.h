@@ -37,4 +37,6 @@ void sbc_lun_init (msd_t *msd);
 
 uint8_t sbc_lun_num_get (void);
 
+void sbc_lun_write_protect_set (uint8_t lun_id, bool enable);
+
 #endif /*USB_MSD_SBC_H_*/

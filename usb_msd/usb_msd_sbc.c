@@ -31,22 +31,6 @@ static sbc_state_t sbc_state;
 static uint8_t sbc_tmp_buffer[MSD_BLOCK_SIZE_MAX];
 
 
-/**
- * Header for the mode pages data
- * 
- */
-static const S_sbc_mode_parameter_header_6 sModeParameterHeader6 =
-{
-    sizeof (S_sbc_mode_parameter_header_6) - 1,  //!< Length of mode page data is 0x03
-    SBC_MEDIUM_TYPE_DIRECT_ACCESS_BLOCK_DEVICE, //!< Direct-access block device
-    0,                                          //!< Reserved bits
-    false,                                      //!< DPO/FUA not supported
-    0,                                          //!< Reserved bits
-    false,                                      //!< Medium is not write-protected
-    0                                           //!< No block descriptor
-};
-
-
 static sbc_status_t
 sbc_status (usb_bot_status_t status)
 {
@@ -456,11 +440,28 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
  * 
  */
 static sbc_status_t
-sbc_mode_sense6 (usb_msd_lun_t *pLun __unused__, S_usb_bot_command_state *pCommandState)
+sbc_mode_sense6 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     sbc_status_t bResult = SBC_STATUS_INCOMPLETE;
     usb_bot_status_t bStatus;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
+    S_sbc_mode_parameter_header_6 sModeParameterHeader6 =
+        {
+            //!< Length of mode page data is 0x03
+            sizeof (S_sbc_mode_parameter_header_6) - 1,
+            //!< Direct-access block device
+            SBC_MEDIUM_TYPE_DIRECT_ACCESS_BLOCK_DEVICE,
+            //!< Reserved bits
+            0,
+            //!< DPO/FUA not supported
+            false,
+            //!< Reserved bits
+            0,
+            //!< Write-protect status
+            pLun->write_protect,
+            //!< No block descriptor
+            0
+        };
 
     switch (sbc_state)
     {
@@ -817,4 +818,16 @@ void
 sbc_reset (void)
 {
     sbc_state = SBC_STATE_INIT;
+}
+
+
+void  sbc_lun_write_protect_set (uint8_t lun_id, bool enable)
+{
+    usb_msd_lun_t *pLun;
+    
+    pLun = lun_get (lun_id);
+    if (!pLun)
+        return;
+    
+    lun_write_protect_set (pLun, enable);
 }

@@ -17,4 +17,6 @@ usb_msd_ret_t usb_msd_update (void);
 
 void usb_msd_shutdown (void);
 
+void usb_msd_write_protect_set (uint8_t lun_id, bool enable);
+
 #endif

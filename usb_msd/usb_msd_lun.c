@@ -54,7 +54,7 @@ static const S_sbc_inquiry_data sInquiryData =
 /**
  * Initializes a LUN instance.
  */
-void lun_init (msd_t *msd)
+usb_msd_lun_t *lun_init (msd_t *msd)
 {
     usb_msd_lun_t *pLun;
     usb_msd_lun_addr_t block_max;
@@ -62,8 +62,8 @@ void lun_init (msd_t *msd)
     TRACE_INFO (USB_MSD_LUN, "LUN:Init\n");
 
     if (lun_num >= USB_MSD_LUN_NUM)
-        return;
-
+        return NULL;
+    
     pLun = &Luns[lun_num++];
 
     // Initialize LUN
@@ -72,6 +72,7 @@ void lun_init (msd_t *msd)
     // Only 512 seems to work for Linux.   The msd wrapper works
     // with byte addresses so this number is independent of msd->block_bytes.
     pLun->block_bytes = 512;
+    pLun->write_protect = false;
 
     block_max = (msd->media_bytes / pLun->block_bytes) - 1;
 
@@ -110,6 +111,7 @@ void lun_init (msd_t *msd)
     // Initialize read capacity data
     STORE_DWORDB (block_max, pLun->sReadCapacityData.pLogicalBlockAddress);
     STORE_DWORDB (pLun->block_bytes, pLun->sReadCapacityData.pLogicalBlockLength);
+    return pLun;
 }
 
 
@@ -238,4 +240,10 @@ usb_msd_lun_t *lun_get (uint8_t num)
 uint8_t lun_num_get (void)
 {
     return lun_num;
+}
+
+
+void lun_write_protect_set (usb_msd_lun_t *pLun, bool enable)
+{
+    pLun->write_protect = enable;
 }

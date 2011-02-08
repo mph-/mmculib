@@ -334,3 +334,10 @@ usb_msd_shutdown (void)
     usb_shutdown ();
     state = USB_MSD_STATE_UNINIT;
 }
+
+
+void 
+usb_msd_write_protect_set (uint8_t lun_id, bool enable)
+{
+    sbc_lun_write_protect_set (lun_id, enable);
+}
