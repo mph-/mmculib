@@ -42,11 +42,10 @@ typedef enum
 //@}
 
 //! \brief  Structure for holding the result of a USB transfer
-//! \see    MSD_Callback
 typedef struct
 {
-    uint32_t  dBytesTransferred; //!< Number of bytes transferred
-    usb_bot_status_t bStatus;       //!< Operation result code
+    uint32_t bytes;
+    usb_bot_status_t status;
 } usb_bot_transfer_t;
 
 

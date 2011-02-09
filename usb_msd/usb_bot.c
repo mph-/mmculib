@@ -82,13 +82,13 @@ static usb_bot_t *bot = &bot_dev;
 
 uint16_t usb_bot_transfer_bytes (usb_bot_transfer_t *pTransfer)
 {
-    return pTransfer->dBytesTransferred;
+    return pTransfer->bytes;
 }
 
 
 usb_bot_status_t usb_bot_transfer_status (usb_bot_transfer_t *pTransfer)
 {
-    return pTransfer->bStatus;
+    return pTransfer->status;
 }
 
 
@@ -111,8 +111,8 @@ usb_bot_status_t usb_bot_status (usb_status_t status)
 static void
 usb_bot_transfer_init (usb_bot_transfer_t *pTransfer)
 {
-    pTransfer->bStatus = USB_BOT_STATUS_INCOMPLETE;
-    pTransfer->dBytesTransferred = 0;
+    pTransfer->status = USB_BOT_STATUS_INCOMPLETE;
+    pTransfer->bytes = 0;
 }
 
 
@@ -125,8 +125,8 @@ usb_bot_transfer_callback (void *arg, usb_transfer_t *usb_transfer)
 {
     usb_bot_transfer_t *bot_transfer = arg;
 
-    bot_transfer->bStatus = usb_bot_status (usb_transfer->status);
-    bot_transfer->dBytesTransferred = usb_transfer->transferred;
+    bot_transfer->status = usb_bot_status (usb_transfer->status);
+    bot_transfer->bytes = usb_transfer->transferred;
 }
 
 
