@@ -75,10 +75,10 @@ bool usb_bot_update (void);
 bool usb_bot_init (uint8_t num, const usb_descriptors_t *descriptors);
 
 usb_bot_status_t
-usb_bot_write (const void *buffer, uint16_t size, void *pTransfer);
+usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer);
 
 usb_bot_status_t
-usb_bot_read (void *buffer, uint16_t size, void *pTransfer);
+usb_bot_read (void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer);
 
 bool
 usb_bot_command_read (S_usb_bot_command_state *pCommandState);

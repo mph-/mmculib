@@ -114,8 +114,9 @@ usb_bot_callback (void *arg, usb_transfer_t *usb_transfer)
 
 
 usb_bot_status_t
-usb_bot_write (const void *buffer, uint16_t size, void *pTransfer)
+usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
+    pTransfer->bSemaphore = 0;
     return usb_bot_status (usb_write_async (bot->usb, buffer, size,
                                             usb_bot_callback,
                                             pTransfer));
@@ -123,8 +124,9 @@ usb_bot_write (const void *buffer, uint16_t size, void *pTransfer)
 
 
 usb_bot_status_t
-usb_bot_read (void *buffer, uint16_t size, void *pTransfer)
+usb_bot_read (void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
+    pTransfer->bSemaphore = 0;
     return usb_bot_status (usb_read_async (bot->usb, buffer, size, 
                                            usb_bot_callback,
                                            pTransfer));
@@ -330,7 +332,6 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
     case USB_BOT_STATE_READ_CBW:
         TRACE_DEBUG (USB_BOT, "BOT:ReadCBW\n");
             
-        pTransfer->bSemaphore = 0;
         bStatus = usb_bot_read (pCbw, MSD_CBW_SIZE, pTransfer);
 
         if (bStatus == USB_BOT_STATUS_SUCCESS)
@@ -413,7 +414,6 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
         TRACE_DEBUG (USB_BOT, "BOT:SendCSW\n");
     
         // Start the CSW write operation
-        pTransfer->bSemaphore = 0;
         bStatus = usb_bot_write (pCsw, MSD_CSW_SIZE, pTransfer);
     
         if (bStatus == USB_BOT_STATUS_SUCCESS)
