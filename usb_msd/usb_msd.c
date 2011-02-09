@@ -216,29 +216,29 @@ usb_msd_preprocess (S_usb_bot_command_state *pCommandState)
 static bool 
 usb_msd_process (S_usb_bot_command_state *pCommandState)
 {
-    sbc_status_t bStatus;
+    usb_bot_status_t bStatus;
     usb_msd_csw_t *pCsw = &pCommandState->sCsw;
 
     bStatus = sbc_process_command (pCommandState);
 
     switch (bStatus)
     {
-    case SBC_STATUS_PARAMETER:
+    case USB_BOT_STATUS_PARAMETER:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         usb_bot_abort (pCommandState);
         return true;
         break;
     
-    case SBC_STATUS_ERROR:
+    case USB_BOT_STATUS_ERROR:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         return true;
         break;
 
-    case SBC_STATUS_INCOMPLETE:
+    case USB_BOT_STATUS_INCOMPLETE:
         return false;
         break;
 
-    case SBC_STATUS_SUCCESS:
+    case USB_BOT_STATUS_SUCCESS:
         return true;
         break;
     }

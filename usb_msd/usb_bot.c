@@ -80,8 +80,19 @@ static usb_bot_t bot_dev;
 static usb_bot_t *bot = &bot_dev;
 
 
-static usb_bot_status_t
-usb_bot_status (usb_status_t status)
+uint16_t usb_bot_transfer_bytes (usb_bot_transfer_t *pTransfer)
+{
+    return pTransfer->dBytesTransferred;
+}
+
+
+usb_bot_status_t usb_bot_transfer_status (usb_bot_transfer_t *pTransfer)
+{
+    return pTransfer->bStatus;
+}
+
+
+usb_bot_status_t usb_bot_status (usb_status_t status)
 {
     switch (status)
     {
@@ -97,28 +108,34 @@ usb_bot_status (usb_status_t status)
 }
 
 
+static void
+usb_bot_transfer_init (usb_bot_transfer_t *pTransfer)
+{
+    pTransfer->bStatus = USB_BOT_STATUS_INCOMPLETE;
+    pTransfer->dBytesTransferred = 0;
+}
+
+
 /**
  * This function is to be used as a callback for BOT transfers.
  * 
  */
 static void
-usb_bot_callback (void *arg, usb_transfer_t *usb_transfer)
+usb_bot_transfer_callback (void *arg, usb_transfer_t *usb_transfer)
 {
     usb_bot_transfer_t *bot_transfer = arg;
 
-    bot_transfer->bSemaphore++;
     bot_transfer->bStatus = usb_bot_status (usb_transfer->status);
     bot_transfer->dBytesTransferred = usb_transfer->transferred;
-    bot_transfer->dBytesRemaining = usb_transfer->remaining;
 }
 
 
 usb_bot_status_t
 usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
-    pTransfer->bSemaphore = 0;
+    usb_bot_transfer_init (pTransfer);
     return usb_bot_status (usb_write_async (bot->usb, buffer, size,
-                                            usb_bot_callback,
+                                            usb_bot_transfer_callback,
                                             pTransfer));
 }
 
@@ -126,9 +143,9 @@ usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 usb_bot_status_t
 usb_bot_read (void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
-    pTransfer->bSemaphore = 0;
+    usb_bot_transfer_init (pTransfer);
     return usb_bot_status (usb_read_async (bot->usb, buffer, size, 
-                                           usb_bot_callback,
+                                           usb_bot_transfer_callback,
                                            pTransfer));
 }
 
@@ -334,51 +351,44 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
             
         bStatus = usb_bot_read (pCbw, MSD_CBW_SIZE, pTransfer);
 
-        if (bStatus == USB_BOT_STATUS_SUCCESS)
-            bot->state = USB_BOT_STATE_WAIT_CBW;
-        else
+        if (bStatus == USB_BOT_STATUS_ERROR)
             TRACE_ERROR (USB_BOT, "BOT:ReadCBW fail\n");            
+        else
+            bot->state = USB_BOT_STATE_WAIT_CBW;
         return 0;
         break;
 
     case USB_BOT_STATE_WAIT_CBW:
-        if (pTransfer->bSemaphore > 0)
+        bStatus = usb_bot_transfer_status (pTransfer);
+        if (bStatus == USB_BOT_STATUS_ERROR)
+            bot->state = USB_BOT_STATE_READ_CBW;
+        else if (bStatus == USB_BOT_STATUS_SUCCESS)
         {
-            pTransfer->bSemaphore--;
-    
-            if (pTransfer->bStatus == USB_BOT_STATUS_SUCCESS)
+            // Copy the tag
+            pCsw->dCSWTag = pCbw->dCBWTag;
+            // Check that the CBW is 31 bytes long
+            if (usb_bot_transfer_bytes (pTransfer) != MSD_CBW_SIZE)
             {
-                // Copy the tag
-                pCsw->dCSWTag = pCbw->dCBWTag;
-                // Check that the CBW is 31 bytes long
-                if ((pTransfer->dBytesTransferred != MSD_CBW_SIZE)
-                    || (pTransfer->dBytesRemaining != 0))
-                {
-                    TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
-
-                    bot_error ();
-                    
-                    pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
-                    bot->state = USB_BOT_STATE_READ_CBW;
-                }
-                // Check the CBW Signature
-                else if (pCbw->dCBWSignature != MSD_CBW_SIGNATURE)
-                {
-                    TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
-                                (unsigned int)pCbw->dCBWSignature);
-                    
-                    bot_error ();
-                    
-                    pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
-                    bot->state = USB_BOT_STATE_READ_CBW;
-                }
-                bot->state = USB_BOT_STATE_PROCESS_CBW;
-                return 1;
-            }
-            else
-            {
+                TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
+                
+                bot_error ();
+                
+                pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                 bot->state = USB_BOT_STATE_READ_CBW;
             }
+            // Check the CBW Signature
+            else if (pCbw->dCBWSignature != MSD_CBW_SIGNATURE)
+            {
+                TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
+                             (unsigned int)pCbw->dCBWSignature);
+                
+                bot_error ();
+                
+                pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
+                bot->state = USB_BOT_STATE_READ_CBW;
+            }
+            bot->state = USB_BOT_STATE_PROCESS_CBW;
+            return 1;
         }
         break;
 
@@ -423,9 +433,9 @@ usb_bot_status_set (S_usb_bot_command_state *pCommandState)
         break;
 
     case USB_BOT_STATE_WAIT_CSW:
-        if (pTransfer->bSemaphore > 0)
+        if (usb_bot_transfer_status (pTransfer) != USB_BOT_STATUS_INCOMPLETE)
         {
-            pTransfer->bSemaphore--;
+            // What about an error?
             bot->state = USB_BOT_STATE_READ_CBW;
             return 1;
         }

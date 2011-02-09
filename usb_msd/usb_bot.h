@@ -17,10 +17,10 @@
 
 typedef enum
 {
-//! \brief  Method was successful
-    USB_BOT_STATUS_SUCCESS = 0x00,
-//! \brief  There was an error when trying to perform a method
-    USB_BOT_STATUS_ERROR = 0x01,
+    USB_BOT_STATUS_SUCCESS,
+    USB_BOT_STATUS_ERROR,
+    USB_BOT_STATUS_INCOMPLETE,
+    USB_BOT_STATUS_PARAMETER
 } usb_bot_status_t;
 
 
@@ -46,9 +46,7 @@ typedef enum
 typedef struct
 {
     uint32_t  dBytesTransferred; //!< Number of bytes transferred
-    uint32_t  dBytesRemaining;   //!< Number of bytes not transferred
-    unsigned char bSemaphore;    //!< Semaphore to indicate transfer completion
-    unsigned char bStatus;       //!< Operation result code
+    usb_bot_status_t bStatus;       //!< Operation result code
 } usb_bot_transfer_t;
 
 
@@ -73,6 +71,10 @@ bool usb_bot_ready_p (void);
 bool usb_bot_update (void);
 
 bool usb_bot_init (uint8_t num, const usb_descriptors_t *descriptors);
+
+uint16_t usb_bot_transfer_bytes (usb_bot_transfer_t *pTransfer);
+
+usb_bot_status_t usb_bot_transfer_status (usb_bot_transfer_t *pTransfer);
 
 usb_bot_status_t
 usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer);
