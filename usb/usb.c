@@ -172,7 +172,7 @@ usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
         break;
         
     default:
-        TRACE_ERROR (USB, "USB:Unknown gdesc 0x%02X\n", setup->request);
+        TRACE_ERROR (USB, "USB:Unknown gdesc 0x%02x\n", setup->request);
         /* Send stall for unsupported descriptor requests.  */
         usb_control_stall (usb);
     }
@@ -243,7 +243,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
             break;
         
         default:
-            TRACE_ERROR (USB, "USB:Bad Feature 0x%04X\n", setup->value);
+            TRACE_ERROR (USB, "USB:Bad Feature 0x%04x\n", setup->value);
             usb_control_stall (usb);
         }
         break;
@@ -267,7 +267,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
             break;
             
         default:
-            TRACE_ERROR (USB, "USB:Bad GetStatus 0x%02X\n", 
+            TRACE_ERROR (USB, "USB:Bad GetStatus 0x%02x\n", 
                          setup->type);
             usb_control_stall (usb);
         }
@@ -285,7 +285,7 @@ usb_std_request_handler (usb_t usb, udp_setup_t *setup)
         break;
 
     default:
-        TRACE_ERROR (USB, "USB:Unknown req 0x%02X\n", setup->request);
+        TRACE_ERROR (USB, "USB:Unknown req 0x%02x\n", setup->request);
         usb_control_stall (usb);
     }
 }
@@ -324,9 +324,9 @@ usb_write_async (usb_t usb, const void *buffer,
 
 usb_status_t
 usb_read_async (usb_t usb, void *buffer, 
-                 unsigned int length, 
-                 udp_callback_t callback, 
-                 void *arg)
+                unsigned int length, 
+                udp_callback_t callback, 
+                void *arg)
 {
     return udp_read_async (usb->udp, UDP_EP_OUT, buffer, length, callback, arg);
 }
@@ -335,7 +335,8 @@ usb_read_async (usb_t usb, void *buffer,
 static void
 usb_request_handler (usb_t usb, udp_setup_t *setup)
 {
-    /* Pass request to other handlers such as BOT or CDC first.  */
+    /* Pass request to other handlers such as BOT or CDC before 
+       handling standard requests.  */
     if (!usb->request_handler 
         || !usb->request_handler (usb, setup))
         usb_std_request_handler (usb, setup);

@@ -81,7 +81,7 @@ usb_bot_status_t
 usb_bot_read (void *buffer, uint16_t size, void *pTransfer);
 
 bool
-usb_bot_command_get (S_usb_bot_command_state *pCommandState);
+usb_bot_command_read (S_usb_bot_command_state *pCommandState);
 
 bool
 usb_bot_status_set (S_usb_bot_command_state *pCommandState);

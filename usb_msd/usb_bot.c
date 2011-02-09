@@ -67,8 +67,10 @@ typedef enum
 //! \see    S_std_class
 typedef struct
 {
-    uint8_t max_lun;             //!< Maximum LUN index
-    usb_bot_state_t state;       //!< Current state of the driver
+    //!< Maximum LUN index.  This is one less than the number of LUNs.
+    uint8_t max_lun;
+    //!< Current state of the driver
+    usb_bot_state_t state;
     uint8_t wait_reset_recovery;
     usb_t usb;
 } usb_bot_t;
@@ -316,7 +318,7 @@ bot_error (void)
 
 
 bool
-usb_bot_command_get (S_usb_bot_command_state *pCommandState)
+usb_bot_command_read (S_usb_bot_command_state *pCommandState)
 {
     usb_msd_cbw_t *pCbw = &pCommandState->sCbw;
     usb_msd_csw_t *pCsw = &pCommandState->sCsw;

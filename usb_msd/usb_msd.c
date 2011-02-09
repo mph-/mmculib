@@ -258,7 +258,7 @@ usb_msd_update (void)
        Note that the BOT (and possibly the SBC) is asynchronous so
        some functions are called multiple times; the first time to
        initiate an action, then subequently to poll their completion.
-       An example of this is bot_command_get.   */
+       An example of this is bot_command_read.   */
 
     ret = USB_MSD_ACTIVE;
     switch (state)
@@ -286,7 +286,7 @@ usb_msd_update (void)
             state = USB_MSD_STATE_INIT;
             ret = USB_MSD_DISCONNECTED;
         }
-        else if (usb_bot_command_get (&CommandState))
+        else if (usb_bot_command_read (&CommandState))
             state = USB_MSD_STATE_PREPROCESS;
         break;
 
