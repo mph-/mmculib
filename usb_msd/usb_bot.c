@@ -487,7 +487,8 @@ usb_bot_ready_p (void)
     switch (usb_bot->state)
     {
     case USB_BOT_STATE_INIT:
-        if (usb_awake_p (usb_bot->usb))
+        if (usb_awake_p (usb_bot->usb)
+            || usb_configured_p (usb_bot->usb))
             usb_bot->state = USB_BOT_STATE_WAIT;
         break;
 
