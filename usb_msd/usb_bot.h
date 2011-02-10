@@ -18,9 +18,14 @@
 typedef enum
 {
     USB_BOT_STATUS_SUCCESS,
-    USB_BOT_STATUS_ERROR,
     USB_BOT_STATUS_INCOMPLETE,
-    USB_BOT_STATUS_PARAMETER
+    USB_BOT_STATUS_ERROR_PARAMETER,
+    USB_BOT_STATUS_ERROR_USB_READ,
+    USB_BOT_STATUS_ERROR_USB_WRITE,
+    USB_BOT_STATUS_ERROR_LUN_READ,
+    USB_BOT_STATUS_ERROR_LUN_WRITE,
+    USB_BOT_STATUS_ERROR_LUN_BUSY,
+    USB_BOT_STATUS_ERROR_LUN_NODEVICE
 } usb_bot_status_t;
 
 
@@ -46,6 +51,7 @@ typedef struct
 {
     uint32_t bytes;
     usb_status_t status;
+    bool write;
 } usb_bot_transfer_t;
 
 

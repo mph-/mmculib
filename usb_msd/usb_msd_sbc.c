@@ -69,7 +69,7 @@ sbc_inquiry (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
-        else if (bResult == USB_BOT_STATUS_ERROR)
+        else if (bResult == USB_BOT_STATUS_ERROR_USB_WRITE)
             TRACE_ERROR (USB_MSD_SBC, "SBC:Inquiry error\n");
         break;
 
@@ -118,7 +118,7 @@ sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
-        else if (bResult == USB_BOT_STATUS_ERROR)
+        else if (bResult == USB_BOT_STATUS_ERROR_USB_WRITE)
             TRACE_ERROR (USB_MSD_SBC, "SBC:Capacity error\n");
         break;
 
@@ -179,11 +179,6 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
             TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT read done\n");
             sbc_state = SBC_STATE_WRITE;            
         }
-        else if (bResult == USB_BOT_STATUS_ERROR)
-        {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT read error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR, 0, 0);
-        }
         break;
         
     case SBC_STATE_WRITE:
@@ -194,10 +189,7 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 
         if (bStatus != LUN_STATUS_SUCCESS)
         {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:LUN write error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
-                                   0, 0);
-            bResult = USB_BOT_STATUS_ERROR;
+            bResult = USB_BOT_STATUS_ERROR_LUN_WRITE;
         }
         else
         {
@@ -232,7 +224,7 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 static usb_bot_status_t
 sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
-    usb_bot_status_t bStatus;
+    lun_status_t bStatus;
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
     S_sbc_read_10 *pCommand = (S_sbc_read_10 *) pCommandState->sCbw.pCommand;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
@@ -260,11 +252,7 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         
         if (bStatus != LUN_STATUS_SUCCESS)
         {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:LUN read error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
-                                   SBC_ASC_LOGICAL_UNIT_NOT_READY,
-                                   0);
-            bResult = USB_BOT_STATUS_ERROR;
+            bResult = USB_BOT_STATUS_ERROR_LUN_READ;
         }
         else
         {
@@ -282,12 +270,8 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         
     case SBC_STATE_WRITE_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
-        switch (bResult)
+        if (bResult == USB_BOT_STATUS_SUCCESS)
         {
-        case USB_BOT_STATUS_INCOMPLETE:
-            break;
-
-        case USB_BOT_STATUS_SUCCESS:
             TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT write done\n");
             
             // Update transfer length and block address
@@ -298,16 +282,9 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
             
             if (pCommandState->dLength == 0)
                 bResult = USB_BOT_STATUS_SUCCESS;
-            break;
-            
-        default:
-            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT write error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR,
-                                   0, 0);
-            break;
+
         }
         break;
-        
     }
 
     return bResult;
@@ -365,7 +342,7 @@ sbc_mode_sense6 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
-        else if (bResult == USB_BOT_STATUS_ERROR)
+        else if (bResult == USB_BOT_STATUS_ERROR_USB_WRITE)
             TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");            
         break;
 
@@ -411,7 +388,7 @@ sbc_request_sense (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
-        else if (bResult == USB_BOT_STATUS_ERROR)
+        else if (bResult == USB_BOT_STATUS_ERROR_USB_WRITE)
             TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
         break;
 
@@ -443,21 +420,17 @@ sbc_test_unit_ready (usb_msd_lun_t *pLun)
     {
     case MSD_STATUS_READY:
         TRACE_INFO (USB_MSD_SBC, "SBC:Ready\n");
-        break;
+        return USB_BOT_STATUS_SUCCESS;
         
     case MSD_STATUS_BUSY:
         TRACE_INFO (USB_MSD_SBC, "SBC:Busy\n");
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY, 0, 0);
-        break;
-        
+        return USB_BOT_STATUS_ERROR_LUN_BUSY;
+
+    default:
     case MSD_STATUS_NODEVICE:
         TRACE_INFO (USB_MSD_SBC, "SBC:?\n");
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_NOT_READY,
-                               SBC_ASC_MEDIUM_NOT_PRESENT, 0);
-        break;
+        return USB_BOT_STATUS_ERROR_LUN_NODEVICE;
     }
-    
-    return USB_BOT_STATUS_SUCCESS;
 }
 
 
@@ -577,7 +550,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
     // If lun in error should we do bad parameter handling?
     pLun = lun_get (pCbw->bCBWLUN);
     if (!pLun)
-        return USB_BOT_STATUS_ERROR;
+        return USB_BOT_STATUS_ERROR_PARAMETER;
 
     // Identify command
     switch (pCommand->bOperationCode)
@@ -623,39 +596,61 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        bResult = USB_BOT_STATUS_PARAMETER;
+        bResult = USB_BOT_STATUS_ERROR_PARAMETER;
     }
 
     switch (bResult)
     {
-    case USB_BOT_STATUS_PARAMETER:
+    case USB_BOT_STATUS_ERROR_PARAMETER:
         // Windows sends this
         TRACE_INFO (USB_MSD_SBC, "SBC:Bad command 0x%02X\n",
                     pCbw->pCommand[0]);
 
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_ILLEGAL_REQUEST,
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_ILLEGAL_REQUEST,
                                SBC_ASC_INVALID_COMMAND_OPERATION_CODE,
                                /* SBC_ASC_INVALID_FIELD_IN_CDB, */
                                0);
         break;
     
-    case USB_BOT_STATUS_ERROR:
+    case USB_BOT_STATUS_ERROR_USB_READ:
+    case USB_BOT_STATUS_ERROR_USB_WRITE:
         TRACE_ERROR (USB_MSD_SBC, "SBC:Command failed\n");
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_MEDIUM_ERROR,
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_MEDIUM_ERROR,
                                SBC_ASC_INVALID_FIELD_IN_CDB, 0);
         break;
 
+    case USB_BOT_STATUS_ERROR_LUN_READ:
+        TRACE_ERROR (USB_MSD_SBC, "SBC:LUN read error\n");
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NOT_READY,
+                               SBC_ASC_LOGICAL_UNIT_NOT_READY, 0);
+        break;
+
+    case USB_BOT_STATUS_ERROR_LUN_WRITE:
+        TRACE_ERROR (USB_MSD_SBC, "SBC:LUN write error\n");
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NOT_READY, 0, 0);
+        break;
+
+    case USB_BOT_STATUS_ERROR_LUN_BUSY:
+        TRACE_ERROR (USB_MSD_SBC, "SBC:LUN busy\n");
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NOT_READY, 0, 0);
+        break;
+
+    case USB_BOT_STATUS_ERROR_LUN_NODEVICE:
+        TRACE_ERROR (USB_MSD_SBC, "SBC:LUN not available\n");
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NOT_READY, 0, 0);
+        break;
+
     case USB_BOT_STATUS_INCOMPLETE:
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_NO_SENSE, 0, 0);
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NO_SENSE, 0, 0);
         break;
 
     case USB_BOT_STATUS_SUCCESS:
         TRACE_DEBUG (USB_MSD_SBC, "SBC:Command complete\n");
-        lun_update_sense_data (pLun, SBC_SENSE_KEY_NO_SENSE, 0, 0);
+        lun_sense_data_update (pLun, SBC_SENSE_KEY_NO_SENSE, 0, 0);
         break;
     }
 
-    /* If finished operation, reset state.  */
+    /* If finished operation or have error, reset state.  */
     if (bResult != USB_BOT_STATUS_INCOMPLETE)
         sbc_state = SBC_STATE_INIT;
 

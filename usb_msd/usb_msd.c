@@ -223,13 +223,16 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
 
     switch (bStatus)
     {
-    case USB_BOT_STATUS_PARAMETER:
+    case USB_BOT_STATUS_ERROR_PARAMETER:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         usb_bot_abort (pCommandState);
         return true;
         break;
     
-    case USB_BOT_STATUS_ERROR:
+    case USB_BOT_STATUS_ERROR_USB_READ:
+    case USB_BOT_STATUS_ERROR_USB_WRITE:
+    case USB_BOT_STATUS_ERROR_LUN_READ:
+    case USB_BOT_STATUS_ERROR_LUN_WRITE:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         return true;
         break;

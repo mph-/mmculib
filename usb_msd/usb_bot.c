@@ -99,17 +99,22 @@ usb_bot_status_t usb_bot_transfer_status (usb_bot_transfer_t *pTransfer)
     case USB_STATUS_RESET:
         TRACE_ERROR (USB_BOT, "BOT:Endpoint reset\n");
         
-    default:
-        return USB_BOT_STATUS_ERROR;
+    case USB_STATUS_BUSY:
+    case USB_STATUS_ABORTED:
+        break;
     }
+
+    return pTransfer->write ? USB_BOT_STATUS_ERROR_USB_WRITE
+        : USB_BOT_STATUS_ERROR_USB_READ;
 }
 
 
 static void
-usb_bot_transfer_init (usb_bot_transfer_t *pTransfer)
+usb_bot_transfer_init (usb_bot_transfer_t *pTransfer, bool write)
 {
     pTransfer->status = USB_STATUS_PENDING;
     pTransfer->bytes = 0;
+    pTransfer->write = write;
 }
 
 
@@ -132,7 +137,7 @@ usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
     usb_bot_status_t status;
 
-    usb_bot_transfer_init (pTransfer);
+    usb_bot_transfer_init (pTransfer, true);
     status = usb_write_async (bot->usb, buffer, size,
                               usb_bot_transfer_callback,
                               pTransfer);
@@ -140,7 +145,7 @@ usb_bot_write (const void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
     if (status != USB_STATUS_SUCCESS)
     {
         pTransfer->status = status;
-        return USB_BOT_STATUS_ERROR;
+        return USB_BOT_STATUS_ERROR_USB_WRITE;
     }
 
     return  USB_BOT_STATUS_INCOMPLETE;
@@ -152,7 +157,7 @@ usb_bot_read (void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
 {
     usb_bot_status_t status;
 
-    usb_bot_transfer_init (pTransfer);
+    usb_bot_transfer_init (pTransfer, false);
 
     status = usb_read_async (bot->usb, buffer, size, 
                              usb_bot_transfer_callback,
@@ -161,7 +166,7 @@ usb_bot_read (void *buffer, uint16_t size, usb_bot_transfer_t *pTransfer)
     if (status != USB_STATUS_SUCCESS)
     {
         pTransfer->status = status;
-        return USB_BOT_STATUS_ERROR;
+        return USB_BOT_STATUS_ERROR_USB_READ;
     }
 
     return  USB_BOT_STATUS_INCOMPLETE;
@@ -373,7 +378,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
 
     case USB_BOT_STATE_WAIT_CBW:
         bStatus = usb_bot_transfer_status (pTransfer);
-        if (bStatus == USB_BOT_STATUS_ERROR)
+        if (bStatus == USB_BOT_STATUS_ERROR_USB_READ)
         {
             TRACE_ERROR (USB_BOT, "BOT:ReadCBW fail\n");
             bot->state = USB_BOT_STATE_READ_CBW;
@@ -446,7 +451,7 @@ usb_bot_status_write (S_usb_bot_command_state *pCommandState)
 
     case USB_BOT_STATE_WAIT_CSW:
         bStatus = usb_bot_transfer_status (pTransfer);
-        if (bStatus == USB_BOT_STATUS_ERROR)
+        if (bStatus == USB_BOT_STATUS_ERROR_USB_WRITE)
         {
             TRACE_ERROR (USB_BOT, "BOT:SendCSW fail\n");            
             bot->state = USB_BOT_STATE_READ_CBW;

@@ -212,7 +212,7 @@ lun_status_get (usb_msd_lun_t *pLun)
  * \param   bAdditionalSenseCodeQualifier Additional sense code qualifier
  */
 void 
-lun_update_sense_data (usb_msd_lun_t *pLun,
+lun_sense_data_update (usb_msd_lun_t *pLun,
                        unsigned char bSenseKey,
                        unsigned char bAdditionalSenseCode,
                        unsigned char bAdditionalSenseCodeQualifier)
