@@ -39,14 +39,13 @@ static uint8_t sbc_tmp_buffer[MSD_BLOCK_SIZE_MAX];
  * that at least another call of the method is necessary.
  * 
  * \param   pCommandState   Current state of the command
- * \return  Operation result code (SUCCESS, ERROR, INCOMPLETE,, or PARAMETER)
+ * \return  Operation result code (SUCCESS, ERROR, INCOMPLETE, or PARAMETER)
  * 
  */
 static usb_bot_status_t
 sbc_inquiry (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
-    usb_bot_status_t bStatus;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     switch (sbc_state)
@@ -62,22 +61,16 @@ sbc_inquiry (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 
     case SBC_STATE_WRITE:
         // Start write operation
-        bStatus = usb_bot_write (&pLun->sInquiryData, pCommandState->dLength,
-                                 pTransfer);
-
-        if (bStatus != USB_BOT_STATUS_SUCCESS)
-        {
-            bResult = USB_BOT_STATUS_ERROR;
-            TRACE_ERROR (USB_MSD_SBC, "SBC:Inquiry error\n");
-        }
-        else
-            sbc_state = SBC_STATE_WRITE_WAIT;
+        usb_bot_write (&pLun->sInquiryData, pCommandState->dLength, pTransfer);
+        sbc_state = SBC_STATE_WRITE_WAIT;
         break;
 
     case SBC_STATE_WRITE_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
+        else if (bResult == USB_BOT_STATUS_ERROR)
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Inquiry error\n");
         break;
 
     default:
@@ -104,7 +97,6 @@ static usb_bot_status_t
 sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
-    usb_bot_status_t bStatus;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     // Identify current command state
@@ -117,19 +109,17 @@ sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState
 
     case SBC_STATE_WRITE:
         // Start the write operation
-        bStatus = usb_bot_write (&pLun->sReadCapacityData,
-                                 pCommandState->dLength, pTransfer);
-    
-        if (bStatus == USB_BOT_STATUS_SUCCESS)
-            sbc_state = SBC_STATE_WRITE_WAIT;
-        else
-            bResult = USB_BOT_STATUS_ERROR;
+        usb_bot_write (&pLun->sReadCapacityData,
+                       pCommandState->dLength, pTransfer);
+        sbc_state = SBC_STATE_WRITE_WAIT;
         break;
 
     case SBC_STATE_WRITE_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
+        else if (bResult == USB_BOT_STATUS_ERROR)
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Capacity error\n");
         break;
 
     default:
@@ -158,7 +148,7 @@ sbc_read_capacity10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState
 static usb_bot_status_t
 sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
-    usb_bot_status_t bStatus;
+    lun_status_t bStatus;
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     S_sbc_write_10 *pCommand = (S_sbc_write_10 *) pCommandState->sCbw.pCommand;
@@ -178,36 +168,23 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
     case SBC_STATE_READ:
         TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT read start\n");
         // Read one block of data sent by the host
-        bStatus = usb_bot_read (sbc_tmp_buffer, pLun->block_bytes,
-                                pTransfer);
-
-        if (bStatus != USB_BOT_STATUS_SUCCESS)
-        {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT read error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR, 0, 0);
-            bResult = USB_BOT_STATUS_ERROR;
-        }
-        else
-            sbc_state = SBC_STATE_READ_WAIT;
+        usb_bot_read (sbc_tmp_buffer, pLun->block_bytes, pTransfer);
+        sbc_state = SBC_STATE_READ_WAIT;
         break;
         
     case SBC_STATE_READ_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
-        switch (bResult)
+        if (bResult == USB_BOT_STATUS_SUCCESS)
         {
-        case USB_BOT_STATUS_INCOMPLETE:
-            break;
-
-        case USB_BOT_STATUS_SUCCESS:
             TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT read done\n");
             sbc_state = SBC_STATE_WRITE;            
-            break;
-
-        default:
+        }
+        else if (bResult == USB_BOT_STATUS_ERROR)
+        {
             TRACE_ERROR (USB_MSD_SBC, "SBC:BOT read error\n");
             lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR, 0, 0);
-            break;
         }
+        break;
         
     case SBC_STATE_WRITE:
     case SBC_STATE_WRITE_WAIT:
@@ -299,21 +276,8 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         TRACE_DEBUG (USB_MSD_SBC, "SBC:BOT write start\n");
         
         // Send the block to the host
-        // Partial blocks are never written
-        bStatus = usb_bot_write (sbc_tmp_buffer,
-                                 pLun->block_bytes, pTransfer);
-        
-        if (bStatus == USB_BOT_STATUS_ERROR)
-        {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:BOT write error\n");
-            lun_update_sense_data (pLun, SBC_SENSE_KEY_HARDWARE_ERROR,
-                                   0, 0);
-            bResult = USB_BOT_STATUS_ERROR;
-        }
-        else
-        {
-            sbc_state = SBC_STATE_WRITE_WAIT;
-        }
+        usb_bot_write (sbc_tmp_buffer, pLun->block_bytes, pTransfer);
+        sbc_state = SBC_STATE_WRITE_WAIT;
         break;
         
     case SBC_STATE_WRITE_WAIT:
@@ -365,7 +329,6 @@ static usb_bot_status_t
 sbc_mode_sense6 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
-    usb_bot_status_t bStatus;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
     S_sbc_mode_parameter_header_6 sModeParameterHeader6 =
         {
@@ -394,22 +357,16 @@ sbc_mode_sense6 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 
     case SBC_STATE_WRITE:
         // Start transfer
-        bStatus = usb_bot_write (&sModeParameterHeader6, pCommandState->dLength,
-                                 pTransfer);
-    
-        if (bStatus != USB_BOT_STATUS_SUCCESS)
-        {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
-            bResult = USB_BOT_STATUS_ERROR;
-        }
-        else
-            sbc_state = SBC_STATE_WRITE_WAIT;
+        usb_bot_write (&sModeParameterHeader6, pCommandState->dLength, pTransfer);
+        sbc_state = SBC_STATE_WRITE_WAIT;
         break;
     
     case SBC_STATE_WRITE_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
+        else if (bResult == USB_BOT_STATUS_ERROR)
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");            
         break;
 
     default:
@@ -436,7 +393,6 @@ static usb_bot_status_t
 sbc_request_sense (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
 {
     usb_bot_status_t bResult = USB_BOT_STATUS_INCOMPLETE;
-    usb_bot_status_t bStatus;
     usb_bot_transfer_t *pTransfer = &pCommandState->sTransfer;
 
     switch (sbc_state)
@@ -447,25 +403,16 @@ sbc_request_sense (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
         /* Fall through ...  */
 
     case SBC_STATE_WRITE:
-        // Start transfer
-        bStatus = usb_bot_write (&pLun->sRequestSenseData, pCommandState->dLength,
-                                 pTransfer);
-
-        if (bStatus != USB_BOT_STATUS_SUCCESS)
-        {
-            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
-            bResult = USB_BOT_STATUS_ERROR;
-        }
-        else
-        {
-            sbc_state = SBC_STATE_WRITE_WAIT;
-        }
+        usb_bot_write (&pLun->sRequestSenseData, pCommandState->dLength, pTransfer);
+        sbc_state = SBC_STATE_WRITE_WAIT;
         break;
     
     case SBC_STATE_WRITE_WAIT:
         bResult = usb_bot_transfer_status (pTransfer);
         if (bResult == USB_BOT_STATUS_SUCCESS)
             pCommandState->dLength -= usb_bot_transfer_bytes (pTransfer);
+        else if (bResult == USB_BOT_STATUS_ERROR)
+            TRACE_ERROR (USB_MSD_SBC, "SBC:Write error\n");
         break;
 
     default:

@@ -45,7 +45,7 @@ typedef enum
 typedef struct
 {
     uint32_t bytes;
-    usb_bot_status_t status;
+    usb_status_t status;
 } usb_bot_transfer_t;
 
 
@@ -85,7 +85,7 @@ bool
 usb_bot_command_read (S_usb_bot_command_state *pCommandState);
 
 bool
-usb_bot_status_set (S_usb_bot_command_state *pCommandState);
+usb_bot_status_write (S_usb_bot_command_state *pCommandState);
 
 void
 usb_bot_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, 

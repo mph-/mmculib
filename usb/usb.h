@@ -8,20 +8,18 @@
 
 typedef usb_dsc_t usb_descriptors_t;
 
-
-// FIXME, these need a direct correspondence with udp_status_t
 typedef enum
 {
-//! Last method has completed successfully
+//! Completed successfully
     USB_STATUS_SUCCESS = 0,
-//! Method was aborted because the recipient (device, endpoint, ...) was busy
-    USB_STATUS_LOCKED = 1,
-//! Method was aborted because of abnormal status
+//! Aborted because the recipient (device, endpoint, ...) was busy
+    USB_STATUS_BUSY = 1,
+//! Aborted because of abnormal status
     USB_STATUS_ABORTED = 2,
-//! Method was aborted because the endpoint or the device has been reset
+//! Aborted because the endpoint or the device has been reset
     USB_STATUS_RESET = 3,
-//! Method status unknow
-    USB_STATUS_UNKOWN = 4
+//! Waiting completion of transfer
+    USB_STATUS_PENDING = 4,
 } usb_status_t;
 
 

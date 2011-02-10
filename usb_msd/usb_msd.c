@@ -301,7 +301,7 @@ usb_msd_update (void)
         break;
 
     case USB_MSD_STATE_STATUS_SEND:
-        if (usb_bot_status_set (&CommandState))
+        if (usb_bot_status_write (&CommandState))
             state = USB_MSD_STATE_COMMAND_READ;
         break;
     }
