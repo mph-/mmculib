@@ -73,6 +73,7 @@ typedef struct
     usb_bot_state_t state;
     uint8_t wait_reset_recovery;
     usb_t usb;
+    uint16_t errors[8];
 } usb_bot_t;
 
 
@@ -347,7 +348,7 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState)
 
 
 static void
-bot_error (void)
+usb_bot_command_read_error (void)
 {
     // Wait for a reset recovery
     bot->wait_reset_recovery = true;
@@ -392,7 +393,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
             {
                 TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
                 
-                bot_error ();
+                usb_bot_command_read_error ();
                 
                 pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                 bot->state = USB_BOT_STATE_READ_CBW;
@@ -403,7 +404,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
                 TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
                              (unsigned int)pCbw->dCBWSignature);
                 
-                bot_error ();
+                usb_bot_command_read_error ();
                 
                 pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
                 bot->state = USB_BOT_STATE_READ_CBW;
@@ -507,4 +508,11 @@ usb_bot_ready_p (void)
         break;
     }
     return 0;
+}
+
+
+void 
+usb_bot_error_log (usb_bot_status_t status)
+{
+    bot_dev.errors[status - USB_BOT_STATUS_ERROR_PARAMETER]]++;
 }

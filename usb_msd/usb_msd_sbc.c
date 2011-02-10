@@ -650,6 +650,10 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
     }
 
+    if (bResult != USB_BOT_STATUS_INCOMPLETE
+        && bResult != USB_BOT_STATUS_SUCCESS)
+        usb_bot_error_log (bResult);
+
     /* If finished operation or have error, reset state.  */
     if (bResult != USB_BOT_STATUS_INCOMPLETE)
         sbc_state = SBC_STATE_INIT;

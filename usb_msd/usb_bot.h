@@ -100,4 +100,7 @@ usb_bot_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength,
 void
 usb_bot_abort (S_usb_bot_command_state *pCommandState);
 
+void 
+usb_bot_error_log (usb_bot_status_t status);
+
 #endif /*USB_BOT_H_*/

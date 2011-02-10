@@ -233,6 +233,8 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
     case USB_BOT_STATUS_ERROR_USB_WRITE:
     case USB_BOT_STATUS_ERROR_LUN_READ:
     case USB_BOT_STATUS_ERROR_LUN_WRITE:
+    case USB_BOT_STATUS_ERROR_LUN_BUSY:
+    case USB_BOT_STATUS_ERROR_LUN_NODEVICE:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         return true;
         break;
