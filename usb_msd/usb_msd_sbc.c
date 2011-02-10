@@ -198,8 +198,8 @@ sbc_write10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
             pCommandState->dLength -=  pLun->block_bytes;
             STORE_DWORDB (addr + 1, pCommand->pLogicalBlockAddress);
             sbc_state = SBC_STATE_READ;
-            if (pCommandState->dLength == 0)
-                bResult = USB_BOT_STATUS_SUCCESS;
+            if (pCommandState->dLength != 0)
+                bResult = USB_BOT_STATUS_INCOMPLETE;
         }
         break;
     }
@@ -280,8 +280,8 @@ sbc_read10 (usb_msd_lun_t *pLun, S_usb_bot_command_state *pCommandState)
             
             sbc_state = SBC_STATE_READ;
             
-            if (pCommandState->dLength == 0)
-                bResult = USB_BOT_STATUS_SUCCESS;
+            if (pCommandState->dLength != 0)
+                bResult = USB_BOT_STATUS_INCOMPLETE;
 
         }
         break;

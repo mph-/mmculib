@@ -51,7 +51,17 @@ typedef enum
 
 
 extern const usb_dsc_t sDescriptors;
-static usb_msd_state_t state = USB_MSD_STATE_UNINIT;
+
+
+typedef struct
+{
+    usb_msd_state_t state;
+    S_usb_bot_command_state command;
+} usb_msd_dev_t;
+
+static usb_msd_dev_t usb_msd_dev;
+static usb_msd_dev_t *usb_msd = &usb_msd_dev;
+
 
 /**
  * Pre-processes a command by checking the differences between the
@@ -255,7 +265,6 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
 usb_msd_ret_t
 usb_msd_update (void)
 {
-    static S_usb_bot_command_state CommandState;
     usb_msd_ret_t ret;
 
     /* This implements a simple state machine to get a CBW from the
@@ -266,7 +275,7 @@ usb_msd_update (void)
        An example of this is bot_command_read.   */
 
     ret = USB_MSD_ACTIVE;
-    switch (state)
+    switch (usb_msd->state)
     {
     case USB_MSD_STATE_UNINIT:
         ret = USB_MSD_INACTIVE;
@@ -276,7 +285,7 @@ usb_msd_update (void)
         if (usb_bot_ready_p ())
         {
             sbc_reset ();
-            state = USB_MSD_STATE_COMMAND_READ;
+            usb_msd->state = USB_MSD_STATE_COMMAND_READ;
             ret = USB_MSD_CONNECTED;
         }
         else
@@ -288,26 +297,26 @@ usb_msd_update (void)
     case USB_MSD_STATE_COMMAND_READ:
         if (!usb_bot_ready_p ())
         {
-            state = USB_MSD_STATE_INIT;
+            usb_msd->state = USB_MSD_STATE_INIT;
             ret = USB_MSD_DISCONNECTED;
         }
-        else if (usb_bot_command_read (&CommandState))
-            state = USB_MSD_STATE_PREPROCESS;
+        else if (usb_bot_command_read (&usb_msd->command))
+            usb_msd->state = USB_MSD_STATE_PREPROCESS;
         break;
 
     case USB_MSD_STATE_PREPROCESS:
-        usb_msd_preprocess (&CommandState);
-        state = USB_MSD_STATE_PROCESS;
+        usb_msd_preprocess (&usb_msd->command);
+        usb_msd->state = USB_MSD_STATE_PROCESS;
         break;
 
     case USB_MSD_STATE_PROCESS:
-        if (usb_msd_process (&CommandState))
-            state = USB_MSD_STATE_STATUS_SEND;
+        if (usb_msd_process (&usb_msd->command))
+            usb_msd->state = USB_MSD_STATE_STATUS_SEND;
         break;
 
     case USB_MSD_STATE_STATUS_SEND:
-        if (usb_bot_status_write (&CommandState))
-            state = USB_MSD_STATE_COMMAND_READ;
+        if (usb_bot_status_write (&usb_msd->command))
+            usb_msd->state = USB_MSD_STATE_COMMAND_READ;
         break;
     }
 
@@ -327,7 +336,7 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
 
     usb_msd_update ();
 
-    state = USB_MSD_STATE_INIT;
+    usb_msd->state = USB_MSD_STATE_INIT;
 
     return true;
 };
@@ -337,7 +346,7 @@ void
 usb_msd_shutdown (void)
 {
     usb_shutdown ();
-    state = USB_MSD_STATE_UNINIT;
+    usb_msd->state = USB_MSD_STATE_UNINIT;
 }
 
 

@@ -49,7 +49,8 @@ typedef enum
 //! \brief  Structure for holding the result of a USB transfer
 typedef struct
 {
-    uint32_t bytes;
+    uint16_t transferred;
+    uint16_t requested;
     usb_status_t status;
     bool write;
 } usb_bot_transfer_t;
