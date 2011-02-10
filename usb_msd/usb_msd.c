@@ -233,7 +233,8 @@ usb_msd_process (S_usb_bot_command_state *pCommandState)
 
     switch (bStatus)
     {
-    case USB_BOT_STATUS_ERROR_PARAMETER:
+    case USB_BOT_STATUS_ERROR_CBW_PARAMETER:
+    case USB_BOT_STATUS_ERROR_CBW_FORMAT:
         pCsw->bCSWStatus = MSD_CSW_COMMAND_FAILED;
         usb_bot_abort (pCommandState);
         return true;
@@ -274,33 +275,44 @@ usb_msd_update (void)
        initiate an action, then subequently to poll their completion.
        An example of this is bot_command_read.   */
 
-    ret = USB_MSD_ACTIVE;
-    switch (usb_msd->state)
+    if (usb_bot_ready_p ())
     {
-    case USB_MSD_STATE_UNINIT:
-        ret = USB_MSD_INACTIVE;
-        break;
-
-    case USB_MSD_STATE_INIT:
-        if (usb_bot_ready_p ())
+        if (usb_msd->state == USB_MSD_STATE_UNINIT)
         {
-            sbc_reset ();
-            usb_msd->state = USB_MSD_STATE_COMMAND_READ;
+            usb_msd->state = USB_MSD_STATE_INIT;            
             ret = USB_MSD_CONNECTED;
+        }
+        else
+        {
+            ret = USB_MSD_ACTIVE;
+        }
+    }
+    else
+    {
+        if (usb_msd->state != USB_MSD_STATE_UNINIT)
+        {
+            ret = USB_MSD_DISCONNECTED;
+            usb_msd->state = USB_MSD_STATE_UNINIT;
         }
         else
         {
             ret = USB_MSD_INACTIVE;
         }
+    }
+
+
+    switch (usb_msd->state)
+    {
+    case USB_MSD_STATE_UNINIT:
+        break;
+
+    case USB_MSD_STATE_INIT:
+        sbc_reset ();
+        usb_msd->state = USB_MSD_STATE_COMMAND_READ;
         break;
 
     case USB_MSD_STATE_COMMAND_READ:
-        if (!usb_bot_ready_p ())
-        {
-            usb_msd->state = USB_MSD_STATE_INIT;
-            ret = USB_MSD_DISCONNECTED;
-        }
-        else if (usb_bot_command_read (&usb_msd->command))
+        if (usb_bot_command_read (&usb_msd->command))
             usb_msd->state = USB_MSD_STATE_PREPROCESS;
         break;
 

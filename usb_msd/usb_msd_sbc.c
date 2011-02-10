@@ -475,7 +475,7 @@ sbc_get_command_information (usb_msd_cbw_t *pCbw, uint32_t *pLength, uint8_t *pT
         if (pSbcCommand->sModeSense6.bPageCode != SBC_PAGE_RETURN_ALL)
         {
             // Unsupported page, Windows sends this
-            TRACE_INFO (USB_MSD_SBC, "SBC:Bad page code 0X%02X\n",
+            TRACE_INFO (USB_MSD_SBC, "SBC:Bad page code 0X%02x\n",
                         pSbcCommand->sModeSense6.bPageCode);
             isCommandSupported = false;
             *pLength = 0;
@@ -550,7 +550,7 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
     // If lun in error should we do bad parameter handling?
     pLun = lun_get (pCbw->bCBWLUN);
     if (!pLun)
-        return USB_BOT_STATUS_ERROR_PARAMETER;
+        return USB_BOT_STATUS_ERROR_CBW_PARAMETER;
 
     // Identify command
     switch (pCommand->bOperationCode)
@@ -596,14 +596,14 @@ sbc_process_command (S_usb_bot_command_state *pCommandState)
         break;
 
     default:
-        bResult = USB_BOT_STATUS_ERROR_PARAMETER;
+        bResult = USB_BOT_STATUS_ERROR_CBW_PARAMETER;
     }
 
     switch (bResult)
     {
-    case USB_BOT_STATUS_ERROR_PARAMETER:
-        // Windows sends this
-        TRACE_INFO (USB_MSD_SBC, "SBC:Bad command 0x%02X\n",
+    case USB_BOT_STATUS_ERROR_CBW_FORMAT:
+    case USB_BOT_STATUS_ERROR_CBW_PARAMETER:
+        TRACE_INFO (USB_MSD_SBC, "SBC:Bad command 0x%02x\n",
                     pCbw->pCommand[0]);
 
         lun_sense_data_update (pLun, SBC_SENSE_KEY_ILLEGAL_REQUEST,

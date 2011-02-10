@@ -114,9 +114,10 @@ static void
 usb_bot_transfer_init (usb_bot_transfer_t *pTransfer, uint16_t size, bool write)
 {
     pTransfer->status = USB_STATUS_PENDING;
-    pTransfer->requested = size;
     pTransfer->transferred = 0;
     pTransfer->write = write;
+    // This is only used for debugging
+    pTransfer->requested = size;
 }
 
 
@@ -382,6 +383,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
         bStatus = usb_bot_transfer_status (pTransfer);
         if (bStatus == USB_BOT_STATUS_ERROR_USB_READ)
         {
+            usb_bot_error_log (bStatus);
             TRACE_ERROR (USB_BOT, "BOT:ReadCBW fail\n");
             usb_bot->state = USB_BOT_STATE_READ_CBW;
         }
@@ -392,6 +394,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
             // Check that the CBW is 31 bytes long
             if (usb_bot_transfer_bytes (pTransfer) != MSD_CBW_SIZE)
             {
+                usb_bot_error_log (USB_BOT_STATUS_ERROR_USB_READ);
                 TRACE_ERROR (USB_BOT, "BOT:Invalid CBW size\n");
                 
                 usb_bot_command_read_error ();
@@ -402,6 +405,7 @@ usb_bot_command_read (S_usb_bot_command_state *pCommandState)
             // Check the CBW Signature
             else if (pCbw->dCBWSignature != MSD_CBW_SIGNATURE)
             {
+                usb_bot_error_log (USB_BOT_STATUS_ERROR_CBW_FORMAT);
                 TRACE_ERROR (USB_BOT, "BOT:Invalid CBW sig\n0x%X\n",
                              (unsigned int)pCbw->dCBWSignature);
                 
@@ -455,6 +459,7 @@ usb_bot_status_write (S_usb_bot_command_state *pCommandState)
         bStatus = usb_bot_transfer_status (pTransfer);
         if (bStatus == USB_BOT_STATUS_ERROR_USB_WRITE)
         {
+            usb_bot_error_log (bStatus);
             TRACE_ERROR (USB_BOT, "BOT:SendCSW fail\n");            
             usb_bot->state = USB_BOT_STATE_READ_CBW;
             return 1;
@@ -515,5 +520,10 @@ usb_bot_ready_p (void)
 void 
 usb_bot_error_log (usb_bot_status_t status)
 {
-    usb_bot_dev.errors[status - USB_BOT_STATUS_ERROR_PARAMETER]++;
+    unsigned int index;
+
+    index = status - USB_BOT_STATUS_ERROR_CBW_PARAMETER;
+
+    if (index < ARRAY_SIZE (usb_bot_dev.errors))
+        usb_bot_dev.errors[index]++;
 }
