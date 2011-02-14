@@ -12,7 +12,7 @@ piezo_t
 piezo_init (const piezo_cfg_t *cfg)
 {
     /* Configure pio as output.  */
-    pio_config_set (cfg->pio, PIO_OUTPUT_HIGH);
+    pio_config_set (cfg->pio, PIO_OUTPUT_LOW);
 
     return cfg;
 }
