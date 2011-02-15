@@ -83,7 +83,7 @@ sdcard_msd_init (void)
     if (!sdcard_msd.handle)
         return NULL;
 
-    sdcard_msd.media_bytes = sdcard_probe (sdcard_msd.handle);
+    sdcard_msd.media_bytes = sdcard_msd_probe (sdcard_msd.handle);
 
     return &sdcard_msd;
 }
