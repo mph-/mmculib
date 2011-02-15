@@ -482,6 +482,9 @@ usb_bot_status_write (S_usb_bot_command_state *pCommandState)
 bool
 usb_bot_ready_p (void)
 {
+    if (!usb_bot->usb)
+        return 0;
+
     usb_poll (usb_bot->usb);
 
     switch (usb_bot->state)

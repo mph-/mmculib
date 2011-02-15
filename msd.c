@@ -205,6 +205,8 @@ msd_status_get (msd_t *msd)
 void
 msd_shutdown (msd_t *msd)
 {
+    if (!msd)
+        return;
     msd_cache_flush (msd);
     if (msd->ops->shutdown)
         msd->ops->shutdown (msd->handle);
