@@ -20,6 +20,8 @@
 
    The maximum clock speed is 20 MHz at 3.3 V, 10 MHz at 2.7 V.
 
+   The CS setup time is 55 ns at 3.3 V.
+   The CS hold time is 180 ns at 3.3 V.
 */
 
 
@@ -247,6 +249,7 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     glcd->spi = spi_init (&spi_cfg);
 
     spi_cs_setup_set (glcd->spi, 2);
+    spi_cs_hold_set (glcd->spi, 4);
 
 #ifdef GLCD_RESET
     pio_config_set (GLCD_RESET, PIO_OUTPUT_HIGH);
