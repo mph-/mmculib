@@ -29,6 +29,10 @@ typedef struct
 } msd_flags_t;
 
 
+typedef msd_addr_t
+(*msd_probe_t)(void *handle);
+
+
 typedef msd_size_t
 (*msd_read_t)(void *handle, msd_addr_t addr, void *buffer, msd_size_t size);
 
@@ -47,6 +51,7 @@ typedef void
 
 typedef struct msd_ops_struct
 {
+    msd_probe_t probe;
     msd_read_t read;
     msd_write_t write;
     msd_status_get_t status_get;
@@ -69,6 +74,8 @@ typedef struct msd_struct
 } msd_t;
 
 
+msd_addr_t msd_probe (msd_t *msd);
+
 msd_size_t msd_read (msd_t *msd, msd_addr_t addr, void *buffer, msd_size_t size);
 
 msd_size_t msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_t size);
@@ -76,5 +83,12 @@ msd_size_t msd_write (msd_t *msd, msd_addr_t addr, const void *buffer, msd_size_
 msd_status_t msd_status_get (msd_t *msd);
 
 void msd_shutdown (msd_t *msd);
+
+static inline msd_addr_t msd_media_bytes_get (msd_t *msd)
+{
+    if (!msd)
+        return 0;
+    return msd->media_bytes;
+}
 
 #endif

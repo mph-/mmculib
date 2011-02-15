@@ -202,11 +202,19 @@ msd_status_get (msd_t *msd)
 }
 
 
+msd_addr_t
+sdcard_msd_probe (msd_t *msd)
+{
+    return msd->ops->probe (msd->handle);
+}
+
+
 void
 msd_shutdown (msd_t *msd)
 {
     if (!msd)
         return;
+
     msd_cache_flush (msd);
     if (msd->ops->shutdown)
         msd->ops->shutdown (msd->handle);

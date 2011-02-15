@@ -5,6 +5,16 @@
 #include <string.h>
 
 
+static msd_addr_t
+sdcard_msd_probe (void *dev)
+{
+    if (sdcard_probe (dev))
+        return 0;
+
+    return sdcard_capacity_get (dev);
+}
+
+
 static msd_size_t
 sdcard_msd_read (void *dev, msd_addr_t addr, void *buffer, msd_size_t size)
 {
@@ -36,6 +46,7 @@ sdcard_msd_shutdown (void *dev)
 
 static const msd_ops_t sdcard_msd_ops =
 {
+    .probe = sdcard_msd_probe,
     .read = sdcard_msd_read,
     .write = sdcard_msd_write,
     .status_get = sdcard_msd_status_get,
@@ -64,6 +75,7 @@ static const sdcard_cfg_t sdcard_cfg =
 };
 
 
+
 msd_t *
 sdcard_msd_init (void)
 {
@@ -71,11 +83,7 @@ sdcard_msd_init (void)
     if (!sdcard_msd.handle)
         return NULL;
 
-    if (sdcard_probe (sdcard_msd.handle))
-        return NULL;
-
-    /* The number of pages should be probed...  */
-    sdcard_msd.media_bytes = sdcard_capacity_get (sdcard_msd.handle);
+    sdcard_msd.media_bytes = sdcard_probe (sdcard_msd.handle);
 
     return &sdcard_msd;
 }
