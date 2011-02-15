@@ -249,9 +249,9 @@ fat_unlink (fat_t *fat, const char *pathname)
 
     TRACE_INFO (FAT, "FAT:Unlink %s\n", pathname);
 
-    /* Should figure out if the file is open and return EBUSY.  Would
-       need to maintain a table of open files.  Let's assume that this
-       is handled at a higher level.  */
+    /* Should figure out if the file is open and return EBUSY.  This
+       would need a table of open files.  Let's assume that this is
+       handled at a higher level.  */
 
     if (!fat_search (fat, pathname, &ff))
     {

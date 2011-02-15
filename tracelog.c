@@ -32,3 +32,14 @@ tracelog_flush (void)
         return;
     fflush (tracelog_file);
 }
+
+
+void 
+tracelog_close (void)
+{
+    if (tracelog_file)
+    {
+        close (tracelog_file);
+        tracelog_file = 0;
+    }
+}

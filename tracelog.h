@@ -15,4 +15,7 @@ void tracelog_init (const char *filename);
 
 void tracelog_flush (void);
 
+
+void tracelog_close (void);
+
 #endif
