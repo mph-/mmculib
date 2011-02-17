@@ -34,6 +34,7 @@ int main (int argc, char **argv)
     if (argc < 1)
         return 3;
 
+    /* The file must be a formatted FAT file system.  */
     fs = fopen (argv[1], "r+");
     if (!fs)
         return 1;

@@ -953,9 +953,9 @@ sdcard_csd_parse (sdcard_t dev)
         /* FIXME.  */
 
     case SDCARD_TYPE_SD:
-        /* Read timeout 100 times longer than typical access time with a max of
-           100 ms.  Write timeout 100 times longer than typical program time with a max of
-           250 ms.  */
+        /* Read timeout 100 times longer than typical access time with
+           a max of 100 ms.  Write timeout 100 times longer than
+           typical program time with a max of 250 ms.  */
         TAAC = csd[1];
         Nac = ((TAAC >> 3) & 0xf) * speed / 100;
         for (i = TAAC & 0x07; i < 7; i++)
@@ -987,6 +987,10 @@ sdcard_csd_parse (sdcard_t dev)
         dev->write_timeout = (speed / 2) / 8;
         break;
     }
+
+    /* Reduce waiting time to compensate for spi overhead.  */
+    dev->read_timeout /= 4;
+    dev->write_timeout /= 4;
 
     return 1;
 }
