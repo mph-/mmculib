@@ -68,7 +68,7 @@ static msd_t sdcard_msd =
 static const sdcard_cfg_t sdcard_cfg =
 {
     .spi = {.channel = SDCARD_SPI_CHANNEL,
-            .clock_divisor =  F_CPU / 20e6 + 1,
+            .clock_speed_kHz = 20e6,
             .cs = SDCARD_CS,
             .mode = SPI_MODE_0,
             .bits = 8},

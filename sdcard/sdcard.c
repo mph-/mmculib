@@ -945,7 +945,7 @@ sdcard_csd_parse (sdcard_t dev)
     dev->speed = speed;
     /* MPH Hack.  */
     speed = speed / 4;
-    speed = spi_clock_speed_set (dev->spi, speed);
+    speed = spi_clock_speed_kHz_set (dev->spi, speed / 1000) * 1000;
 
     switch (dev->type)
     {
@@ -1008,7 +1008,7 @@ sdcard_probe (sdcard_t dev)
 
     /* MMC cards need to be initialised with a clock speed between 100
        and 400 kHz.  */
-    spi_clock_speed_set (dev->spi, 400e3);
+    spi_clock_speed_kHz_set (dev->spi, 400);
 
     /* Send the card 80 clocks to activate it (at least 74 are
        required) with DI and CS high.  */

@@ -25,8 +25,8 @@
 */
 
 
-#ifndef GLCD_SPI_DIVISOR
-#define GLCD_SPI_DIVISOR SPI_CLOCK_DIVISOR (20e6)
+#ifndef GLCD_SPI_CLOCK_SPEED_KHZ
+#define GLCD_SPI_CLOCK_SPEED_KHZ 20000
 #endif
 
 
@@ -237,7 +237,7 @@ glcd_init (glcd_dev_t *dev, const glcd_cfg_t *cfg)
     const spi_cfg_t spi_cfg = 
     {
         .channel = GLCD_SPI_CHANNEL,
-        .clock_divisor = GLCD_SPI_DIVISOR,
+        .clock_speed_kHz = GLCD_SPI_CLOCK_SPEED_KHZ,
         .cs = GLCD_CS,
         .mode = SPI_MODE_3,
         .bits = 8
