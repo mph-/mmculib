@@ -1071,7 +1071,7 @@ sdcard_init (const sdcard_cfg_t *cfg)
     /* Ensure chip select isn't negated too soon.  */
     spi_cs_hold_set (dev->spi, 16);    
    
-    /* This will change when CSD read.  */
+    /* This will change when CSD is read.  */
     dev->read_timeout = 8;
 
     return dev;
