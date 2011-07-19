@@ -16,7 +16,7 @@
 led_t
 led_init (const led_cfg_t *cfg)
 {
-    pio_config_set (cfg->pio, PIO_OUTPUT_HIGH);
+    pio_config_set (cfg->pio, cfg->active ? PIO_OUTPUT_HIGH : PIO_OUTPUT_LOW);
 
     return cfg;
 }
