@@ -26,7 +26,7 @@ typedef struct
 
 
 //! Configuration descriptor
-static const usb_msd_descriptor_t sConfigurationDescriptor = 
+static const usb_msd_descriptor_t usb_msd_cfg_descriptor = 
 {
     // Configuration Descriptor
     {
@@ -149,9 +149,9 @@ static const char *pStringDescriptors[] =
 
 //! \brief  List of descriptors used by the device
 //! \see    usb_dsc_t
-const usb_dsc_t sDescriptors =
+const usb_dsc_t usb_msd_descriptors =
 {
-    (usb_dsc_cfg_t *) &sConfigurationDescriptor,
+    (usb_dsc_cfg_t *) &usb_msd_cfg_descriptor,
 #ifdef USB_HIGHSPEED    
     &sDeviceQualifierDescriptor,
 #endif    

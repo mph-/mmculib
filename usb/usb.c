@@ -64,7 +64,7 @@
 //! Device descriptor
 static const usb_dsc_dev_t devDescriptor =
 {
-    sizeof (usb_dsc_dev_t),         // Size of this descriptor in bytes
+    sizeof (usb_dsc_dev_t),          // Size of this descriptor in bytes
     USB_DEVICE_DESCRIPTOR,           // DEVICE Descriptor Type
     0x0200,                          // USB specification 2.0 in BCD
     0x00,                            // Class is specified in the interface descriptor.
@@ -369,6 +369,7 @@ usb_shutdown (void)
 {
     udp_shutdown ();
 }
+
 
 
 usb_t usb_init (const usb_descriptors_t *descriptors,

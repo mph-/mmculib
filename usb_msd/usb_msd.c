@@ -50,7 +50,7 @@ typedef enum
 #endif
 
 
-extern const usb_dsc_t sDescriptors;
+extern const usb_dsc_t usb_msd_descriptors;
 
 
 typedef struct
@@ -344,7 +344,7 @@ usb_msd_init (msd_t **luns, uint8_t num_luns)
     for (i = 0; i < num_luns; i++)
         sbc_lun_init (luns[i]);
 
-    usb_bot_init (num_luns, &sDescriptors);
+    usb_bot_init (num_luns, &usb_msd_descriptors);
 
     usb_msd_update ();
 

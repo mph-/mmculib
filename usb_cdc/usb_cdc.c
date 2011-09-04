@@ -1,6 +1,7 @@
 #include "config.h"
 #include "usb_cdc.h"
-#include "pio.h"
+#include "usb_dsc.h"
+#include "usb.h"
 
 
 /* CDC communication device class. 
@@ -14,7 +15,8 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-static const char cfgDescriptor[] = 
+
+static const char usb_cdc_cfg_descriptor[] = 
 {
     /* ============== CONFIGURATION 1 =========== */
     /* Configuration 1 descriptor */
@@ -92,7 +94,7 @@ static const char cfgDescriptor[] =
     0x05,   // bDescriptorType
     0x01,   // bEndpointAddress, Endpoint 01 - OUT
     0x02,   // bmAttributes      BULK
-    USB_EP_OUT_SIZE,   // wMaxPacketSize
+    UDP_EP_OUT_SIZE,   // wMaxPacketSize
     0x00,
     0x00,   // bInterval
     
@@ -101,14 +103,24 @@ static const char cfgDescriptor[] =
     0x05,   // bDescriptorType
     0x82,   // bEndpointAddress, Endpoint 02 - IN
     0x02,   // bmAttributes      BULK
-    USB_EP_IN_SIZE,   // wMaxPacketSize
+    UDP_EP_IN_SIZE,   // wMaxPacketSize
     0x00,
     0x00    // bInterval
 };
 
 
+const usb_descriptors_t usb_cdc_descriptors =
+{
+    (usb_dsc_cfg_t *) &usb_cdc_cfg_descriptor,
+    0,
+    0
+};
+
+
+
 /* CDC Class Specific Request Code */
 #define GET_LINE_CODING               0x21A1
+#define SET_LINE_CODING               0x2021
 #define SET_CONTROL_LINE_STATE        0x2221
 
 
@@ -151,7 +163,6 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
         break;
 
     case SET_CONTROL_LINE_STATE:
-        usb->connection = setup->value;
         usb_control_write_zlp (usb);
         break;
 
@@ -191,13 +202,6 @@ usb_cdc_configured_p (usb_cdc_t usb_cdc)
 
 
 void
-usb_cdc_connect (usb_cdc_t usb_cdc)
-{
-    usb_connect (usb_cdc->usb);
-}
-
-
-void
 usb_cdc_shutdown (void)
 {
     AT91PS_UDP pUDP = AT91C_BASE_UDP;
@@ -215,20 +219,13 @@ usb_cdc_shutdown (void)
 }
 
 
-static const usb_cfg_t usb_cdc_cfg =
-{
-    .cfg_descriptor = cfgDescriptor,
-    .cfg_descriptor_size = sizeof (cfgDescriptor),
-    .request_handler = usb_cdc_request_handler
-};
-
-
 usb_cdc_t
 usb_cdc_init (void)
 {
     usb_cdc_t usb_cdc = &usb_cdc_dev;
 
-    usb_cdc->usb = usb_init (&usb_cdc_cfg);
+    usb_cdc->usb = usb_init (&usb_cdc_descriptors, 
+                             (void *)usb_cdc_request_handler);
 
     return usb_cdc;
 }
