@@ -22,17 +22,18 @@ typedef struct
     usb_dsc_if_t  sInterface;     //!< Interface descriptor
     usb_dsc_ep_t  sBulkOut;       //!< Bulk OUT endpoint
     usb_dsc_ep_t  sBulkIn;        //!< Bulk IN endpoint
-} usb_msd_descriptor_t;
+} usb_msd_cfg_descriptor_t;
 
 
-//! Configuration descriptor
-static const usb_msd_descriptor_t usb_msd_cfg_descriptor = 
+//! Configuration descriptor  (note first entry specifies total size)
+
+static const usb_msd_cfg_descriptor_t usb_msd_cfg_descriptor = 
 {
     // Configuration Descriptor
     {
         sizeof (usb_dsc_cfg_t),        // Size of descriptor in bytes
         USB_CONFIGURATION_DESCRIPTOR,  // CONFIGURATION descriptor type
-        sizeof (usb_msd_descriptor_t), // Total size of descriptors
+        sizeof (usb_msd_cfg_descriptor_t), // Total size of descriptors
         0x01,                          // One interface
         0x01,                          // Configuration number 1
         0x00,                          // No string description

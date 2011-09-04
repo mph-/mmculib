@@ -56,4 +56,8 @@ usb_cdc_putc (usb_cdc_t usb_cdc, char ch);
 int8_t
 usb_cdc_puts (usb_cdc_t usb_cdc, const char *str);
 
+
+void
+usb_cdc_update (void);
+
 #endif

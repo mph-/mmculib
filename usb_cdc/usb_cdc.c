@@ -109,7 +109,7 @@ static const char usb_cdc_cfg_descriptor[] =
 };
 
 
-const usb_descriptors_t usb_cdc_descriptors =
+static const usb_descriptors_t usb_cdc_descriptors =
 {
     (usb_dsc_cfg_t *) &usb_cdc_cfg_descriptor,
     0,
@@ -133,7 +133,7 @@ typedef struct
 } USB_CDC_LINE_CODING;
 
 
-USB_CDC_LINE_CODING line_coding =
+static USB_CDC_LINE_CODING line_coding =
 {
     115200, // baudrate
     0,      // 1 Stop Bit
@@ -159,7 +159,6 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
     case GET_LINE_CODING:
         usb_control_write (usb, &line_coding,
                            MIN (sizeof (line_coding), setup->length));
-        return 1;
         break;
 
     case SET_CONTROL_LINE_STATE:
@@ -167,9 +166,10 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
         break;
 
     default:
-        break;
+        // Forward request to standard handler
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
 
@@ -263,4 +263,12 @@ usb_cdc_puts (usb_cdc_t usb_cdc, const char *str)
     while (*str)
         usb_cdc_putc (usb_cdc, *str++);
     return 1;
+}
+
+
+void
+usb_cdc_update (void)
+{
+    /* This is needed to signal USB device.  */
+    usb_poll ((&usb_cdc_dev)->usb);
 }

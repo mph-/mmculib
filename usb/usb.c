@@ -151,6 +151,13 @@ usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
         
     case USB_STRING_DESCRIPTOR:
         TRACE_DEBUG (USB, "USB:Str%d\n", LOW_BYTE (setup->value));
+
+        if (!usb->descriptors->strings)
+        {
+            usb_control_stall (usb);
+            break;
+        }
+
         usb_control_write (usb, usb->descriptors->strings[LOW_BYTE (setup->value)], 
                            MIN (*(usb->descriptors->strings[LOW_BYTE (setup->value)]),
                                 setup->length));    
@@ -162,7 +169,14 @@ usb_std_get_descriptor (usb_t usb, udp_setup_t *setup)
            capability of the device.  For a full-speed device, stall
            this request.  */
         TRACE_DEBUG (USB, "USB:Qua\n");
+
 #ifdef USB_HIGHSPEED
+        if (!usb->descriptors->pQualifier)
+        {
+            usb_control_stall (usb);
+            break;
+        }
+
         usb_control_write (usb, usb->descriptors->pQualifier, 
                            MIN (usb->descriptors->pQualifier->bLength, 
                                 setup->length));
