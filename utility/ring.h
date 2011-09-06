@@ -29,9 +29,14 @@ typedef struct ring_struct
 
 
 
-/* Return non-zero if the ring buffer is empty.  */
-extern bool
+/** Return non-zero if the ring buffer is empty.  */
+bool
 ring_empty_p (ring_t *ring);
+
+
+/** Return non-zero if the ring buffer is full.  */
+bool
+ring_full_p (ring_t *ring);
 
 
 /** Read from a ring buffer.
@@ -39,7 +44,7 @@ ring_empty_p (ring_t *ring);
     @param buffer pointer to memory buffer
     @param size maximum number of bytes to read
     @return number of bytes actually read.  */
-extern ring_size_t 
+ring_size_t 
 ring_read (ring_t *ring, void *buffer, ring_size_t size);
 
 
@@ -48,7 +53,7 @@ ring_read (ring_t *ring, void *buffer, ring_size_t size);
     @param buffer pointer to memory buffer
     @param size number of bytes to write
     @return number of bytes actually written.  */
-extern ring_size_t
+ring_size_t
 ring_write (ring_t *ring, const void *buffer, ring_size_t size);
 
 
@@ -57,17 +62,17 @@ ring_write (ring_t *ring, const void *buffer, ring_size_t size);
     @param buffer pointer to memory buffer
     @param size size of memory buffer in bytes
     @return size size of memory buffer in bytes or zero if error.  */
-extern ring_size_t
+ring_size_t
 ring_init (ring_t *ring, void *buffer, ring_size_t size);
 
 
 /** Number of bytes in ring buffer for reading.  */
-extern ring_size_t
+ring_size_t
 ring_read_num (ring_t *ring);
 
 
 /** Number of bytes free in ring buffer for writing.  */
-extern ring_size_t
+ring_size_t
 ring_write_num (ring_t *ring);
 
 
