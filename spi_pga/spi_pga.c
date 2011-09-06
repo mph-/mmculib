@@ -71,28 +71,20 @@ spi_pga_gain_t
 spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
     unsigned int i;
-    uint16_t prev_gain;
     const uint16_t *gains;
+    uint8_t gain_index;
 
     gains = pga->ops->gains;
 
-    /* Choose lowest gain.  */ 
-    if (gain == 0)
-    {
-        spi_pga_gain_index_set (pga, 0);
-        return gains[0];
-    }
+    /* The specified gain is considered a maximum so we need to choose
+       the next lower value if no gains match.  */
+    for (i = 1; gains[i] && (gain >= gains[i]); i++)
+        continue;
 
-    prev_gain = 0;
-    for (i = 0; gains[i]; i++)
-    {
-        if (gain >= prev_gain && gain < gains[i])
-            break;
-        prev_gain = gains[i];
-    }
-    
-    spi_pga_gain_index_set (pga, i - 1);
-    return gains[i - 1];
+    gain_index = i - 1;
+        
+    spi_pga_gain_index_set (pga, gain_index);
+    return gains[gain_index];
 }
 
 

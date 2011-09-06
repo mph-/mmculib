@@ -35,7 +35,8 @@ static const spi_pga_gain_t max9939_gains[] =
     GAIN_SCALE (80),
     GAIN_SCALE (120),
     GAIN_SCALE (157),
-    GAIN_SCALE (0)
+    /* Terminate list with a zero gain.  */
+    0
 };
 
 
@@ -66,8 +67,10 @@ typedef struct
 #define OFFSET_MAP(OFFSET, REGVAL) {.offset = (OFFSET) * 10, \
             .regval = ((REGVAL) << 3)}
 
-static const max9939_offset_map_t offset_map[] =
+static const max9939_offset_map_t max9939_offset_map[] =
 {
+    /* Scale the offsets to tenths of a millivolt
+       and flip the bit order since LSB first.  */
     OFFSET_MAP (0.0, 0x0),
     OFFSET_MAP (1.3, 0x8),
     OFFSET_MAP (2.5, 0x4),
@@ -92,6 +95,10 @@ max9939_gain_set (spi_pga_t pga, uint8_t gain_index)
 {
     uint8_t command[1];
     
+#if 0
+    printf ("gain %u\n", max9939_gains[gain_index]);
+#endif
+
     command[0] = gain_commands[gain_index];
     
     return spi_pga_command (pga, command, ARRAY_SIZE (command));
@@ -104,9 +111,9 @@ max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
     spi_pga_offset_t offset;
     uint8_t command[1];
     
-    offset = offset_map[index].offset;
+    offset = max9939_offset_map[index].offset;
     
-    command[0] = offset_map[index].regval;
+    command[0] = max9939_offset_map[index].regval;
 
     if (negative)
     {
@@ -116,6 +123,10 @@ max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
 
     if (measure)
         command[0] |= MAX9939_MEAS;
+
+#if 0
+    printf ("offset %d\n", offset);
+#endif
     
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
         return 0;
@@ -168,17 +179,17 @@ max9939_offset_set (spi_pga_t pga, spi_pga_offset_t offset, bool measure)
         offset = -offset;
 
     /* Searching for bracketing range.  */
-    for (i = 1; i < ARRAY_SIZE (offset_map); i++)
+    for (i = 1; i < ARRAY_SIZE (max9939_offset_map); i++)
     {
-        if (offset < offset_map[i].offset)
+        if (offset < max9939_offset_map[i].offset)
             break;
     }
 
-    if (i != ARRAY_SIZE (offset_map))
+    if (i != ARRAY_SIZE (max9939_offset_map))
     {
         /* Choose closest value.  */
-        if (abs (offset - offset_map[i].offset)
-            < abs (offset - offset_map[i - 1].offset))
+        if (abs (offset - max9939_offset_map[i].offset)
+            < abs (offset - max9939_offset_map[i - 1].offset))
             i++;
     }
     
@@ -208,7 +219,7 @@ max9939_input_short_set (spi_pga_t pga, bool enable)
 {
     uint8_t command[1];
 
-    command[0] = offset_map[pga->offset_index].regval;
+    command[0] = max9939_offset_map[pga->offset_index].regval;
 
     if (enable)
         command[0] |= MAX9939_MEAS;
