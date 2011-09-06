@@ -125,7 +125,7 @@ max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
         command[0] |= MAX9939_MEAS;
 
 #if 0
-    printf ("offset %d\n", offset);
+    printf ("off %d, gain %d\n", offset, max9939_gains[pga->gain_index]);
 #endif
     
     if (!spi_pga_command (pga, command, ARRAY_SIZE (command)))
