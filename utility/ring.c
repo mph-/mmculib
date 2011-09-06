@@ -29,15 +29,15 @@
 bool
 ring_empty_p (ring_t *ring)
 {
-    return ring_read_num (ring) == 0
+    return ring_read_num (ring) == 0;
 }
 
 
 /** Return non-zero if the ring buffer is full.  */
 bool
-ring_empty_p (ring_t *ring)
+ring_full_p (ring_t *ring)
 {
-    return ring_write_num (ring) == 0
+    return ring_write_num (ring) == 0;
 }
 
 
