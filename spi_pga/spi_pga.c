@@ -84,7 +84,7 @@ spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
     }
 
     prev_gain = 0;
-    for (i = 0; i < gains[i]; i++)
+    for (i = 0; gains[i]; i++)
     {
         if (gain >= prev_gain && gain < gains[i])
             break;
