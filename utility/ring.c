@@ -8,23 +8,6 @@
 #include "ring.h"
 
 
-/** Number of bytes in ring buffer.  */
-#define RING_SIZE(RING) ((RING)->end - (RING)->top)
-
-/** Number of bytes in ring buffer for reading.  Need temporary
-   integer variable so that only read in and out pointers once in
-   expression.  This avoids a possible race condition if these
-   pointers are modified by an ISR.  It is assumed that pointer reads
-   and writes are atomic.  */
-#define RING_READ_NUM(RING, TMP) \
-   (((TMP) = ((RING)->in - (RING)->out)) < 0 \
-      ? (TMP) + RING_SIZE (RING) : (TMP))
-
-/** Number of free bytes in ring buffer for writing.  */
-#define RING_WRITE_NUM(RING, TMP) \
-   (RING_SIZE (RING) - RING_READ_NUM (RING, TMP) - 1)
-
-
 /** Return non-zero if the ring buffer is empty.  */
 bool
 ring_empty_p (ring_t *ring)

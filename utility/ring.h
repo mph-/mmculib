@@ -12,13 +12,13 @@
 typedef uint16_t ring_size_t;
 
 
-/* Define ring buffer structure.  Unfortunately, since we need to
-   statically allocate this structure we cannot make the structure
-   opaque.  However, do not access the members directly.  They may
-   change one day.  Note the in pointer is only modified by ring_write
-   whereas the out pointer is only modified by ring_read so these
-   routines can be called by an ISR without a race condition (provided
-   pointer reads and writes are atomic).  */
+/** Define ring buffer structure.  Unfortunately, since we need to
+    statically allocate this structure we cannot make the structure
+    opaque.  However, do not access the members directly.  They may
+    change one day.  Note the in pointer is only modified by
+    ring_write whereas the out pointer is only modified by ring_read
+    so these routines can be called by an ISR without a race condition
+    (provided pointer reads and writes are atomic).  */
 typedef struct ring_struct
 {
     char *in;                   /* Pointer to next element to write.  */
@@ -27,6 +27,24 @@ typedef struct ring_struct
     char *end;                  /* Pointer to char after buffer end.  */
 } ring_t;
 
+
+/** The following macros should be considered private.  */
+
+/** Number of bytes in ring buffer.  */
+#define RING_SIZE(RING) ((RING)->end - (RING)->top)
+
+/** Number of bytes in ring buffer for reading.  Need temporary
+   integer variable so that only read in and out pointers once in
+   expression.  This avoids a possible race condition if these
+   pointers are modified by an ISR.  It is assumed that pointer reads
+   and writes are atomic.  */
+#define RING_READ_NUM(RING, TMP) \
+   (((TMP) = ((RING)->in - (RING)->out)) < 0 \
+      ? (TMP) + RING_SIZE (RING) : (TMP))
+
+/** Number of free bytes in ring buffer for writing.  */
+#define RING_WRITE_NUM(RING, TMP) \
+   (RING_SIZE (RING) - RING_READ_NUM (RING, TMP) - 1)
 
 
 /** Return non-zero if the ring buffer is empty.  */
@@ -74,26 +92,6 @@ ring_read_num (ring_t *ring);
 /** Number of bytes free in ring buffer for writing.  */
 ring_size_t
 ring_write_num (ring_t *ring);
-
-
-/** The following macros should be considered private.  */
-
-/** Number of bytes in ring buffer.  */
-#define RING_SIZE(RING) ((RING)->end - (RING)->top)
-
-/** Number of bytes in ring buffer for reading.  Need temporary
-   integer variable so that only read in and out pointers once in
-   expression.  This avoids a possible race condition if these
-   pointers are modified by an ISR.  It is assumed that pointer reads
-   and writres are atomic.  */
-#define RING_READ_NUM(RING, TMP) \
-   (((TMP) = ((RING)->in - (RING)->out)) < 0 \
-      ? (TMP) + RING_SIZE (RING) : (TMP))
-
-/** Number of free bytes in ring buffer for writing.  */
-#define RING_WRITE_NUM(RING, TMP) \
-   (RING_SIZE (RING) - RING_READ_NUM (RING, TMP) - 1)
-
 
 
 /** Write single character to ring buffer.
