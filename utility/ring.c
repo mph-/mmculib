@@ -164,3 +164,58 @@ ring_write (ring_t *ring, const void *buffer, ring_size_t size)
     return size;
 }
 
+
+/** Determine where would write into ring buffer after size bytes.
+    @param ring pointer to ring buffer structure
+    @param size number of bytes to next write
+    @return next write pointer.  */
+char *
+ring_write_next (ring_t *ring, ring_size_t size)
+{
+    char *new;
+
+    new = ring->in + size;
+    if (new >= ring->end)
+        new -= RING_SIZE (ring);
+
+    return new;
+}
+
+
+/** Determine where would read from ring buffer after size bytes.
+    @param ring pointer to ring buffer structure
+    @param size number of bytes to next read
+    @return next read pointer.  */
+char *
+ring_read_next (ring_t *ring, ring_size_t size)
+{
+    char *new;
+
+    new = ring->out + size;
+    if (new >= ring->end)
+        new -= RING_SIZE (ring);
+
+    return new;
+}
+
+
+/** Advance ring buffer for writing.
+    @param ring pointer to ring buffer structure
+    @param size number of bytes to advance write
+    @return new write pointer.  */
+char *
+ring_write_advance (ring_t *ring, ring_size_t size)
+{
+    return ring->in = ring_write_next (ring, size);
+}
+
+
+/** Advance ring buffer for reading.
+    @param ring pointer to ring buffer structure
+    @param size number of bytes to advance read
+    @return new read pointer.  */
+char *
+ring_read_advance (ring_t *ring, ring_size_t size)
+{
+    return ring->out = ring_read_next (ring, size);
+}
