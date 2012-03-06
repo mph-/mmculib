@@ -214,6 +214,16 @@ menu_current_get (void)
 }
 
 
+uint8_t
+menu_current_index_get (void)
+{
+    menu_t *menu;
+
+    menu = menu_current_get();
+    return menu->index;
+}
+
+
 void 
 menu_init (int rows,
            void (*display)(const char *title, int row,

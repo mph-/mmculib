@@ -38,42 +38,42 @@ typedef struct menu_struct
 
 
 /* Move to previous menu item.  */
-extern void
+void
 menu_prev (void);
 
 
 /* Move to next menu item.  */
-extern void
+void
 menu_next (void);
 
 
 /* Go to selected menu item.  */
-extern void 
+void 
 menu_goto (int index);
 
 
 /* Select current menu item.  */
-extern void
+void
 menu_select (void);
 
 
 /* Quit current menu and return to parent menu.  */
-extern void
+void
 menu_quit (void);
 
 
 /* Display a new menu with prompt at last position.  */
-extern bool
+bool
 menu_display (menu_t *menu);
 
 
 /* Display a new menu with prompt at top.  */
-extern bool
+bool
 menu_display_top (menu_t *menu);
 
 
 /* Display current menu.  */
-extern void
+void
 menu_show (void);
 
 
@@ -99,17 +99,21 @@ menu_item_name_get (menu_t *menu, int item)
 }
 
 
+uint8_t
+menu_current_index_get (void);
+
+
 /* Set current index for menu and execute action; useful for restoring
    menu options.  */
-extern void
+void
 menu_index_set (menu_t *menu, uint8_t index);
 
 
-extern menu_t *
+menu_t *
 menu_current_get (void);
 
 
-extern void 
+void 
 menu_init (int rows,
            void (*display)(const char *title, int row,
                            const char *item_name, bool highlight));
