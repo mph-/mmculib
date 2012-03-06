@@ -39,7 +39,7 @@ tracelog_close (void)
 {
     if (tracelog_file)
     {
-        close (tracelog_file);
+        fclose (tracelog_file);
         tracelog_file = 0;
     }
 }
