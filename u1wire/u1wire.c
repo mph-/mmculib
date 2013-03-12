@@ -123,7 +123,7 @@ u1wire_reset (void)
     }
 
     /* The read slot must be a minimum of 480 microseconds.  */
-    DELAY_US (240);
+    DELAY_US (480 - 240);
     irq_global_enable ();
     return 1;
 }
