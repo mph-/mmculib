@@ -11,7 +11,7 @@
 #include "delay.h"
 #include "u1wire.h"
 #include "irq.h"
-#include "port.h"
+#include "pio.h"
 
 enum
 { 
@@ -29,22 +29,16 @@ enum
 
 #define U1WIRE_DEBUG 1
 
-#ifndef U1WIRE_PORT
-#error U1WIRE_PORT needs to be defined in target.h
-#endif
-
-#ifndef U1WIRE_BIT
-#error U1WIRE_BIT needs to be defined in target.h
+#ifndef U1WIRE_PIO
+#error U1WIRE_PIO needs to be defined in target.h
 #endif
 
 
-#define U1WIRE_RELEASE() port_pin_config_pullup (U1WIRE_PORT, U1WIRE_BIT)
+#define U1WIRE_RELEASE() pio_config_set(U1WIRE_PIO, PIO_CONFIG_PULLUP)
 
-#define U1WIRE_DRIVE() \
-    do {port_pin_config_output (U1WIRE_PORT, U1WIRE_BIT); \
-        port_pin_set_low (U1WIRE_PORT, U1WIRE_BIT);} while (0)
+#define U1WIRE_DRIVE() pio_config_set(U1WIRE_PIO, PIO_CONFIG_OUTPUT_LOW)
 
-#define U1WIRE_TEST() port_pin_read (U1WIRE_PORT, U1WIRE_BIT)
+#define U1WIRE_TEST() pio_input_get (U1WIRE_PIO)
 
 
 int8_t
