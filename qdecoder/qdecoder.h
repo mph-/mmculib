@@ -12,17 +12,15 @@
 typedef int16_t qdecoder_pos_t;
 
 
-#define QDECODER_CFG(PORT0, PORTBIT0, PORT1, PORTBIT1) \
-    {(PORT0), BIT (PORTBIT0), (PORT1), BIT (PORTBIT1)}
+#define QDECODER_CFG(PIO0, PIO1) \
+    {(PIO0), (PIO1)}
 
 
 /* Qdecoder configuration structure.  */
 typedef struct
 {
-    port_t port0;
-    port_mask_t bitmask0;
-    port_t port1;
-    port_mask_t bitmask1;
+    pio_t pio0;
+    pio_t pio1;
 } qdecoder_cfg_t;
 
 
@@ -46,10 +44,10 @@ qdecoder_state (qdecoder_t this)
 
     state = 0;
 
-    if (port_pins_read (this->cfg->port1, this->cfg->bitmask1))
+    if (pio_input_get (this->cfg->pio1))
         state = 2;
 
-    if (port_pins_read (this->cfg->port0, this->cfg->bitmask0))
+    if (pio_input_get (this->cfg->pio0))
         state++;
     
     return state;

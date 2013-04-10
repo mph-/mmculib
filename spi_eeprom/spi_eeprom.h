@@ -9,14 +9,14 @@
 #define SPI_EEPROM_H
 
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
 
 
 typedef struct
 {
     spi_cfg_t spi;
-    port_cfg_t wp;
+    pio_t wp;
     uint16_t size;
     uint16_t page_size;
 } spi_eeprom_cfg_t;
