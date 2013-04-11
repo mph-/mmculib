@@ -10,7 +10,6 @@
 #include "gsm862.h"
 #include "target.h"
 #include "delay.h"
-#include "busart.h"
 
 /* Network requests can take a long time, up to a minute?
    Do we want the driver blocking for this time?
@@ -34,6 +33,13 @@
 /* RX ring buffer size.  */
 #ifndef GSM862_RX_SIZE
 #define GSM862_RX_SIZE 16
+#endif
+
+
+#ifdef GSM_DEBUG_PIO
+#define GSM_DEBUG(state)(state) ? pio_output_high(GSM_DEBUG_PIO) : pio_output_low(GSM_DEBUG_PIO)
+#else
+#define GSM_DEBUG(state)
 #endif
 
 
@@ -142,14 +148,14 @@ static bool
 gsm862_poweron (gsm862_t gsm)
 {
     pio_output_high (gsm->cfg->onoff);
-    pio_output_high (LEDDEBUG);
+    GSM_DEBUG (1);
     
     /* Wait for GSM to boot up.  */
     delay_ms (4000);
     
     /* Release onoff signal.  */
     pio_output_low (gsm->cfg->onoff);
-    pio_output_low (LEDDEBUG);
+    GSM_DEBUG (0);
     return 1;
 }
 
@@ -218,7 +224,7 @@ gsm862_init (const gsm862_cfg_t *cfg)
     pio_config_set (cfg->onoff, PIO_OUTPUT_HIGH);
     pio_config_set (cfg->reset, PIO_OUTPUT_HIGH);
     pio_config_set (cfg->pwrmon, PIO_INPUT);
-    pio_config_set (LEDDEBUG, PIO_OUTPUT_HIGH);
+    pio_config_set (GSM_DEBUG_PIO, PIO_OUTPUT_HIGH);
 
     gsm->cfg = cfg;
     gsm->busart = busart_init (cfg->channel, cfg->baud_divisor,
@@ -232,11 +238,15 @@ gsm862_init (const gsm862_cfg_t *cfg)
     gsm862_at_command (gsm, "AT+IPR=38400\r", NULL, 0, GSM862_ATTEMPTS, 2000);
     gsm862_at_command (gsm, "AT&K0\r", NULL,0, GSM862_ATTEMPTS, 2000);
     gsm862_at_command (gsm, "AT+CMGF=1\r", NULL, 0, GSM862_ATTEMPTS, 2000);
+
+    #ifdef GSM_DEBUG_PIO
+    pio_config_set (GSM_DEBUG_PIO, PIO_OUTPUT_LOW);
+    #endif
 	
-    pio_output_high (LEDDEBUG);
+    GSM_DEBUG (1);
     delay_ms (15000);
     //gsm862_at_command (gsm, "AT+CMGD=1\r", NULL, 0, GSM862_ATTEMPTS, 2000);
-    pio_output_low (LEDDEBUG);
+    GSM_DEBUG (0);
     return gsm;
 }
 
