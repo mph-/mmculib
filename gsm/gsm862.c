@@ -10,6 +10,7 @@
 #include "gsm862.h"
 #include "target.h"
 #include "delay.h"
+#include "busart.h"
 
 /* Network requests can take a long time, up to a minute?
    Do we want the driver blocking for this time?
