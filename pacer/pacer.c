@@ -7,6 +7,7 @@
 #include "pacer.h"
 
 static pit_tick_t pacer_period;
+static pit_tick_t pacer_when;
 
 
 /** Initialise pacer:
@@ -16,14 +17,13 @@ void pacer_init (pacer_rate_t pacer_rate)
     pit_init ();
 
     pacer_period = PIT_RATE / pacer_rate;
+    pacer_when = pit_get ();
 }
 
 
 /** Wait until next pacer tick.  */
 void pacer_wait (void)
 {
-    static pit_tick_t when = 0;
-
-    pit_wait_until (when);
-    when += pacer_period;
+    pit_wait_until (pacer_when);
+    pacer_when += pacer_period;
 }
