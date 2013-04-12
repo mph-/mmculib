@@ -192,10 +192,9 @@ spi_eeprom_write_setup (spi_eeprom_t eeprom, spi_eeprom_addr_t addr)
 spi_eeprom_t
 spi_eeprom_init (spi_eeprom_obj_t *eeprom, const spi_eeprom_cfg_t *cfg)
 {
-    if (cfg->wp.port)
+    if (cfg->wp)
     {
-        port_pins_config_output (cfg->wp.port, cfg->wp.bitmask);
-        port_pins_set_high (cfg->wp.port, cfg->wp.bitmask);
+        pio_config_set(cfg->wp, PIO_OUTPUT_HIGH);
     }
 
     eeprom->cfg = cfg;

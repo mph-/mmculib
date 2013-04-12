@@ -10,6 +10,10 @@
    will create a tty device such as /dev/ttyUSB0
 */
 
+#ifndef USB_CURRENT_MA
+#define USB_CURRENT_MA 100
+#endif
+
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

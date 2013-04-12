@@ -180,7 +180,6 @@ fat_de_next (fat_de_iter_t *de_iter)
 
             if (fat_cluster_last_p (cluster_next))
             {
-                fat_de_t *de;
                 uint32_t sector;
 
                 /* Have reached end of chain.  Normally we will have
@@ -190,12 +189,12 @@ fat_de_next (fat_de_iter_t *de_iter)
 
                 de_iter->dir.sector = fat_cluster_to_sector (fat, cluster_next);
 
-                /* Linux (see linux/fs/fat/dir.c searches all the
-                   directory entries in the cluster chain and does not
-                   stop when it finds a zero entry.  So we zero all
-                   the sectors for this cluster creating empty slots;
-                   in reverse order so the last one we want is in the
-                   cache.  */
+                /* The linux kernel (see linux/fs/fat/dir.c) searches
+                   all the directory entries in the cluster chain and
+                   does not stop when it finds a zero entry.  So we
+                   zero all the sectors for this cluster creating
+                   empty slots; in reverse order so the last one we
+                   want is in the cache.  */
                 for (sector = de_iter->sectors; sector > 0; sector--)
                 {
                     buffer = fat_io_cache_read (fat, de_iter->dir.sector 
@@ -207,7 +206,6 @@ fat_de_next (fat_de_iter_t *de_iter)
                     fat_io_cache_write (fat, de_iter->dir.sector 
                                         + sector - 1);                    
                 }
-                de = (fat_de_t *) buffer;
             }
 
             de_iter->cluster = cluster_next;

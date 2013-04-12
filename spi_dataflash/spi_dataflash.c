@@ -225,7 +225,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
     if (addr + total_bytes > dev->size)
         return -1;
 
-    if (dev->cfg->wp.port)
+    if (dev->cfg->wp)
         pio_output_high (dev->cfg->wp);
 
     sector_size = dev->cfg->sector_size;
@@ -324,7 +324,7 @@ spi_dataflash_writev (spi_dataflash_t dev, spi_dataflash_addr_t addr,
             writelen = remaining_bytes;
     }
 
-    if (dev->cfg->wp.port)
+    if (dev->cfg->wp)
         pio_output_low (dev->cfg->wp);
 
     return written_bytes;
@@ -382,11 +382,8 @@ spi_dataflash_init (const spi_dataflash_cfg_t *cfg)
     /* Ensure chip select isn't negated too soon.  */
     spi_cs_negate_delay_set (dev->spi, 16);    
 
-    if (cfg->wp.port)
-    {
-        pio_config_set (cfg->wp, PIO_OUTPUT_HIGH);
-        pio_output_low (cfg->wp);
-    }
+    if (cfg->wp)
+        pio_config_set (cfg->wp, PIO_OUTPUT_LOW);
 
     spi_dataflash_status_read (dev);
 

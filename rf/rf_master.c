@@ -9,7 +9,7 @@
 #include "rf.h"
 #include "delay.h"
 
-#include "port.h"
+#include "pio.h"
 #include "target.h"
 
 
@@ -80,16 +80,8 @@ rf_probes_enumerate (rf_t rf, rf_probe_t *probes, uint8_t probes_max)
             ret = rf_read (dev, buffer, sizeof (buffer),
                            RF_PROBE_RESPONSE_WAIT_MS);
 
-
-
-
-            port_pin_toggle (PORT_D, 5);
             delay_us (100);
-            port_pin_toggle (PORT_D, 5);
             
-
-
-
             if (!ret)
                 continue;
             
