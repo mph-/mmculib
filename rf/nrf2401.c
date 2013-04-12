@@ -30,16 +30,16 @@ enum {NRF_T_SB_ACTIVE = 202};
 
 
 /* Definitions of some macros for outside functions to call.  */
-#define NRF_DATA_READY_P(DEV) (port_pins_read ((DEV)->cfg->dr.port, (DEV)->cfg->dr.bitmask))
+#define NRF_DATA_READY_P(DEV) (pio_input_get ((DEV)->cfg->dr)
 
 
 /* The nRF2401 chip has a 15-byte configuration register.  */
 #define NRF_CONFIGURATION_REGISTER_SIZE 15
 
-#define NRF_CE_HIGH_SET(DEV) (port_pins_set_high ((DEV)->cfg->ce.port, (DEV)->cfg->ce.bitmask))
-#define NRF_CE_LOW_SET(DEV) (port_pins_set_low ((DEV)->cfg->ce.port, (DEV)->cfg->ce.bitmask))
-#define NRF_CS_HIGH_SET(DEV) (port_pins_set_high ((DEV)->cfg->cs.port, (DEV)->cfg->cs.bitmask))
-#define NRF_CS_LOW_SET(DEV) (port_pins_set_low ((DEV)->cfg->cs.port, (DEV)->cfg->cs.bitmask))
+#define NRF_CE_HIGH_SET(DEV) (pio_output_high ((DEV)->cfg->ce))
+#define NRF_CE_LOW_SET(DEV) (pio_output_low ((DEV)->cfg->ce))
+#define NRF_CS_HIGH_SET(DEV) (pio_output_high ((DEV)->cfg->cs))
+#define NRF_CS_LOW_SET(DEV) (pio_output_low ((DEV)->cfg->cs))
 
 
 /* Unfortunately, the CS is active high.  Rather than pessimising the
@@ -82,13 +82,13 @@ nrf_init (nrf_obj_t *dev, const nrf_cfg_t *cfg)
 
     /* Make chip select pin an output.  The SPI driver does not control
      this pin since it is active high.  */
-    port_pins_config_output (cfg->cs.port, cfg->cs.bitmask);
+    pio_config_set (cfg->cs, PIO_OUTPUT_HIGH);
 
     /* Make chip enable pin an output.  */
-    port_pins_config_output (cfg->ce.port, cfg->ce.bitmask);
+    pio_config_set (cfg->ce, PIO_OUTPUT_HIGH);
     
     /* Make data ready pin an input.  */
-    port_pins_config_input (cfg->dr.port, cfg->dr.bitmask);
+    pio_config_set (cfg->dr, PIO_INPUT);
     
     /* Initialise spi port.  */
     dev->spi = spi_init (&cfg->spi);

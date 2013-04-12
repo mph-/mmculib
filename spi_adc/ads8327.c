@@ -1,5 +1,5 @@
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
 #include "spi_adc.h"
 
@@ -7,14 +7,14 @@
 static inline void 
 ads8327_chip_select (void)
 {
-    port_pin_set_low (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+   pio_output_low (SPI_ADC_CS_PIO);
 }
 
 
 static inline void 
 ads8327_chip_deselect (void)
 {
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_output_high (SPI_ADC_CS_PIO);
 }
 
 
@@ -63,11 +63,8 @@ uint16_t ads8327_command (uint16_t val)
 void
 ads8327_init (void)
 {
-    port_pin_config_output (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
-    port_pin_set_high (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
-
-    port_pin_config_output (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_config_set (SPI_ADC_CS_PIO, PIO_OUTPUT_HIGH);
+    pio_config_set (SPI_ADC_CONV_PIO, PIO_OUTPUT_HIGH);
 
     /* Send wakeup command.  */
     ads8327_command (0xB000);
@@ -104,9 +101,9 @@ ads8327_convert (void)
 {
     /* Drive CONV pin of A/D low to start conversion. 
        It only needs to go low for 40 ns.  */
-    port_pin_set_low (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
+    pio_output_low (SPI_ADC_CONV_PIO);
     /* Drive CONV pin of A/D high.  */
-    port_pin_set_high (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
+    pio_output_high (SPI_ADC_CONV_PIO);
 
     return ads8327_read ();
 }
