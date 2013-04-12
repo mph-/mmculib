@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "spi.h"
-#include "port.h"
+#include "pio.h"
 
 
 enum {NRF_DEVICE_ID_SIZE = 8};
@@ -89,9 +89,9 @@ typedef union
 typedef struct
 {
     spi_cfg_t spi;
-    port_cfg_t cs;
-    port_cfg_t ce;
-    port_cfg_t dr;
+    pio_t cs;
+    pio_t ce;
+    pio_t dr;
 } nrf_cfg_t;
 
 

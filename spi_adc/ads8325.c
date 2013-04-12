@@ -1,30 +1,27 @@
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
 
 
 static inline void 
 ads8325_chip_select (void)
 {
-    port_pin_set_low (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_output_low (SPI_ADC_CS_PIO);
 }
 
 
 static inline void 
 ads8325_chip_deselect (void)
 {
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_output_high (SPI_ADC_CS_PIO);
 }
 
 
 void
 ads8325_init (void)
 {
-    port_pin_config_output (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
-    port_pin_set_high (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
-
-    port_pin_config_output (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_config_set (SPI_ADC_CS_PIO, PIO_OUTPUT_HIGH);
+    pio_config_set (SPI_ADC_CONV_PIO, PIO_OUTPUT_HIGH);
 }
 
 
@@ -37,10 +34,9 @@ ads8325_read (void)
 
     /* Drive CONV pin of A/D low to start conversion. 
        It only needs to go low for 40 ns.  */
-    port_pin_set_low (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
+    pio_output_low (SPI_ADC_CONV_PIO);
     /* Drive CONV pin of A/D high.  */
-    port_pin_set_high (SPI_ADC_CONV_PORT, SPI_ADC_CONV_BIT);
-
+    pio_output_high (SPI_ADC_CONV_PIO);
 
     /* The ADS8325 is a successive approximation 16-bit ADC with an
        SPI interface.  It can operate at up to 100 kHz.  The serial

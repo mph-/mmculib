@@ -1,5 +1,5 @@
 #include "config.h"
-#include "port.h"
+#include "pio.h"
 #include "spi.h"
 #include "spi_adc.h"
 
@@ -63,14 +63,14 @@ enum
 static inline void 
 ads7870_chip_select (void)
 {
-    port_pin_set_low (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_output_low (SPI_ADC_CS_PIO);
 }
 
 
 static inline void 
 ads7870_chip_deselect (void)
 {
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_output_high (SPI_ADC_CS_PIO);
 }
 
 
@@ -191,8 +191,7 @@ ads7870_channel_convert (uint8_t channel, spi_adc_mode_t mode)
 void
 ads7870_init (void)
 {
-    port_pin_config_output (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
-    port_pin_set_high (SPI_ADC_CS_PORT, SPI_ADC_CS_BIT);
+    pio_config_set (SPI_ADC_CS_PIO, PIO_OUTPUT_HIGH);
 
     /* Should check ID register.  */
     ads7870_reg_write (ADS7870_REFOSC, ADS7870_REFOSC_OSCE 
