@@ -69,8 +69,6 @@ i2cm_scl_set (i2cm_t dev, bool state)
 static bool
 i2cm_scl_wait (i2cm_t dev)
 {
-    int i;
-
     if (!i2cm_scl_get (dev))
     {
         int i = I2CM_CLOCK_STRETCH_TIMEOUT_US;
@@ -176,7 +174,7 @@ i2cm_send_stop (i2cm_t dev)
     DELAY_US (4);
 
     i2cm_scl_set (dev, 1);
-    i2cm_scl_wait ();
+    i2cm_scl_wait (dev);
     DELAY_US (4);
 
     i2cm_sda_set (dev, 1);
