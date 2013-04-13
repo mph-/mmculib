@@ -91,6 +91,9 @@ i2cm_scl_wait (i2cm_t dev)
 static int
 i2cm_send_bit (i2cm_t dev, bool bit)
 {
+    /* The scl line should be low at this point.  The sda line can
+     only be changed when scl is low.  */
+
     i2cm_sda_set (dev, bit);
 
     i2cm_scl_set (dev, 1);
@@ -120,9 +123,6 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
     int i;
     int ret = 1;
 
-    /* The scl line should be low at this point.  The sda line can
-     only be changed when scl is low.  */
-
     for (i = 0; i < 8; i++)
     {
         if (!i2cm_send_bit (dev, (data >> 7) & 1))
@@ -142,6 +142,30 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
 }
 
 
+static bool
+i2cm_recv_bit (i2cm_t dev)
+{
+    bool bit;
+
+    i2cm_sda_set (dev, 1);
+    DELAY_US (4);    
+
+    i2cm_scl_set (dev, 1);
+    /* Hmmm, what about if there is an error?  */
+    if (!i2cm_scl_wait (dev))
+        return 0;
+
+    bit = i2cm_sda_get (dev);
+
+    DELAY_US (4);    
+
+    i2cm_scl_set (dev, 0);
+    
+    return bit
+}
+
+
+
 static
 int i2cm_recv_byte (i2cm_t dev, uint8_t *data, bool ack)
 {
@@ -149,17 +173,11 @@ int i2cm_recv_byte (i2cm_t dev, uint8_t *data, bool ack)
     uint8_t d = 0;
 
     for (i = 0; i < 8; i++)
-    {
-        d <<= 1;
-        i2cm_scl_set (dev, 1);
-        d |= i2cm_sda_get (dev);
-        i2cm_scl_set (dev, 0);
-    }
+        d = (d <<= 1) | i2cm_recv_bit (dev);
+
     *data = d;
-    if (ack)
-        i2cm_sda_set (dev, 0);
-    else
-        i2cm_sda_set (dev, 1);
+
+    i2cm_send_bit (dev, !ack);
 
     i2cm_scl_set (dev, 1);
     i2cm_scl_set (dev, 0);
