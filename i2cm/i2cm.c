@@ -20,7 +20,7 @@ bool i2cm_sda_get (i2cm_t dev)
 static void
 i2cm_sda_set (i2cm_t dev, bool state)
 {
-    pio_config_set (dev->sda, state ? PIO_INPUT_PULLUP : PIO_OUTPUT_LOW);
+    pio_config_set (dev->sda, state ? PIO_PULLUP : PIO_OUTPUT_LOW);
 
     /* TODO: generalise for different speeds.  */
     DELAY_US (2);
@@ -30,7 +30,7 @@ i2cm_sda_set (i2cm_t dev, bool state)
 static void 
 i2cm_scl_set (i2cm_t dev, bool state)
 {
-    pio_config_set (dev->scl, val ? PIO_INPUT_PULLUP : PIO_OUTPUT_LOW);    
+    pio_config_set (dev->scl, state ? PIO_PULLUP : PIO_OUTPUT_LOW);    
 
     /* TODO: generalise for different speeds.  */
 }
@@ -54,7 +54,7 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
     i2cm_scl_set (dev, 1);
 
     /* Check acknowledge bit.  */
-    if (!i2cm_sda_get ())
+    if (!i2cm_sda_get (dev))
         ret = 0;
 
     i2cm_scl_set (dev, 0);
@@ -63,7 +63,7 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
 
 
 static
-int i2cm_recv (i2cm_t dev, uint8_t *data, bool ack)
+int i2cm_recv_byte (i2cm_t dev, uint8_t *data, bool ack)
 {
     int i;
     uint8_t d = 0;
@@ -72,7 +72,7 @@ int i2cm_recv (i2cm_t dev, uint8_t *data, bool ack)
     {
         d <<= 1;
         i2cm_scl_set (dev, 1);
-        d |= i2cm_sda_get ();
+        d |= i2cm_sda_get (dev);
         i2cm_scl_set (dev, 0);
     }
     *data = d;
@@ -144,7 +144,7 @@ i2cm_recv_buffer (i2cm_t dev, void *buffer, uint8_t size)
     /* Receive data packets.  */
     for (i = 0; i < size; i++)
     {
-        if (!i2cm_recv_byte (dev, data[i]))
+        if (!i2cm_recv_byte (dev, &data[i], 1))
             return 0;
     }
     return i;
@@ -161,7 +161,7 @@ i2cm_start (i2cm_t dev, i2cm_addr_t addr, bool read)
         return 0;
 
     /* Send register address.  */
-    if (!i2cm_send_buffer (dev, dev->id, addr, dev->addr_bytes))
+    if (!i2cm_send_buffer (dev, &addr, dev->addr_bytes))
         return 0;
 
     if (read)
@@ -179,7 +179,8 @@ i2cm_start (i2cm_t dev, i2cm_addr_t addr, bool read)
 static int
 i2cm_stop (i2cm_t dev)
 {
-    return i2cm_send_stop ();
+    i2cm_send_stop (dev);
+    return 1;
 }
 
 
@@ -190,7 +191,7 @@ i2cm_read (i2cm_t dev, i2cm_addr_t addr, void *buffer, uint8_t size)
 
     i2cm_start (dev, addr, 1);
 
-    ret = i2cm_send_buffer (dev, buffer, size);
+    ret = i2cm_recv_buffer (dev, buffer, size);
 
     i2cm_stop (dev);
 
