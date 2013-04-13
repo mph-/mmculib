@@ -4,6 +4,10 @@
     @brief  Bit-bashed I2C master (TWI)
 
     This is written on a whim and is completely untested.
+
+    Two PIOs are required for SCL and SDA.  Ideally, they should have
+    schmitt trigger inputs to handle the slow rising edges of an
+    open-drain bus.
 */
 
 #include "i2cm.h"
@@ -15,6 +19,11 @@
 #endif
 
 
+#ifndef I2CM_CLOCK_STRETCH_TIMEOUT_US
+#define I2CM_CLOCK_STRETCH_TIMEOUT_US 50
+#endif
+
+
 struct i2cm_dev_struct
 {
     const i2cm_bus_cfg_t *bus;
@@ -23,7 +32,6 @@ struct i2cm_dev_struct
 
 static uint8_t i2cm_devices_num = 0;
 static i2cm_dev_t i2cm_devices[I2CM_DEVICES_NUM];
-
 
 
 
@@ -39,8 +47,15 @@ i2cm_sda_set (i2cm_t dev, bool state)
 {
     pio_config_set (dev->bus->sda, state ? PIO_PULLUP : PIO_OUTPUT_LOW);
 
-    /* TODO: generalise for different speeds.  */
-    DELAY_US (2);
+    /* If sda has not gone high when state == 1 then there is a bus conflict
+       and the other device has won.  */
+}
+
+
+static
+bool i2cm_scl_get (i2cm_t dev)
+{
+    return pio_input_get (dev->bus->scl) != 0;
 }
 
 
@@ -48,9 +63,6 @@ static void
 i2cm_scl_set (i2cm_t dev, bool state)
 {
     pio_config_set (dev->bus->scl, state ? PIO_PULLUP : PIO_OUTPUT_LOW);    
-
-    /* TODO: generalise for different speeds.  */
-    DELAY_US (2);
 }
 
 
@@ -60,11 +72,39 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
     int i;
     int ret = 1;
 
+
+    /* The scl line should be low at this point.  The sda line can
+     only be changed when scl is low.  */
+
     for (i = 0; i < 8; i++)
     {
         i2cm_sda_set (dev, (data >> 7) & 1);
         data <<= 1;
         i2cm_scl_set (dev, 1);
+
+        /* The receiver samples on the rising edge of scl but this is
+           a slow transition.  Wait until the scl goes high to ensure
+           that the receiver sees the bit.  The slave can also force
+           scl low to stretch the clock and give it time to do
+           something.  */
+        if (!i2cm_scl_get (dev))
+        {
+            int i = I2CM_CLOCK_STRETCH_TIMEOUT_US;
+            
+            while (i && !i2cm_scl_get (dev))
+            {
+                DELAY_US (1);
+                i--;
+            }
+            if (!i)
+            {
+                /* scl seems to be stuck low.  */
+                return 0;
+            }
+        }
+
+        DELAY_US (4);
+        
         i2cm_scl_set (dev, 0);
     }
 
@@ -113,6 +153,7 @@ i2cm_send_start (i2cm_t dev)
     i2cm_scl_set (dev, 1);
     i2cm_sda_set (dev, 0);
     i2cm_scl_set (dev, 0);
+    DELAY_US (4);
 }
 
 
