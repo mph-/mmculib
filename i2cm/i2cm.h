@@ -27,16 +27,21 @@ typedef struct
 
     /* Number of bytes for register address.  */
     uint8_t addr_bytes;
+} i2cm_dev_cfg_t;
 
+
+/** I2CM bus configuration structure.  */
+typedef struct
+{
     /* SCL PIO. */
     pio_t scl;
 
     /* SDA PIO. */
     pio_t sda;
-} i2cm_cfg_t;
+} i2cm_bus_cfg_t;
 
 
-typedef const i2cm_cfg_t i2cm_dev_t;
+typedef struct i2cm_dev_struct i2cm_dev_t;
 
 
 /** Define datatype for handle to I2CM functions.  */
@@ -44,7 +49,7 @@ typedef i2cm_dev_t *i2cm_t;
 
 
 i2cm_t
-i2cm_init (const i2cm_cfg_t *cfg);
+i2cm_init (const i2cm_bus_cfg_t *bus_cfg, const i2cm_dev_cfg_t *dev_cfg);
 
 
 int
@@ -56,4 +61,3 @@ i2cm_read (i2cm_t dev, i2cm_addr_t addr, void *buffer, uint8_t size);
 
 
 #endif
-
