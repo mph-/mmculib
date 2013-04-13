@@ -88,6 +88,32 @@ i2cm_scl_wait (i2cm_t dev)
 }
 
 
+static int
+i2cm_send_bit (i2cm_t dev, bool bit)
+{
+    i2cm_sda_set (dev, bit);
+
+    i2cm_scl_set (dev, 1);
+
+    /* The receiver samples on the rising edge of scl but this is
+       a slow transition.  Wait until the scl goes high to ensure
+       that the receiver sees the bit.  The slave can also force
+       scl low to stretch the clock and give it time to do
+       something.  */
+    if (!i2cm_scl_wait (dev))
+        return 0;
+
+    /* Check if lost arbitration.  */
+    if (bit && !i2cm_sda_get (dev))
+        return 0;
+    
+    DELAY_US (4);
+    
+    i2cm_scl_set (dev, 0);
+    return 1;
+}
+
+
 static
 int i2cm_send_byte (i2cm_t dev, uint8_t data)
 {
@@ -99,21 +125,9 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
 
     for (i = 0; i < 8; i++)
     {
-        i2cm_sda_set (dev, (data >> 7) & 1);
-        data <<= 1;
-        i2cm_scl_set (dev, 1);
-
-        /* The receiver samples on the rising edge of scl but this is
-           a slow transition.  Wait until the scl goes high to ensure
-           that the receiver sees the bit.  The slave can also force
-           scl low to stretch the clock and give it time to do
-           something.  */
-        if (!i2cm_scl_wait (dev))
+        if (!i2cm_send_bit (dev, (data >> 7) & 1))
             return 0;
-
-        DELAY_US (4);
-        
-        i2cm_scl_set (dev, 0);
+        data <<= 1;
     }
 
     i2cm_sda_set (dev, 1);
