@@ -66,12 +66,35 @@ i2cm_scl_set (i2cm_t dev, bool state)
 }
 
 
+static bool
+i2cm_scl_wait (i2cm_t dev)
+{
+    int i;
+
+    if (!i2cm_scl_get (dev))
+    {
+        int i = I2CM_CLOCK_STRETCH_TIMEOUT_US;
+        
+        while (i && !i2cm_scl_get (dev))
+        {
+            DELAY_US (1);
+            i--;
+        }
+        if (!i)
+        {
+            /* scl seems to be stuck low.  */
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 static
 int i2cm_send_byte (i2cm_t dev, uint8_t data)
 {
     int i;
     int ret = 1;
-
 
     /* The scl line should be low at this point.  The sda line can
      only be changed when scl is low.  */
@@ -87,21 +110,8 @@ int i2cm_send_byte (i2cm_t dev, uint8_t data)
            that the receiver sees the bit.  The slave can also force
            scl low to stretch the clock and give it time to do
            something.  */
-        if (!i2cm_scl_get (dev))
-        {
-            int i = I2CM_CLOCK_STRETCH_TIMEOUT_US;
-            
-            while (i && !i2cm_scl_get (dev))
-            {
-                DELAY_US (1);
-                i--;
-            }
-            if (!i)
-            {
-                /* scl seems to be stuck low.  */
-                return 0;
-            }
-        }
+        if (!i2cm_scl_wait (dev))
+            return 0;
 
         DELAY_US (4);
         
@@ -150,10 +160,12 @@ int i2cm_recv_byte (i2cm_t dev, uint8_t *data, bool ack)
 static void
 i2cm_send_start (i2cm_t dev)
 {
-    i2cm_scl_set (dev, 1);
+    /* The scl and sda lines should be high at this point.  If not,
+       some other master got in first.  */
     i2cm_sda_set (dev, 0);
-    i2cm_scl_set (dev, 0);
     DELAY_US (4);
+
+    i2cm_scl_set (dev, 0);
 }
 
 
@@ -161,8 +173,15 @@ static void
 i2cm_send_stop (i2cm_t dev)
 {
     i2cm_sda_set (dev, 0);
+    DELAY_US (4);
+
     i2cm_scl_set (dev, 1);
+    i2cm_scl_wait ();
+    DELAY_US (4);
+
     i2cm_sda_set (dev, 1);
+    /* It is possible to lose arbitration at this point but who cares? 
+       We think we have finished!  */
 }
 
 
@@ -172,8 +191,8 @@ i2cm_send_addr (i2cm_t dev, bool read)
     /* Send 7-bit slave address followed by bit to indicate
        read/write.  
 
-       10-bit slave addresses are not yet supported; this requires
-       writing two bytes.  */
+       For 10-bit slave addresses, the second byte is part of the
+       data packet.  */
     return i2cm_send_byte (dev, (dev->dev->id << 1) | (read != 0));
 }
 
@@ -246,11 +265,14 @@ i2cm_stop (i2cm_t dev)
 int
 i2cm_read (i2cm_t dev, i2cm_addr_t addr, void *buffer, uint8_t size)
 {
-    int ret;
+    int ret = 0;
 
-    i2cm_start (dev, addr, 1);
+    /* Check if some other master active.  */
+    if (!i2cm_sda_get (dev))
+        return 0;
 
-    ret = i2cm_recv_buffer (dev, buffer, size);
+    if (i2cm_start (dev, addr, 1))
+        ret = i2cm_recv_buffer (dev, buffer, size);
 
     i2cm_stop (dev);
 
@@ -261,11 +283,14 @@ i2cm_read (i2cm_t dev, i2cm_addr_t addr, void *buffer, uint8_t size)
 int
 i2cm_write (i2cm_t dev, i2cm_addr_t addr, void *buffer, uint8_t size)
 {
-    int ret;
+    int ret = 0;
 
-    i2cm_start (dev, addr, 0);
+    /* Check if some other master active.  */
+    if (!i2cm_sda_get (dev))
+        return 0;
 
-    ret = i2cm_send_buffer (dev, buffer, size);
+    if (i2cm_start (dev, addr, 0))
+        ret = i2cm_send_buffer (dev, buffer, size);
 
     i2cm_stop (dev);
 
