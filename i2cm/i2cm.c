@@ -161,7 +161,7 @@ i2cm_recv_bit (i2cm_t dev)
 
     i2cm_scl_set (dev, 0);
     
-    return bit
+    return bit;
 }
 
 
@@ -173,7 +173,7 @@ int i2cm_recv_byte (i2cm_t dev, uint8_t *data, bool ack)
     uint8_t d = 0;
 
     for (i = 0; i < 8; i++)
-        d = (d <<= 1) | i2cm_recv_bit (dev);
+        d = (d << 1) | i2cm_recv_bit (dev);
 
     *data = d;
 
