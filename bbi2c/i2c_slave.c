@@ -24,11 +24,13 @@ i2c_slave_send_bit (i2c_t dev, bool bit)
     i2c_sda_set (dev, bit);
 
     /* Wait for scl to go high.  */
-    ret = i2c_scl_ensure_high (dev);
+    ret = i2c_scl_wait_high (dev);
     if (ret != I2C_OK)
         return ret;
 
-    /* When clock goes low, can release data.  */
+    ret = i2c_scl_wait_low (dev);
+    if (ret != I2C_OK)
+        return ret;
 
     return I2C_OK;
 }
@@ -40,10 +42,6 @@ i2c_slave_send_ack (i2c_t dev)
     i2c_ret_t ret;
 
     ret = i2c_slave_send_bit (dev, 0);
-    if (ret != I2C_OK)
-        return ret;
-    
-    ret = i2c_scl_wait_low (dev);
     if (ret != I2C_OK)
         return ret;
 
@@ -104,8 +102,9 @@ i2c_slave_recv_byte (i2c_t dev, uint8_t *data)
 
     *data = d;
 
-    /* CHECKME.  */
-    i2c_slave_send_bit (dev, 1);
+    /* Don't send acknowledge here; this routine is also used for
+       reading the slave address and we should only send an ack if the
+       address matechs.  */
 
     return I2C_OK;
 }
