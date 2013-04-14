@@ -205,6 +205,9 @@ i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
     if (ret != I2C_OK)
         return ret;
 
+    /* TODO: If id is zero then a general call has been transmitted.
+       All slaves should respond.  */
+
     if ((id >> 1) != dev->slave->id)
         return I2C_ERROR_MATCH;        
 

@@ -48,6 +48,15 @@ typedef struct i2c_dev_struct i2c_dev_t;
 typedef i2c_dev_t *i2c_t;
 
 
+typedef enum i2c_action
+{
+    I2C_START = 1,
+    I2C_STOP = 2,
+    I2C_READ = 4,
+    I2C_WRITE = 8
+} i2c_action_t;
+
+
 typedef enum i2c_ret
 {
     I2C_SLAVE_READ = 2,

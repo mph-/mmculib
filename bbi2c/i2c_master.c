@@ -153,57 +153,23 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data)
 }
 
 
-static int
-i2c_master_send_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* Send data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_master_send_byte (dev, data[i]);
-        if (ret != I2C_OK)
-            return ret;
-    }
-    return i;
-}
-
-
 static i2c_ret_t
-i2c_master_recv_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* Receive data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_master_recv_byte (dev, &data[i]);
-        if (ret < 0)
-            return ret;
-    }
-    return i;
-}
-
-
-static void
 i2c_master_send_start (i2c_t dev)
 {
-    /* The scl and sda lines should be high at this point.  If not,
-       some other master got in first.  */
+    /* The scl and sda lines should be high inputs at this point.  If
+       not, some other master got in first.  */
+    if (!i2c_sda_get (dev))
+        return I2C_ERROR_CONFLICT;
+
     i2c_sda_set (dev, 0);
     DELAY_US (4);
 
     i2c_scl_set (dev, 0);
+    return I2C_OK;
 }
 
 
-static void
+static i2c_ret_t
 i2c_master_send_stop (i2c_t dev)
 {
     i2c_sda_set (dev, 0);
@@ -216,6 +182,7 @@ i2c_master_send_stop (i2c_t dev)
     i2c_sda_set (dev, 1);
     /* It is possible to lose arbitration at this point but who cares? 
        We think we have finished!  */
+    return I2C_OK;
 }
 
 
@@ -231,79 +198,72 @@ i2c_master_send_addr (i2c_t dev, bool read)
 }
 
 
-static i2c_ret_t
-i2c_master_start (i2c_t dev, i2c_addr_t addr, bool read)
+int
+i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
 {
+    uint8_t i;
+    uint8_t *data = buffer;
     i2c_ret_t ret;
 
-    i2c_master_send_start (dev);
-
-    /* Send slave address (for writing).  */
-    ret = i2c_master_send_addr (dev, 0);
-    if (ret != I2C_OK)
-        return ret;
-
-    /* Send register address.  */
-    ret = i2c_master_send_data (dev, &addr, dev->slave->addr_bytes);
-    if (ret < 0)
-        return ret;
-
-    if (read)
+    if (action & I2C_START)
     {
-        i2c_master_send_start (dev);
-        
-        /* Send slave address (for reading).  */
-        ret = i2c_master_send_addr (dev, 1);
+        ret = i2c_master_send_start (dev);
+        if (ret != I2C_OK)
+            return ret;
+
+        ret = i2c_master_send_addr (dev, action & I2C_READ);
         if (ret != I2C_OK)
             return ret;
     }
-    return I2C_OK;
-}
 
+    /* Send or receive data packets.  */
+    for (i = 0; i < size; i++)
+    {
+        if (action & I2C_WRITE)
+            ret = i2c_master_send_byte (dev, data[i]);
+        else
+            ret = i2c_master_recv_byte (dev, &data[i]);
 
-static i2c_ret_t
-i2c_master_stop (i2c_t dev)
-{
-    i2c_master_send_stop (dev);
-    return I2C_OK;
-}
+        if (ret != I2C_OK)
+            return ret;
+    }
 
+    if (action & I2C_STOP)
+    {
+        ret = i2c_master_send_stop (dev);
+        if (ret != I2C_OK)
+            return ret;
+    }
 
-i2c_ret_t
-i2c_master_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
-{
-    i2c_ret_t ret;
-
-    /* Check if some other master active.  */
-    if (!i2c_sda_get (dev))
-        return I2C_ERROR_CONFLICT;
-
-    ret = i2c_master_start (dev, addr, 1);
-    if (ret == I2C_OK)
-        ret = i2c_master_recv_data (dev, buffer, size);
-
-    i2c_master_stop (dev);
-
-    return ret;
+    return i;
 }
 
 
 i2c_ret_t
-i2c_master_write (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
+i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
 {
     i2c_ret_t ret;
 
-    /* Check if some other master active.  */
-    if (!i2c_sda_get (dev))
-        return I2C_ERROR_CONFLICT;
+    ret = i2c_master_transfer (dev, &addr, dev->slave->addr_bytes, 
+                               I2C_START | I2C_WRITE);
+    if (ret < 0)
+        return ret;
 
-    ret = i2c_master_start (dev, addr, 0);
-    if (ret == I2C_OK)
-        ret = i2c_master_send_data (dev, buffer, size);
+    return i2c_master_transfer (dev, buffer, size, I2C_WRITE | I2C_STOP);
+}
 
-    i2c_master_stop (dev);
 
-    return ret;
+i2c_ret_t
+i2c_master_addr_write (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
+{
+    i2c_ret_t ret;
+
+    ret = i2c_master_transfer (dev, &addr, dev->slave->addr_bytes, 
+                               I2C_START | I2C_WRITE);
+    if (ret < 0)
+        return ret;
+
+    return i2c_master_transfer (dev, buffer, size, I2C_WRITE | I2C_STOP);
 }
 
 
