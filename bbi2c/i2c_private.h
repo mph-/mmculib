@@ -100,4 +100,13 @@ i2c_scl_wait_high (i2c_t dev)
 }
 
 
+static i2c_ret_t
+i2c_scl_ensure_high (i2c_t dev)
+{
+    i2c_scl_set (dev, 1);
+
+    return i2c_scl_wait_high (dev);
+}
+
+
 #endif
