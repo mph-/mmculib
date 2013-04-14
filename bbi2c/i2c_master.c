@@ -249,7 +249,7 @@ i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
     if (ret < 0)
         return ret;
 
-    return i2c_master_transfer (dev, buffer, size, I2C_WRITE | I2C_STOP);
+    return i2c_master_transfer (dev, buffer, size, I2C_READ | I2C_STOP);
 }
 
 
