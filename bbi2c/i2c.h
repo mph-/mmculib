@@ -57,8 +57,6 @@ typedef enum i2c_action
 
 typedef enum i2c_ret
 {
-    I2C_SLAVE_READ = 2,
-    I2C_SLAVE_WRITE = 1, 
     I2C_OK = 0,
     I2C_ERROR_MATCH = -1,
     I2C_ERROR_NO_ACK = -2,
@@ -67,7 +65,9 @@ typedef enum i2c_ret
     I2C_ERROR_TIMEOUT = -5,
     I2C_ERROR_BUSY = -6,
     I2C_ERROR_SCL_STUCK_HIGH = -7,
-    I2C_ERROR_PROTOCOL = -8
+    I2C_ERROR_PROTOCOL = -8,
+    I2C_SEEN_START = -9,
+    I2C_SEEN_STOP = -10
 } i2c_ret_t;
 
 #endif

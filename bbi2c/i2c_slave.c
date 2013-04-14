@@ -74,6 +74,7 @@ i2c_slave_recv_bit (i2c_t dev)
 {
     i2c_ret_t ret;
     bool val;
+    int timeout = I2C_CLOCK_STRETCH_TIMEOUT_US;
 
     /* The scl line should be low at this point.  */
 
@@ -85,9 +86,20 @@ i2c_slave_recv_bit (i2c_t dev)
 
     /* Wait for scl to go low or for SDA to transistion
        indicating a start or a stop bit.  */
-    ret = i2c_scl_wait_low (dev);
-    if (ret != I2C_OK)
-        return ret;
+    while (timeout && i2c_scl_get (dev))
+    {
+        DELAY_US (1);
+        timeout--;
+
+        if (val != i2c_sda_get (dev))
+            return val ? I2C_SEEN_START : I2C_SEEN_STOP;
+
+    }
+    if (!timeout)
+    {
+        /* scl seems to be stuck high.  */
+        return I2C_ERROR_SCL_STUCK_HIGH;
+    }
 
     return val;
 }
@@ -119,56 +131,6 @@ i2c_slave_recv_byte (i2c_t dev, uint8_t *data)
 }
 
 
-static int
-i2c_slave_send_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* Send data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_slave_send_byte (dev, data[i]);
-        if (ret < 0)
-            return ret;
-
-        ret = i2c_slave_recv_bit (dev);
-        if (ret < 0)
-            return ret;
-        if (ret != 1)
-            return I2C_ERROR_NO_ACK;
-    }
-    return i;
-}
-
-
-static i2c_ret_t
-i2c_slave_recv_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* TODO: handle case if requesting more bytes than sent.  In this
-       case a stop will be received.  */
-
-    /* Receive data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_slave_recv_byte (dev, &data[i]);
-        if (ret < 0)
-            return ret;
-
-        /* Send acknowledge.  */
-        i2c_slave_send_ack (dev);
-    }
-    return i;
-}
-
-
 i2c_t
 i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 {
@@ -184,6 +146,7 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
     
     dev->bus = bus_cfg;
     dev->slave = slave_cfg;
+    dev->seen_start = 0;
     
     i2c_sda_set (dev, 1);
     i2c_scl_set (dev, 1);
@@ -226,11 +189,15 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 {
     i2c_ret_t ret;
     uint8_t id;
+    uint8_t *data = buffer;
+    uint8_t i;
 
     /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
 
-    i2c_slave_start_wait (dev, timeout_us);
+    if (!dev->seen_start)
+        i2c_slave_start_wait (dev, timeout_us);
+    dev->seen_start = 0;
 
     ret = i2c_slave_recv_byte (dev, &id);
     if (ret != I2C_OK)
@@ -249,17 +216,39 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     if (id & 1)
         return I2C_ERROR_PROTOCOL;
 
-    /* Read data.  */
-    ret = i2c_slave_recv_data (dev, buffer, size);
-    if (ret != I2C_OK)
-        return ret;
 
-    /* Here it gets tricky... TODO, handle repeated start or a stop.
-       If we get a repeated start then need to stretch clock to give
-       some pondering time.  */
+    /* Receive data packets.  */
+    for (i = 0; i < size; i++)
+    {
+        i2c_ret_t ret;
+
+        ret = i2c_slave_recv_byte (dev, &data[i]);
+
+        /* If saw a stop then cannot read as many bytes as requested.  */
+        if (ret == I2C_SEEN_STOP)
+            return i;
+
+        /* Saw a repeated start.  */
+        if (ret == I2C_SEEN_START)
+        {
+            dev->seen_start = 1;
+
+            /* Stretch clock to give some pondering time.  */        
+            i2c_scl_set (dev, 0);
+            return i;
+        }
+
+        if (ret != I2C_OK)
+            return ret;
+
+        /* Send acknowledge.  */
+        i2c_slave_send_ack (dev);
+    }
+
+    /* Not all data read, so stretch clock to give some pondering
+       time.  */        
     i2c_scl_set (dev, 0);
-
-    return ret;
+    return i;
 }
 
 
@@ -268,6 +257,8 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 {
     i2c_ret_t ret;
     uint8_t id;
+    uint8_t i;
+    uint8_t *data = buffer;
 
     /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
@@ -289,11 +280,20 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     if ((id & 1) == 0)
         return I2C_ERROR_PROTOCOL;
 
-    ret = i2c_slave_send_data (dev, buffer, size);
-    if (ret != I2C_OK)
-        return ret;
+    /* Send data packets.  */
+    for (i = 0; i < size; i++)
+    {
+        i2c_ret_t ret;
 
-    /* Wait for the stop.  */
+        ret = i2c_slave_send_byte (dev, data[i]);
+        if (ret < 0)
+            return ret;
 
-    return ret;
+        ret = i2c_slave_recv_bit (dev);
+        if (ret < 0)
+            return ret;
+        if (ret != 1)
+            return I2C_ERROR_NO_ACK;
+    }
+    return i;
 }

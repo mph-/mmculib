@@ -27,6 +27,7 @@ struct i2c_dev_struct
 {
     const i2c_bus_cfg_t *bus;
     const i2c_slave_cfg_t *slave;
+    bool seen_start;
 };
 
 
@@ -64,20 +65,17 @@ i2c_scl_set (i2c_t dev, bool state)
 static i2c_ret_t
 i2c_scl_wait_high (i2c_t dev)
 {
-    if (!i2c_scl_get (dev))
-    {
-        int i = I2C_CLOCK_STRETCH_TIMEOUT_US;
+    int timeout = I2C_CLOCK_STRETCH_TIMEOUT_US;
         
-        while (i && !i2c_scl_get (dev))
-        {
-            DELAY_US (1);
-            i--;
-        }
-        if (!i)
-        {
-            /* scl seems to be stuck low.  */
-            return I2C_ERROR_SCL_STUCK_LOW;
-        }
+    while (timeout && !i2c_scl_get (dev))
+    {
+        DELAY_US (1);
+        timeout--;
+    }
+    if (!timeout)
+    {
+        /* scl seems to be stuck low.  */
+        return I2C_ERROR_SCL_STUCK_LOW;
     }
     return I2C_OK;
 }
@@ -86,20 +84,17 @@ i2c_scl_wait_high (i2c_t dev)
 static i2c_ret_t
 i2c_scl_wait_low (i2c_t dev)
 {
-    if (i2c_scl_get (dev))
-    {
-        int i = I2C_CLOCK_STRETCH_TIMEOUT_US;
+    int timeout = I2C_CLOCK_STRETCH_TIMEOUT_US;
         
-        while (i && i2c_scl_get (dev))
-        {
-            DELAY_US (1);
-            i--;
-        }
-        if (!i)
-        {
-            /* scl seems to be stuck high.  */
-            return I2C_ERROR_SCL_STUCK_HIGH;
-        }
+    while (timeout && i2c_scl_get (dev))
+    {
+        DELAY_US (1);
+        timeout--;
+    }
+    if (!timeout)
+    {
+        /* scl seems to be stuck high.  */
+        return I2C_ERROR_SCL_STUCK_HIGH;
     }
     return I2C_OK;
 }
