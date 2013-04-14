@@ -236,14 +236,14 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     /* Send acknowledge.  */
     i2c_slave_send_ack (dev);
 
-    /* Read register address.  */
-    ret = i2c_slave_recv_data (dev, buffer, size);
-    if (ret != I2C_OK)
-        return ret;
-
     /* If the LSB is set then there is a protocol error; we should be writing.  */
     if (id & 1)
         return I2C_ERROR_PROTOCOL;
+
+    /* Read data.  */
+    ret = i2c_slave_recv_data (dev, buffer, size);
+    if (ret != I2C_OK)
+        return ret;
 
     /* Here it gets tricky... TODO, handle repeated start or a stop.
        If we get a repeated start then need to stretch clock to give
@@ -275,15 +275,14 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     /* Send acknowledge.  */
     i2c_slave_send_ack (dev);
 
-    /* Read register address.  */
-    ret = i2c_slave_recv_data (dev, buffer, size);
-    if (ret != I2C_OK)
-        return ret;
-
     /* If the LSB is not set then there is a protocol error; we should
        be reading.  */
     if ((id & 1) == 0)
         return I2C_ERROR_PROTOCOL;
+
+    ret = i2c_slave_send_data (dev, buffer, size);
+    if (ret != I2C_OK)
+        return ret;
 
     /* Wait for the stop.  */
 
