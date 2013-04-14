@@ -20,11 +20,6 @@
 #endif
 
 
-#ifndef I2C_CLOCK_STRETCH_TIMEOUT_US
-#define I2C_CLOCK_STRETCH_TIMEOUT_US 50
-#endif
-
-
 
 static uint8_t i2c_devices_num = 0;
 static i2c_dev_t i2c_devices[I2C_DEVICES_NUM];
@@ -144,6 +139,44 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data, bool ack)
 }
 
 
+static int
+i2c_master_send_data (i2c_t dev, void *buffer, uint8_t size)
+{
+    uint8_t i;
+    uint8_t *data = buffer;
+
+    /* Send data packets.  */
+    for (i = 0; i < size; i++)
+    {
+        i2c_ret_t ret;
+
+        ret = i2c_master_send_byte (dev, data[i]);
+        if (ret != I2C_OK)
+            return ret;
+    }
+    return i;
+}
+
+
+static i2c_ret_t
+i2c_master_recv_data (i2c_t dev, void *buffer, uint8_t size)
+{
+    uint8_t i;
+    uint8_t *data = buffer;
+
+    /* Receive data packets.  */
+    for (i = 0; i < size; i++)
+    {
+        i2c_ret_t ret;
+
+        ret = i2c_master_recv_byte (dev, &data[i], 1);
+        if (ret != I2C_OK)
+            return ret;
+    }
+    return i;
+}
+
+
 static void
 i2c_master_send_start (i2c_t dev)
 {
@@ -181,44 +214,6 @@ i2c_master_send_addr (i2c_t dev, bool read)
        For 10-bit slave addresses, the second byte is part of the
        data packet.  */
     return i2c_master_send_byte (dev, (dev->slave->id << 1) | (read != 0));
-}
-
-
-static int
-i2c_master_send_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* Send data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_master_send_byte (dev, data[i]);
-        if (ret != I2C_OK)
-            return ret;
-    }
-    return i;
-}
-
-
-static i2c_ret_t
-i2c_master_recv_data (i2c_t dev, void *buffer, uint8_t size)
-{
-    uint8_t i;
-    uint8_t *data = buffer;
-
-    /* Receive data packets.  */
-    for (i = 0; i < size; i++)
-    {
-        i2c_ret_t ret;
-
-        ret = i2c_master_recv_byte (dev, &data[i], 1);
-        if (ret != I2C_OK)
-            return ret;
-    }
-    return i;
 }
 
 
