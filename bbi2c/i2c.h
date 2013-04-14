@@ -69,7 +69,8 @@ typedef enum i2c_ret
     I2C_ERROR_CONFLICT = -4,
     I2C_ERROR_TIMEOUT = -5,
     I2C_ERROR_BUSY = -6,
-    I2C_ERROR_SCL_STUCK_HIGH = -7
+    I2C_ERROR_SCL_STUCK_HIGH = -7,
+    I2C_ERROR_PROTOCOL = -8
 } i2c_ret_t;
 
 #endif

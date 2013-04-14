@@ -213,12 +213,12 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
 
 
 i2c_ret_t
-i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
+i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 {
     i2c_ret_t ret;
     uint8_t id;
 
-    /* Ensure scl is an input after an error.  */
+    /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
 
     i2c_slave_start_wait (dev, timeout_us);
@@ -237,40 +237,55 @@ i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
     i2c_slave_send_ack (dev);
 
     /* Read register address.  */
-    ret = i2c_slave_recv_data (dev, addr, dev->slave->addr_bytes);
+    ret = i2c_slave_recv_data (dev, buffer, size);
     if (ret != I2C_OK)
         return ret;
 
-    /* Start clock stretch by holding clock low; this gives some
-       pondering time.  */
+    /* If the LSB is set then there is a protocol error; we should be writing.  */
+    if (id & 1)
+        return I2C_ERROR_PROTOCOL;
+
+    /* Here it gets tricky... TODO, handle repeated start or a stop.
+       If we get a repeated start then need to stretch clock to give
+       some pondering time.  */
     i2c_scl_set (dev, 0);
 
-
-    /* TODO:  need to consider if a start is next sent or a data
-       byte.  */
-
-    if (id & 1)
-        return I2C_SLAVE_WRITE;
-    
-    return I2C_SLAVE_READ;
+    return ret;
 }
 
 
 i2c_ret_t
-i2c_slave_write (i2c_t dev, void *buffer, uint8_t size)
+i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 {
-    /* Release clock stretch.  */
+    i2c_ret_t ret;
+    uint8_t id;
+
+    /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
 
-    return i2c_slave_send_data (dev, buffer, size);
-}
+    i2c_slave_start_wait (dev, timeout_us);
 
+    ret = i2c_slave_recv_byte (dev, &id);
+    if (ret != I2C_OK)
+        return ret;
 
-i2c_ret_t
-i2c_slave_read (i2c_t dev,  void *buffer, uint8_t size)
-{
-    /* Release clock stretch.  */
-    i2c_scl_set (dev, 1);
+    if ((id >> 1) != dev->slave->id)
+        return I2C_ERROR_MATCH;        
 
-    return i2c_slave_recv_data (dev, buffer, size);
+    /* Send acknowledge.  */
+    i2c_slave_send_ack (dev);
+
+    /* Read register address.  */
+    ret = i2c_slave_recv_data (dev, buffer, size);
+    if (ret != I2C_OK)
+        return ret;
+
+    /* If the LSB is not set then there is a protocol error; we should
+       be reading.  */
+    if ((id & 1) == 0)
+        return I2C_ERROR_PROTOCOL;
+
+    /* Wait for the stop.  */
+
+    return ret;
 }
