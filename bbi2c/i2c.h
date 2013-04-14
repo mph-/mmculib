@@ -47,4 +47,10 @@ typedef struct i2c_dev_struct i2c_dev_t;
 /** Define datatype for handle to I2C functions.  */
 typedef i2c_dev_t *i2c_t;
 
+
+typedef enum i2c_ret
+{
+    I2C_SLAVE_READ = 2,  I2C_SLAVE_WRITE = 1,  I2C_ERROR = -1
+} i2c_ret_t;
+
 #endif

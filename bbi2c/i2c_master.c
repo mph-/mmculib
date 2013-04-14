@@ -1,4 +1,4 @@
-/** @file   i2c.c
+/** @file   i2c_master.c
     @author M. P. Hayes, UCECE
     @date   12 April 2013
     @brief  Bit-bashed I2C master (TWI)
@@ -11,6 +11,7 @@
 */
 
 #include "i2c_master.h"
+#include "i2c_private.h"
 #include "delay.h"
 
 
@@ -24,50 +25,13 @@
 #endif
 
 
-struct i2c_dev_struct
-{
-    const i2c_bus_cfg_t *bus;
-    const i2c_slave_cfg_t *slave;
-};
 
 static uint8_t i2c_devices_num = 0;
 static i2c_dev_t i2c_devices[I2C_DEVICES_NUM];
 
 
-
-static
-bool i2c_sda_get (i2c_t dev)
-{
-    return pio_input_get (dev->bus->sda) != 0;
-}
-
-
-static void
-i2c_sda_set (i2c_t dev, bool state)
-{
-    pio_config_set (dev->bus->sda, state ? PIO_PULLUP : PIO_OUTPUT_LOW);
-
-    /* If sda has not gone high when state == 1 then there is a bus conflict
-       and the other device has won.  */
-}
-
-
-static
-bool i2c_scl_get (i2c_t dev)
-{
-    return pio_input_get (dev->bus->scl) != 0;
-}
-
-
-static void 
-i2c_scl_set (i2c_t dev, bool state)
-{
-    pio_config_set (dev->bus->scl, state ? PIO_PULLUP : PIO_OUTPUT_LOW);    
-}
-
-
 static bool
-i2c_scl_wait (i2c_t dev)
+i2c_master_scl_wait (i2c_t dev)
 {
     if (!i2c_scl_get (dev))
     {
@@ -89,7 +53,7 @@ i2c_scl_wait (i2c_t dev)
 
 
 static int
-i2c_send_bit (i2c_t dev, bool bit)
+i2c_master_send_bit (i2c_t dev, bool bit)
 {
     /* The scl line should be low at this point.  The sda line can
      only be changed when scl is low.  */
@@ -103,7 +67,7 @@ i2c_send_bit (i2c_t dev, bool bit)
        that the receiver sees the bit.  The slave can also force
        scl low to stretch the clock and give it time to do
        something.  */
-    if (!i2c_scl_wait (dev))
+    if (!i2c_master_scl_wait (dev))
         return 0;
 
     /* Check if lost arbitration.  */
@@ -118,14 +82,14 @@ i2c_send_bit (i2c_t dev, bool bit)
 
 
 static
-int i2c_send_byte (i2c_t dev, uint8_t data)
+int i2c_master_send_byte (i2c_t dev, uint8_t data)
 {
     int i;
     int ret = 1;
 
     for (i = 0; i < 8; i++)
     {
-        if (!i2c_send_bit (dev, (data >> 7) & 1))
+        if (!i2c_master_send_bit (dev, (data >> 7) & 1))
             return 0;
         data <<= 1;
     }
@@ -143,7 +107,7 @@ int i2c_send_byte (i2c_t dev, uint8_t data)
 
 
 static bool
-i2c_recv_bit (i2c_t dev)
+i2c_master_recv_bit (i2c_t dev)
 {
     bool bit;
 
@@ -152,7 +116,7 @@ i2c_recv_bit (i2c_t dev)
 
     i2c_scl_set (dev, 1);
     /* Hmmm, what about if there is an error?  */
-    if (!i2c_scl_wait (dev))
+    if (!i2c_master_scl_wait (dev))
         return 0;
 
     bit = i2c_sda_get (dev);
@@ -167,17 +131,17 @@ i2c_recv_bit (i2c_t dev)
 
 
 static
-int i2c_recv_byte (i2c_t dev, uint8_t *data, bool ack)
+int i2c_master_recv_byte (i2c_t dev, uint8_t *data, bool ack)
 {
     int i;
     uint8_t d = 0;
 
     for (i = 0; i < 8; i++)
-        d = (d << 1) | i2c_recv_bit (dev);
+        d = (d << 1) | i2c_master_recv_bit (dev);
 
     *data = d;
 
-    i2c_send_bit (dev, !ack);
+    i2c_master_send_bit (dev, !ack);
 
     i2c_scl_set (dev, 1);
     i2c_scl_set (dev, 0);
@@ -188,7 +152,7 @@ int i2c_recv_byte (i2c_t dev, uint8_t *data, bool ack)
 
 
 static void
-i2c_send_start (i2c_t dev)
+i2c_master_send_start (i2c_t dev)
 {
     /* The scl and sda lines should be high at this point.  If not,
        some other master got in first.  */
@@ -200,13 +164,13 @@ i2c_send_start (i2c_t dev)
 
 
 static void
-i2c_send_stop (i2c_t dev)
+i2c_master_send_stop (i2c_t dev)
 {
     i2c_sda_set (dev, 0);
     DELAY_US (4);
 
     i2c_scl_set (dev, 1);
-    i2c_scl_wait (dev);
+    i2c_master_scl_wait (dev);
     DELAY_US (4);
 
     i2c_sda_set (dev, 1);
@@ -216,19 +180,19 @@ i2c_send_stop (i2c_t dev)
 
 
 static int
-i2c_send_addr (i2c_t dev, bool read)
+i2c_master_send_addr (i2c_t dev, bool read)
 {
     /* Send 7-bit slave address followed by bit to indicate
        read/write.  
 
        For 10-bit slave addresses, the second byte is part of the
        data packet.  */
-    return i2c_send_byte (dev, (dev->slave->id << 1) | (read != 0));
+    return i2c_master_send_byte (dev, (dev->slave->id << 1) | (read != 0));
 }
 
 
 static int
-i2c_send_buffer (i2c_t dev, void *buffer, uint8_t size)
+i2c_master_send_buffer (i2c_t dev, void *buffer, uint8_t size)
 {
     uint8_t i;
     uint8_t *data = buffer;
@@ -236,7 +200,7 @@ i2c_send_buffer (i2c_t dev, void *buffer, uint8_t size)
     /* Send data packets.  */
     for (i = 0; i < size; i++)
     {
-        if (!i2c_send_byte (dev, data[i]))
+        if (!i2c_master_send_byte (dev, data[i]))
             return 0;
     }
     return i;
@@ -244,7 +208,7 @@ i2c_send_buffer (i2c_t dev, void *buffer, uint8_t size)
 
 
 static int
-i2c_recv_buffer (i2c_t dev, void *buffer, uint8_t size)
+i2c_master_recv_buffer (i2c_t dev, void *buffer, uint8_t size)
 {
     uint8_t i;
     uint8_t *data = buffer;
@@ -252,7 +216,7 @@ i2c_recv_buffer (i2c_t dev, void *buffer, uint8_t size)
     /* Receive data packets.  */
     for (i = 0; i < size; i++)
     {
-        if (!i2c_recv_byte (dev, &data[i], 1))
+        if (!i2c_master_recv_byte (dev, &data[i], 1))
             return 0;
     }
     return i;
@@ -260,24 +224,24 @@ i2c_recv_buffer (i2c_t dev, void *buffer, uint8_t size)
 
 
 static int
-i2c_start (i2c_t dev, i2c_addr_t addr, bool read)
+i2c_master_start (i2c_t dev, i2c_addr_t addr, bool read)
 {
-    i2c_send_start (dev);
+    i2c_master_send_start (dev);
 
     /* Send slave address (for writing).  */
-    if (!i2c_send_addr (dev, 0))
+    if (!i2c_master_send_addr (dev, 0))
         return 0;
 
     /* Send register address.  */
-    if (!i2c_send_buffer (dev, &addr, dev->slave->addr_bytes))
+    if (!i2c_master_send_buffer (dev, &addr, dev->slave->addr_bytes))
         return 0;
 
     if (read)
     {
-        i2c_send_start (dev);
+        i2c_master_send_start (dev);
         
         /* Send slave address (for reading).  */
-        if (!i2c_send_addr (dev, 1))
+        if (!i2c_master_send_addr (dev, 1))
             return 0;
     }
     return 1;
@@ -285,9 +249,9 @@ i2c_start (i2c_t dev, i2c_addr_t addr, bool read)
 
 
 static int
-i2c_stop (i2c_t dev)
+i2c_master_stop (i2c_t dev)
 {
-    i2c_send_stop (dev);
+    i2c_master_send_stop (dev);
     return 1;
 }
 
@@ -301,10 +265,10 @@ i2c_master_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
     if (!i2c_sda_get (dev))
         return 0;
 
-    if (i2c_start (dev, addr, 1))
-        ret = i2c_recv_buffer (dev, buffer, size);
+    if (i2c_master_start (dev, addr, 1))
+        ret = i2c_master_recv_buffer (dev, buffer, size);
 
-    i2c_stop (dev);
+    i2c_master_stop (dev);
 
     return ret;
 }
@@ -319,10 +283,10 @@ i2c_master_write (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size)
     if (!i2c_sda_get (dev))
         return 0;
 
-    if (i2c_start (dev, addr, 0))
-        ret = i2c_send_buffer (dev, buffer, size);
+    if (i2c_master_start (dev, addr, 0))
+        ret = i2c_master_send_buffer (dev, buffer, size);
 
-    i2c_stop (dev);
+    i2c_master_stop (dev);
 
     return ret;
 }
