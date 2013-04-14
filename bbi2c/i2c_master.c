@@ -41,7 +41,7 @@ i2c_master_recv_bit (i2c_t dev)
 
     i2c_scl_set (dev, 1);
 
-    ret = i2c_scl_wait (dev);
+    ret = i2c_scl_wait_high (dev);
     if (ret != I2C_OK)
         return ret;
 
@@ -73,7 +73,7 @@ i2c_master_send_bit (i2c_t dev, bool bit)
        that the receiver sees the bit.  The slave can also force
        scl low to stretch the clock and give it time to do
        something.  */
-    ret = i2c_scl_wait (dev);
+    ret = i2c_scl_wait_high (dev);
     if (ret != I2C_OK)
         return ret;
 
@@ -172,11 +172,16 @@ i2c_master_send_start (i2c_t dev)
 static i2c_ret_t
 i2c_master_send_stop (i2c_t dev)
 {
+    i2c_ret_t ret;
+    
     i2c_sda_set (dev, 0);
     DELAY_US (4);
 
     i2c_scl_set (dev, 1);
-    i2c_scl_wait (dev);
+    ret = i2c_scl_wait_high (dev);
+    if (ret != I2C_OK)
+        return ret;
+
     DELAY_US (4);
 
     i2c_sda_set (dev, 1);

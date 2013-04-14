@@ -57,7 +57,7 @@ i2c_scl_set (i2c_t dev, bool state)
 
 
 static i2c_ret_t
-i2c_scl_wait (i2c_t dev)
+i2c_scl_wait_low (i2c_t dev)
 {
     if (!i2c_scl_get (dev))
     {
@@ -76,5 +76,28 @@ i2c_scl_wait (i2c_t dev)
     }
     return I2C_OK;
 }
+
+
+static i2c_ret_t
+i2c_scl_wait_high (i2c_t dev)
+{
+    if (i2c_scl_get (dev))
+    {
+        int i = I2C_CLOCK_STRETCH_TIMEOUT_US;
+        
+        while (i && i2c_scl_get (dev))
+        {
+            DELAY_US (1);
+            i--;
+        }
+        if (!i)
+        {
+            /* scl seems to be stuck high.  */
+            return I2C_ERROR_SCL_STUCK_HIGH;
+        }
+    }
+    return I2C_OK;
+}
+
 
 #endif
