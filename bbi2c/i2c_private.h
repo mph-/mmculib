@@ -18,6 +18,11 @@
 #endif
 
 
+#ifndef I2C_DELAY_US
+#define I2C_DELAY_US 4
+#endif
+
+
 struct i2c_dev_struct
 {
     const i2c_bus_cfg_t *bus;
@@ -106,6 +111,14 @@ i2c_scl_ensure_high (i2c_t dev)
     i2c_scl_set (dev, 1);
 
     return i2c_scl_wait_high (dev);
+}
+
+
+static void
+i2c_delay (i2c_t dev)
+{
+    /* This could be generalised for different speed buses.  */
+    DELAY_US (I2C_DELAY_US);
 }
 
 

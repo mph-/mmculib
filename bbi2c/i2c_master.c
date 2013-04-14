@@ -12,7 +12,6 @@
 
 #include "i2c_master.h"
 #include "i2c_private.h"
-#include "delay.h"
 
 
 #ifndef I2C_DEVICES_NUM
@@ -37,7 +36,7 @@ i2c_master_recv_bit (i2c_t dev)
     bool bit;
 
     i2c_sda_set (dev, 1);
-    DELAY_US (4);    
+    i2c_delay (dev);    
 
     ret = i2c_scl_ensure_high (dev);
     if (ret != I2C_OK)
@@ -45,7 +44,7 @@ i2c_master_recv_bit (i2c_t dev)
 
     bit = i2c_sda_get (dev);
 
-    DELAY_US (4);    
+    i2c_delay (dev);    
 
     i2c_scl_set (dev, 0);
     
@@ -77,11 +76,11 @@ i2c_master_send_bit (i2c_t dev, bool bit)
     if (bit && !i2c_sda_get (dev))
         return 0;
     
-    DELAY_US (4);
+    i2c_delay (dev);
  
     i2c_scl_set (dev, 0);
 
-    DELAY_US (4);
+    i2c_delay (dev);
     return 1;
 }
 
@@ -160,7 +159,7 @@ i2c_master_send_start (i2c_t dev)
         return I2C_ERROR_CONFLICT;
 
     i2c_sda_set (dev, 0);
-    DELAY_US (4);
+    i2c_delay (dev);
 
     i2c_scl_set (dev, 0);
     return I2C_OK;
@@ -173,13 +172,13 @@ i2c_master_send_stop (i2c_t dev)
     i2c_ret_t ret;
     
     i2c_sda_set (dev, 0);
-    DELAY_US (4);
+    i2c_delay (dev);
 
     ret = i2c_scl_ensure_high (dev);
     if (ret != I2C_OK)
         return ret;
 
-    DELAY_US (4);
+    i2c_delay (dev);
 
     i2c_sda_set (dev, 1);
     /* It is possible to lose arbitration at this point but who cares? 
