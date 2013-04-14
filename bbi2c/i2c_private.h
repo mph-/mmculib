@@ -11,6 +11,11 @@
 
 #include "config.h"
 #include "pio.h"
+#include "delay.h"
+
+#ifndef I2C_CLOCK_STRETCH_TIMEOUT_US
+#define I2C_CLOCK_STRETCH_TIMEOUT_US 50
+#endif
 
 
 struct i2c_dev_struct
@@ -50,5 +55,26 @@ i2c_scl_set (i2c_t dev, bool state)
     pio_config_set (dev->bus->scl, state ? PIO_PULLUP : PIO_OUTPUT_LOW);    
 }
 
+
+static i2c_ret_t
+i2c_scl_wait (i2c_t dev)
+{
+    if (!i2c_scl_get (dev))
+    {
+        int i = I2C_CLOCK_STRETCH_TIMEOUT_US;
+        
+        while (i && !i2c_scl_get (dev))
+        {
+            DELAY_US (1);
+            i--;
+        }
+        if (!i)
+        {
+            /* scl seems to be stuck low.  */
+            return I2C_ERROR_SCL_STUCK_LOW;
+        }
+    }
+    return I2C_OK;
+}
 
 #endif
