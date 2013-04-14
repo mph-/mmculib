@@ -26,6 +26,36 @@ static i2c_dev_t i2c_devices[I2C_DEVICES_NUM];
 
 
 
+/**
+   Preconditions: SCL output low, SDA don't care.
+   Postconditions: SCL output low, SDA input
+*/
+static i2c_ret_t
+i2c_master_recv_bit (i2c_t dev)
+{
+    i2c_ret_t ret;
+    bool bit;
+
+    i2c_sda_set (dev, 1);
+    DELAY_US (4);    
+
+    i2c_scl_set (dev, 1);
+
+    ret = i2c_scl_wait (dev);
+    if (ret != I2C_OK)
+        return ret;
+
+    bit = i2c_sda_get (dev);
+
+    DELAY_US (4);    
+
+    i2c_scl_set (dev, 0);
+    
+    return bit;
+}
+
+
+
 static i2c_ret_t
 i2c_master_send_bit (i2c_t dev, bool bit)
 {
@@ -58,6 +88,31 @@ i2c_master_send_bit (i2c_t dev, bool bit)
 }
 
 
+static i2c_ret_t
+i2c_master_recv_ack (i2c_t dev)
+{
+    return i2c_master_recv_bit (dev);
+}
+
+
+static i2c_ret_t
+i2c_master_send_ack (i2c_t dev)
+{
+    return i2c_master_send_bit (dev, 0);
+}
+
+
+static i2c_ret_t
+i2c_master_send_nack (i2c_t dev)
+{
+    return i2c_master_send_bit (dev, 1);
+}
+
+
+/**
+   Preconditions: SCL output low, SDA output indeterminate.
+   Postconditions: SCL output low, SDA input
+*/
 static i2c_ret_t 
 i2c_master_send_byte (i2c_t dev, uint8_t data)
 {
@@ -72,47 +127,12 @@ i2c_master_send_byte (i2c_t dev, uint8_t data)
         data <<= 1;
     }
 
-    i2c_sda_set (dev, 1);
-    i2c_scl_set (dev, 1);
-
-    ret = I2C_OK;
-
-    /* Check acknowledge bit.  */
-    if (!i2c_sda_get (dev))
-        ret = I2C_ERROR_NO_ACK;
-
-    i2c_scl_set (dev, 0);
-    return ret;
+    return i2c_master_recv_ack (dev);
 }
 
 
 static i2c_ret_t
-i2c_master_recv_bit (i2c_t dev)
-{
-    i2c_ret_t ret;
-    bool bit;
-
-    i2c_sda_set (dev, 1);
-    DELAY_US (4);    
-
-    i2c_scl_set (dev, 1);
-
-    ret = i2c_scl_wait (dev);
-    if (ret != I2C_OK)
-        return ret;
-
-    bit = i2c_sda_get (dev);
-
-    DELAY_US (4);    
-
-    i2c_scl_set (dev, 0);
-    
-    return bit;
-}
-
-
-static i2c_ret_t
-i2c_master_recv_byte (i2c_t dev, uint8_t *data, bool ack)
+i2c_master_recv_byte (i2c_t dev, uint8_t *data)
 {
     int i;
     i2c_ret_t ret;
@@ -129,13 +149,7 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data, bool ack)
 
     *data = d;
 
-    i2c_master_send_bit (dev, !ack);
-
-    i2c_scl_set (dev, 1);
-    i2c_scl_set (dev, 0);
-    i2c_sda_set (dev, 0);
-    i2c_sda_set (dev, 1);
-    return I2C_OK;
+    return i2c_master_send_ack (dev);
 }
 
 
@@ -169,7 +183,7 @@ i2c_master_recv_data (i2c_t dev, void *buffer, uint8_t size)
     {
         i2c_ret_t ret;
 
-        ret = i2c_master_recv_byte (dev, &data[i], 1);
+        ret = i2c_master_recv_byte (dev, &data[i]);
         if (ret < 0)
             return ret;
     }

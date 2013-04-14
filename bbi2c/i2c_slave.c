@@ -102,6 +102,12 @@ i2c_slave_send_data (i2c_t dev, void *buffer, uint8_t size)
         ret = i2c_slave_send_byte (dev, data[i]);
         if (ret < 0)
             return ret;
+
+        ret = i2c_slave_recv_bit (dev);
+        if (ret < 0)
+            return ret;
+        if (ret != 1)
+            return I2C_ERROR_NO_ACK;
     }
     return i;
 }
@@ -113,6 +119,9 @@ i2c_slave_recv_data (i2c_t dev, void *buffer, uint8_t size)
     uint8_t i;
     uint8_t *data = buffer;
 
+    /* TODO: handle case if requesting more bytes than sent.  In this
+       case a stop will be received.  */
+
     /* Receive data packets.  */
     for (i = 0; i < size; i++)
     {
@@ -121,6 +130,9 @@ i2c_slave_recv_data (i2c_t dev, void *buffer, uint8_t size)
         ret = i2c_slave_recv_byte (dev, &data[i]);
         if (ret < 0)
             return ret;
+
+        /* Send acknowledge.  */
+        i2c_slave_send_bit (dev, 1);
     }
     return i;
 }
@@ -184,6 +196,9 @@ i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
     i2c_ret_t ret;
     uint8_t id;
 
+    /* Ensure scl is an input after an error.  */
+    i2c_scl_set (dev, 1);
+
     i2c_slave_start_wait (dev, timeout_us);
 
     ret = i2c_slave_recv_byte (dev, &id);
@@ -193,19 +208,31 @@ i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
     if ((id >> 1) != dev->slave->id)
         return I2C_ERROR_MATCH;        
 
-    /* Hold clock low to give some pondering time.  */
+    /* Send acknowledge.  */
+    i2c_slave_send_bit (dev, 1);
+
+    /* Read register address.  */
+    ret = i2c_slave_recv_data (dev, addr, dev->slave->addr_bytes);
+    if (ret != I2C_OK)
+        return ret;
+
+    /* Start clock stretch by holding clock low; this gives some
+       pondering time.  */
     i2c_scl_set (dev, 0);
 
     if (id & 1)
-        return I2C_SLAVE_READ;
+        return I2C_SLAVE_WRITE;
     
-    return I2C_SLAVE_WRITE;
+    return I2C_SLAVE_READ;
 }
 
 
 i2c_ret_t
 i2c_slave_write (i2c_t dev, void *buffer, uint8_t size)
 {
+    /* Release clock stretch.  */
+    i2c_scl_set (dev, 1);
+
     return i2c_slave_send_data (dev, buffer, size);
 }
 
@@ -213,5 +240,8 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size)
 i2c_ret_t
 i2c_slave_read (i2c_t dev,  void *buffer, uint8_t size)
 {
+    /* Release clock stretch.  */
+    i2c_scl_set (dev, 1);
+
     return i2c_slave_recv_data (dev, buffer, size);
 }
