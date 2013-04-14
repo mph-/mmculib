@@ -73,14 +73,23 @@ static i2c_ret_t
 i2c_slave_recv_bit (i2c_t dev)
 {
     i2c_ret_t ret;
+    bool val;
 
     /* The scl line should be low at this point.  */
 
+    ret = i2c_scl_wait_high (dev);
+    if (ret != I2C_OK)
+        return ret;
+
+    val = i2c_sda_get (dev);
+
+    /* Wait for scl to go low or for SDA to transistion
+       indicating a start or a stop bit.  */
     ret = i2c_scl_wait_low (dev);
     if (ret != I2C_OK)
         return ret;
 
-    return i2c_sda_get (dev);
+    return val;
 }
 
 

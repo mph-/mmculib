@@ -62,7 +62,7 @@ i2c_scl_set (i2c_t dev, bool state)
 
 
 static i2c_ret_t
-i2c_scl_wait_low (i2c_t dev)
+i2c_scl_wait_high (i2c_t dev)
 {
     if (!i2c_scl_get (dev))
     {
@@ -84,7 +84,7 @@ i2c_scl_wait_low (i2c_t dev)
 
 
 static i2c_ret_t
-i2c_scl_wait_high (i2c_t dev)
+i2c_scl_wait_low (i2c_t dev)
 {
     if (i2c_scl_get (dev))
     {
