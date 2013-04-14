@@ -20,11 +20,13 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
 
 
 i2c_ret_t
-i2c_master_addr_write (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size);
+i2c_master_addr_write (i2c_t dev, i2c_addr_t addr, uint8_t addr_size,
+                       void *buffer, uint8_t size);
 
 
 i2c_ret_t
-i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size);
+i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, uint8_t addr_size, 
+                      void *buffer, uint8_t size);
 
 
 #endif

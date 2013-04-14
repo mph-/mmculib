@@ -24,9 +24,6 @@ typedef struct
 {
     /* Slave address.  */
     i2c_id_t id;
-
-    /* Number of bytes for register address.  */
-    uint8_t addr_bytes;
 } i2c_slave_cfg_t;
 
 
