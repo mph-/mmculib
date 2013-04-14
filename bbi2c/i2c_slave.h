@@ -17,7 +17,7 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg);
 
 /** Listen on I2C bus for matching slave address.  NB, this blocks.  */
 i2c_ret_t
-i2c_slave_listen (i2c_t dev, i2c_addr_t *addr);
+i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us);
 
 
 i2c_ret_t

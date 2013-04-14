@@ -170,7 +170,7 @@ i2c_master_recv_data (i2c_t dev, void *buffer, uint8_t size)
         i2c_ret_t ret;
 
         ret = i2c_master_recv_byte (dev, &data[i], 1);
-        if (ret != I2C_OK)
+        if (ret < 0)
             return ret;
     }
     return i;
@@ -231,7 +231,7 @@ i2c_master_start (i2c_t dev, i2c_addr_t addr, bool read)
 
     /* Send register address.  */
     ret = i2c_master_send_data (dev, &addr, dev->slave->addr_bytes);
-    if (ret != I2C_OK)
+    if (ret < 0)
         return ret;
 
     if (read)

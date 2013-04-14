@@ -100,7 +100,7 @@ i2c_slave_send_data (i2c_t dev, void *buffer, uint8_t size)
         i2c_ret_t ret;
 
         ret = i2c_slave_send_byte (dev, data[i]);
-        if (ret != I2C_OK)
+        if (ret < 0)
             return ret;
     }
     return i;
@@ -119,7 +119,7 @@ i2c_slave_recv_data (i2c_t dev, void *buffer, uint8_t size)
         i2c_ret_t ret;
 
         ret = i2c_slave_recv_byte (dev, &data[i]);
-        if (ret != I2C_OK)
+        if (ret < 0)
             return ret;
     }
     return i;
@@ -150,9 +150,56 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 
 
 i2c_ret_t
-i2c_slave_listen (i2c_t dev, i2c_addr_t *addr)
+i2c_slave_start_wait (i2c_t dev, int timeout_us)
 {
-    return I2C_ERROR_MATCH;
+    while (timeout_us && !i2c_scl_get (dev))
+    {
+        DELAY_US (1);
+        timeout_us--;
+    }
+
+    if (!timeout_us)
+        return I2C_ERROR_TIMEOUT;
+
+    while (timeout_us && i2c_sda_get (dev))
+    {
+        /* If scl goes low then we missed the start.  */
+        if (!i2c_scl_get (dev))
+            return I2C_ERROR_BUSY;
+
+        DELAY_US (1);
+        timeout_us--;
+    }    
+
+    if (!timeout_us)
+        return I2C_ERROR_TIMEOUT;
+
+    return I2C_OK;
+}
+
+
+i2c_ret_t
+i2c_slave_listen (i2c_t dev, i2c_addr_t *addr, int timeout_us)
+{
+    i2c_ret_t ret;
+    uint8_t id;
+
+    i2c_slave_start_wait (dev, timeout_us);
+
+    ret = i2c_slave_recv_byte (dev, &id);
+    if (ret != I2C_OK)
+        return ret;
+
+    if ((id >> 1) != dev->slave->id)
+        return I2C_ERROR_MATCH;        
+
+    /* Hold clock low to give some pondering time.  */
+    i2c_scl_set (dev, 0);
+
+    if (id & 1)
+        return I2C_SLAVE_READ;
+    
+    return I2C_SLAVE_WRITE;
 }
 
 
