@@ -15,11 +15,11 @@ i2c_t
 i2c_master_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg);
 
 
-int
+i2c_ret_t
 i2c_master_write (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size);
 
 
-int
+i2c_ret_t
 i2c_master_read (i2c_t dev, i2c_addr_t addr, void *buffer, uint8_t size);
 
 

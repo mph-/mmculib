@@ -40,19 +40,19 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 i2c_ret_t
 i2c_slave_listen (i2c_t dev, i2c_addr_t *addr)
 {
-    return I2C_ERROR;
+    return I2C_ERROR_MATCH;
 }
 
 
-int
+i2c_ret_t
 i2c_slave_write (i2c_t dev, void *buffer, uint8_t size)
 {
-    return I2C_ERROR;
+    return 0;
 }
 
 
-int
+i2c_ret_t
 i2c_slave_read (i2c_t dev,  void *buffer, uint8_t size)
 {
-    return I2C_ERROR;
+    return 0;
 }

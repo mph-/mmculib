@@ -20,11 +20,11 @@ i2c_ret_t
 i2c_slave_listen (i2c_t dev, i2c_addr_t *addr);
 
 
-int
+i2c_ret_t
 i2c_slave_write (i2c_t dev, void *buffer, uint8_t size);
 
 
-int
+i2c_ret_t
 i2c_slave_read (i2c_t dev,  void *buffer, uint8_t size);
 
 

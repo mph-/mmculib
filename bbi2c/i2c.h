@@ -50,7 +50,13 @@ typedef i2c_dev_t *i2c_t;
 
 typedef enum i2c_ret
 {
-    I2C_SLAVE_READ = 2,  I2C_SLAVE_WRITE = 1,  I2C_ERROR = -1
+    I2C_SLAVE_READ = 2,
+    I2C_SLAVE_WRITE = 1, 
+    I2C_OK = 0,
+    I2C_ERROR_MATCH = -1,
+    I2C_ERROR_NO_ACK = -2,
+    I2C_ERROR_SCL_STUCK_LOW = -3,
+    I2C_ERROR_CONFLICT = -4
 } i2c_ret_t;
 
 #endif
