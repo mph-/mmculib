@@ -36,18 +36,15 @@ typedef enum {BUTTON_STATE_UP, BUTTON_STATE_DOWN,
               BUTTON_STATE_PUSHED, BUTTON_STATE_RELEASED} button_state_t;
 
 
-/** Private button structure.  */
-typedef struct
+typedef struct button_struct
 {
     button_state_t state;
-    const button_cfg_t *cfg;
+    pio_t pio;
     uint8_t count;
     uint8_t hold_count;
-} button_private_t;
+} button_dev_t;
 
-
-typedef button_private_t button_obj_t;
-typedef button_obj_t *button_t;
+typedef button_dev_t *button_t;
 
 
 /** Set the number of polls required for the debounce period.
@@ -57,11 +54,10 @@ button_poll_count_set (uint8_t poll_count);
 
 
 /** Create a new button object.
-    @param obj  pointer to button structure
     @param cfg  pointer to button configuration
     @return     pointer to button object  */
 extern button_t
-button_init (button_obj_t *obj, const button_cfg_t *cfg);
+button_init (const button_cfg_t *cfg);
 
 
 /** Poll the specified button and return its debounced state. 
@@ -164,6 +160,6 @@ static inline bool
 button_pressed_p (button_t button)
 {
     /* When a button is pushed it pulls the pio line low.  */
-    return !pio_input_get (button->cfg->pio);
+    return !pio_input_get (button->pio);
 }
 #endif

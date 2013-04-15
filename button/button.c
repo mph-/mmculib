@@ -12,6 +12,14 @@
 static uint8_t button_poll_count;
 
 
+#ifndef BUTTON_NUM
+#define BUTTON_NUM 4
+#endif
+
+static int button_num = 0;
+static button_dev_t buttons[BUTTON_NUM];
+
+
 /** Set the number of polls required for the debounce period.
     @param poll_count number of update periods  */
 void button_poll_count_set (uint8_t poll_count)
@@ -21,18 +29,25 @@ void button_poll_count_set (uint8_t poll_count)
 
 
 /** Create a new button object.
-    @param obj  pointer to button structure
     @param cfg  pointer to button configuration
     @return     pointer to button object  */
 button_t
-button_init (button_obj_t *obj, const button_cfg_t *cfg)
+button_init (const button_cfg_t *cfg)
 {
-    button_t button = obj;
+    button_dev_t *button;
 
-    button->cfg = cfg;
+    if (button_num >= BUTTON_NUM)
+        return 0;
+    
+    button = &buttons[button_num++];
+
+    button->pio = cfg->pio;
     button->state = BUTTON_STATE_UP;
     button->count = 0;
     button->hold_count = 0;
+
+    /* Ensure PIO clock enabled for PIO reading.  */
+    pio_init (cfg->pio);
 
     /* Configure pio for input and enable internal pullup resistor.  */
     pio_config_set (cfg->pio, PIO_PULLUP);
