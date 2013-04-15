@@ -284,6 +284,9 @@ i2c_master_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 
     dev->bus = bus_cfg;
     dev->slave = slave_cfg;
+
+    /* Ensure PIO clock enabled for PIO reading.  */
+    pio_init (dev->bus->sda);
     
     i2c_sda_set (dev, 1);
     i2c_scl_set (dev, 1);
