@@ -1,7 +1,0 @@
-I2CM_DIR = $(DRIVER_DIR)/i2cm
-
-VPATH += $(I2CM_DIR)
-SRC += i2cm.c
-
-INCLUDES += -I$(I2CM_DIR)
-
