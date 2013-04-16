@@ -162,4 +162,7 @@ button_pressed_p (button_t button)
     /* When a button is pushed it pulls the pio line low.  */
     return !pio_input_get (button->pio);
 }
+
+void
+button_poll_all (void);
 #endif

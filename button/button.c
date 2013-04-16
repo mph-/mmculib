@@ -116,3 +116,14 @@ button_poll (button_t button)
 {
     return button_debounce (button, button_pressed_p (button));
 }
+
+
+void
+button_poll_all (void)
+{
+    unsigned int i;
+    
+    /* Poll buttons.  */
+    for (i = 0; i < button_num; i++)
+        button_poll (buttons->buttons + i);
+}
