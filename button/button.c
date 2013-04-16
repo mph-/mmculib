@@ -121,9 +121,9 @@ button_poll (button_t button)
 void
 button_poll_all (void)
 {
-    unsigned int i;
+    int i;
     
     /* Poll buttons.  */
     for (i = 0; i < button_num; i++)
-        button_poll (buttons->buttons + i);
+        button_poll (&buttons[i]);
 }

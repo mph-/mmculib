@@ -71,6 +71,7 @@ button_poll (button_t button);
     @param  button pointer to button object
     @return button state  */
 static inline button_state_t
+
 button_state_get (button_t button)
 {
     return button->state;
