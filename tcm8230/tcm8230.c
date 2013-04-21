@@ -111,7 +111,7 @@ static const tc_cfg_t tc_cfg =
     .pio = TCM8230_EXTCLK_PIO
 };
 
- 
+
 int tcm8230_init (void)
 {
     tc_t tc;
@@ -135,7 +135,7 @@ int tcm8230_init (void)
 
     i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
  
-    /* Turn on data output, set picture size, and black and white operation.  */
+    /* Turn on data output, set SQCIF picture size, and black and white operation.  */
     tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
                        | TCM8230_PICSIZ_SQCIF | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
 
@@ -161,4 +161,50 @@ int tcm8230_init (void)
     tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
  
     return 1;
+}
+
+
+uint32_t tcm8230_capture (uint16_t *image, uint32_t bytes)
+{
+    uint16_t row;
+    uint16_t col;
+    uint8_t *buffer;
+    
+    /* Check if user buffer large enough.  */
+    if (bytes < SQCIF_HEIGHT * SQCIF_WIDTH * 2)
+        return 0;
+
+
+    buffer = (void *)image;
+
+    /* TODO: add sync.  */
+
+    for (row = 0; row < SQCIF_HEIGHT; row++)
+    {
+        for (col = 0; col < SQCIF_WIDTH; col++)
+        {
+
+            /* TODO: should add timeout.  */
+            while (! pio_input_get (TCM8230_DCLK_PIO))
+                continue;
+
+            *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
+
+            /* TODO: should add timeout.  */
+            while (pio_input_get (TCM8230_DCLK_PIO))
+                continue;
+
+
+            /* TODO: should add timeout.  */
+            while (! pio_input_get (TCM8230_DCLK_PIO))
+                continue;
+
+            *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
+
+            /* TODO: should add timeout.  */
+            while (pio_input_get (TCM8230_DCLK_PIO))
+                continue;
+        }
+    }
+    return SQCIF_HEIGHT * SQCIF_WIDTH * 2;
 }
