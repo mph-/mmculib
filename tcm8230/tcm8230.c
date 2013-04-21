@@ -125,9 +125,7 @@ int tcm8230_init (void)
  
     tc = tc_init (&tc_cfg);
 
-    tc_pulse_config (tc, TC_PULSE_MODE, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL),
-                    TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL) / 2);
-                    
+    tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
  
     tc_start (tc);
  
@@ -160,8 +158,7 @@ int tcm8230_init (void)
 
  
     /* Slow down clock; this will result in fewer than 15 fps.  */
-    tc_pulse_config (tc, TC_PULSE_MODE, TC_PERIOD_DIVISOR (TCM8230_CLOCK),
-                    TC_PERIOD_DIVISOR (TCM8230_CLOCK) / 2);
+    tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
  
     return 1;
 }
