@@ -63,21 +63,6 @@ enum {TCM8230_PICSEL_COLORBAR = 0,
       TCM8230_PICSEL_RAMP2 = 2};
  
  
-enum {VGA_HEIGHT = 480,
-      CIF_HEIGHT = 288,
-      QVGA_HEIGHT = 240,
-      QCIF_HEIGHT = 144,
-      QQVGA_HEIGHT = 120,
-      SQCIF_HEIGHT = 96};
- 
-enum {VGA_WIDTH = 640,
-      CIF_WIDTH = 352,
-      QVGA_WIDTH = 320,
-      QCIF_WIDTH = 176,
-      QQVGA_WIDTH = 160,
-      SQCIF_WIDTH = 128};
-
-
 typedef struct tcm8230_mode_struct
 {
     uint16_t width;
@@ -132,16 +117,16 @@ static const tc_cfg_t tc_cfg =
 
 
 
-int tcm8230_init (tcm8230_picsize_t picsize)
+int tcm8230_init (const tcm8230_cfg_t *cfg)
 {
     tc_t tc;
     i2c_t i2c;
 
-    if (picsize > TCM8230_PICSIZE_SQCIF_ZOOM)
+    if (cfg->picsize > TCM8230_PICSIZE_SQCIF_ZOOM)
         return 0;
 
-    width = modes[picsize].width;
-    height = modes[picsize].height;
+    width = modes[cfg->picsize].width;
+    height = modes[cfg->picsize].height;
 
     /* Configure PIOs.  */
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
@@ -165,7 +150,7 @@ int tcm8230_init (tcm8230_picsize_t picsize)
     /* Turn on data output, set picture size, and black and
        white operation.  */
     tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
-                       | (picsize << 2) | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
+                       | (cfg->picsize << 2) | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
 
  
     /* CHECKME.  */
@@ -304,4 +289,16 @@ uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
         
     }
     return buffer - image;
+}
+
+
+uint16_t tcm8230_width (void)
+{
+    return width;
+}
+
+
+uint16_t tcm8230_height (void)
+{
+    return height;
 }
