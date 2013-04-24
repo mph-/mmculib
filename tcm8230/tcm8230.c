@@ -12,6 +12,9 @@
 #ifndef TCM8230_CLOCK
 #define TCM8230_CLOCK 2e6
 #endif
+
+#define TCM8230_VSYNC_TIMEOUT_US (1000 * 1000 / 50)
+#define TCM8230_HSYNC_TIMEOUT_US (TCM8230_VSYNC_TIMEOUT_US / 100)
  
  
 /* Register 0x02 control fields.  */
@@ -116,23 +119,24 @@ int tcm8230_init (void)
 {
     tc_t tc;
     i2c_t i2c;
-    
+
+    /* Configure PIOs.  */
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_HD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_DCLK_PIO, PIO_INPUT);
  
     piobus_config_set (TCM8230_DATA_PIOBUS, PIO_INPUT);
  
-    tc = tc_init (&tc_cfg);
 
+    /* Generate EXTCLK.  */
+    tc = tc_init (&tc_cfg);
     tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
- 
     tc_start (tc);
  
     /* CHECKME.  */
     DELAY_US (1000);
- 
 
+    /* Configure sensor using I2C.  */
     i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
  
     /* Turn on data output, set SQCIF picture size, and black and white operation.  */
@@ -164,47 +168,116 @@ int tcm8230_init (void)
 }
 
 
-uint32_t tcm8230_capture (uint16_t *image, uint32_t bytes)
+bool tcm8230_vsync_high_wait (uint32_t timeout_us)
+{
+    /* Wait for vertical sync. to go high.  */
+    while (timeout_us)
+    {
+        if (pio_input_get (TCM8230_VD_PIO))
+            return 1;
+        timeout_us--;
+        DELAY_US (1);
+    }
+    return 0;
+}
+
+
+bool tcm8230_hsync_high_wait (uint32_t timeout_us)
+{
+    /* Wait for horizontal sync. to go high.  */
+    while (timeout_us)
+    {
+        if (pio_input_get (TCM8230_HD_PIO))
+            return 1;
+        timeout_us--;
+        DELAY_US (1);
+    }
+    return 0;
+}
+
+
+bool tcm8230_hsync_low_wait (uint32_t timeout_us)
+{
+    /* Wait for horizontal sync. to go low.  */
+    while (timeout_us)
+    {
+        if (! pio_input_get (TCM8230_HD_PIO))
+            return 1;
+        timeout_us--;
+        DELAY_US (1);
+    }
+    return 0;
+}
+
+
+uint16_t tcm8230_row_read (uint8_t *row, uint16_t bytes)
+{
+    uint16_t col;
+    uint8_t *buffer;
+
+    buffer = row;
+
+    /* Wait for horizontal sync. to go high.  
+       TODO: should add timeout.  */
+    while (! pio_input_get (TCM8230_HD_PIO))
+        continue;
+    
+    for (col = 0; col < bytes * 2; col++)
+    {
+        
+        /* TODO: should add timeout.  */
+        while (! pio_input_get (TCM8230_DCLK_PIO))
+            continue;
+        
+        *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
+        
+        /* TODO: should add timeout.  */
+        while (pio_input_get (TCM8230_DCLK_PIO))
+            continue;
+        
+        /* TODO: should add timeout.  */
+        while (! pio_input_get (TCM8230_DCLK_PIO))
+            continue;
+        
+        *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
+        
+        /* TODO: should add timeout.  */
+        while (pio_input_get (TCM8230_DCLK_PIO))
+            continue;
+    }
+    
+    return bytes;
+}
+
+
+uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
 {
     uint16_t row;
-    uint16_t col;
     uint8_t *buffer;
     
     /* Check if user buffer large enough.  */
     if (bytes < SQCIF_HEIGHT * SQCIF_WIDTH * 2)
         return 0;
 
+    buffer = image;
 
-    buffer = (void *)image;
-
-    /* TODO: add sync.  */
+    if (! tcm8230_vsync_high_wait (TCM8230_VSYNC_TIMEOUT_US))
+        return 0;
 
     for (row = 0; row < SQCIF_HEIGHT; row++)
     {
-        for (col = 0; col < SQCIF_WIDTH; col++)
-        {
 
-            /* TODO: should add timeout.  */
-            while (! pio_input_get (TCM8230_DCLK_PIO))
-                continue;
+        if (! tcm8230_hsync_high_wait (TCM8230_HSYNC_TIMEOUT_US))
+            return 0;
 
-            *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
+        buffer += tcm8230_row_read (buffer, SQCIF_WIDTH * 2);
 
-            /* TODO: should add timeout.  */
-            while (pio_input_get (TCM8230_DCLK_PIO))
-                continue;
+        if (! tcm8230_hsync_low_wait (TCM8230_HSYNC_TIMEOUT_US))
+            return 0;
 
-
-            /* TODO: should add timeout.  */
-            while (! pio_input_get (TCM8230_DCLK_PIO))
-                continue;
-
-            *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
-
-            /* TODO: should add timeout.  */
-            while (pio_input_get (TCM8230_DCLK_PIO))
-                continue;
-        }
+        /* For small image formats there is plenty of spare time
+           here...  */
+        
     }
-    return SQCIF_HEIGHT * SQCIF_WIDTH * 2;
+    return buffer - image;
 }

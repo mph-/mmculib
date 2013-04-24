@@ -6,8 +6,10 @@
 #ifndef TCM8230_H
 #define TCM8230_H
 
+#include "config.h"
+
 void tcm8230_init (void);
 
-uin32_t tcm8230_capture (uint16_t *image, uint32_t bytes);
+uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes);
 
 #endif
