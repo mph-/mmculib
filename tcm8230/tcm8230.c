@@ -3,6 +3,7 @@
 #include "tc.h"
 #include "delay.h"
 #include "i2c_master.h"
+#include "tcm8230.h"
 
  
 #define TCM8230_TWI_ADDRESS 0x30
@@ -36,17 +37,6 @@ enum {TCM8230_DOUTSW_ON = 0,
  
 enum {TCM8230_DATAHZ_OUT = 0,
       TCM8230_DATAHZ_HIZ = 1 << 6};
- 
-enum {TCM8230_PICSIZ_VGA = 0,
-      TCM8230_PICSIZ_QVGA = 1 << 2,
-      TCM8230_PICSIZ_QVGA_ZOOM = 2 << 2,
-      TCM8230_PICSIZ_QQVGA = 3 << 2,
-      TCM8230_PICSIZ_QQGA_ZOOM = 4 << 2,
-      TCM8230_PICSIZ_CIF = 5 << 2,
-      TCM8230_PICSIZ_QCIF = 6 << 2,
-      TCM8230_PICSIZ_QCIF_ZOOM = 7 << 2,
-      TCM8230_PICSIZ_SQCIF = 8 << 2,
-      TCM8230_PICSIZ_SQCIF_ZOOM = 9 << 2};
  
 enum {TCM8230_PICFMT_YUV = 0,
       TCM8230_PICFMT_RGB = 1 << 1};
@@ -86,8 +76,29 @@ enum {VGA_WIDTH = 640,
       QCIF_WIDTH = 176,
       QQVGA_WIDTH = 160,
       SQCIF_WIDTH = 128};
- 
 
+
+typedef struct tcm8230_mode_struct
+{
+    uint16_t width;
+    uint16_t height;
+} tcm8230_mode_t;
+
+
+static const tcm8230_mode_t modes[] =
+{
+    {VGA_WIDTH, VGA_HEIGHT},
+    {QVGA_WIDTH, QVGA_HEIGHT},
+    {QVGA_WIDTH, QVGA_HEIGHT},
+    {QQVGA_WIDTH, QQVGA_HEIGHT},    
+    {QQVGA_WIDTH, QQVGA_HEIGHT},    
+    {CIF_WIDTH, CIF_HEIGHT},    
+    {QCIF_WIDTH, QCIF_HEIGHT},    
+    {QCIF_WIDTH, QCIF_HEIGHT},    
+    {SQCIF_WIDTH, SQCIF_HEIGHT},    
+    {SQCIF_WIDTH, SQCIF_HEIGHT}
+};
+ 
 
 static const i2c_bus_cfg_t i2c_bus_cfg =
 {
@@ -100,6 +111,11 @@ static const i2c_slave_cfg_t i2c_cfg =
 {
     .id = TCM8230_TWI_ADDRESS
 };
+
+
+static uint16_t width;
+static uint16_t height;
+
 
 
 static void
@@ -115,10 +131,17 @@ static const tc_cfg_t tc_cfg =
 };
 
 
-int tcm8230_init (void)
+
+int tcm8230_init (tcm8230_picsize_t picsize)
 {
     tc_t tc;
     i2c_t i2c;
+
+    if (picsize > TCM8230_PICSIZE_SQCIF_ZOOM)
+        return 0;
+
+    width = modes[picsize].width;
+    height = modes[picsize].height;
 
     /* Configure PIOs.  */
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
@@ -139,9 +162,10 @@ int tcm8230_init (void)
     /* Configure sensor using I2C.  */
     i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
  
-    /* Turn on data output, set SQCIF picture size, and black and white operation.  */
+    /* Turn on data output, set picture size, and black and
+       white operation.  */
     tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
-                       | TCM8230_PICSIZ_SQCIF | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
+                       | (picsize << 2) | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
 
  
     /* CHECKME.  */
@@ -256,7 +280,7 @@ uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
     uint8_t *buffer;
     
     /* Check if user buffer large enough.  */
-    if (bytes < SQCIF_HEIGHT * SQCIF_WIDTH * 2)
+    if (bytes < 2u * height * width)
         return 0;
 
     buffer = image;
@@ -264,13 +288,13 @@ uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
     if (! tcm8230_vsync_high_wait (TCM8230_VSYNC_TIMEOUT_US))
         return 0;
 
-    for (row = 0; row < SQCIF_HEIGHT; row++)
+    for (row = 0; row < height; row++)
     {
 
         if (! tcm8230_hsync_high_wait (TCM8230_HSYNC_TIMEOUT_US))
             return 0;
 
-        buffer += tcm8230_row_read (buffer, SQCIF_WIDTH * 2);
+        buffer += tcm8230_row_read (buffer, width * 2);
 
         if (! tcm8230_hsync_low_wait (TCM8230_HSYNC_TIMEOUT_US))
             return 0;
