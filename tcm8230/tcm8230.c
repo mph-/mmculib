@@ -132,6 +132,10 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_HD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_DCLK_PIO, PIO_INPUT);
+
+#ifdef TCM8230_RESET_PIO
+    pio_config_set (TCM8230_RESET_PIO, PIO_OUTPUT_LOW);
+#endif
  
     piobus_config_set (TCM8230_DATA_PIOBUS, PIO_INPUT);
  
@@ -141,8 +145,17 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
     tc_start (tc);
  
+
+#ifdef TCM8230_RESET_PIO
+    /* Need to wait for 100 EXTCLK cycles.  */
+    DELAY_US (100e6 / TCM8230_CLOCK_INITIAL);
+    pio_output_high (TCM8230_RESET_PIO);
+#endif
+
+
     /* CHECKME.  */
     DELAY_US (1000);
+
 
     /* Configure sensor using I2C.  */
     i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
