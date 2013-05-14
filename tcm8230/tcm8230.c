@@ -1,5 +1,6 @@
 #include "pio.h"
 #include "piobus.h"
+#include "pwm.h"
 #include "tc.h"
 #include "delay.h"
 #include "i2c_master.h"
@@ -116,10 +117,20 @@ static const tc_cfg_t tc_cfg =
 };
 
 
+static const pwm_cfg_t pwm_cfg =
+{
+    .pio = TCM8230_EXTCLK_PIO,
+    .period = PWM_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL),
+    .duty = PWM_DUTY_DIVISOR (TCM8230_CLOCK_INITIAL, 50),
+    .align = PWM_ALIGN_LEFT,
+    .polarity = PWM_POLARITY_LOW
+};
+
 
 int tcm8230_init (const tcm8230_cfg_t *cfg)
 {
     tc_t tc;
+    pwm_t pwm;
     i2c_t i2c;
 
     if (cfg->picsize > TCM8230_PICSIZE_SQCIF_ZOOM)
@@ -142,9 +153,18 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
 
     /* Generate EXTCLK.  */
     tc = tc_init (&tc_cfg);
-    tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
-    tc_start (tc);
- 
+    if (tc)
+    {
+        tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
+        tc_start (tc);
+    }
+    else
+    {
+        pwm = pwm_init (&pwm_cfg);
+        if (!pwm)
+            return 0;
+        pwm_start (pwm);
+    }
 
 #ifdef TCM8230_RESET_PIO
     /* Need to wait for 100 EXTCLK cycles.  */
@@ -184,7 +204,14 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
 
  
     /* Slow down clock; this will result in fewer than 15 fps.  */
-    tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
+    if (tc)
+    {
+        tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
+    }
+    else
+    {
+        /* TODO: slow down PWM clock.  */
+    }
  
     return 1;
 }
