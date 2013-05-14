@@ -113,7 +113,9 @@ tcm8230_reg_write (i2c_t i2c, uint8_t addr, uint8_t value)
 
 static const tc_cfg_t tc_cfg =
 {
-    .pio = TCM8230_EXTCLK_PIO
+    .pio = TCM8230_EXTCLK_PIO,
+    .mode = TC_MODE_CLOCK,
+    .period = TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL)
 };
 
 
@@ -155,7 +157,6 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     tc = tc_init (&tc_cfg);
     if (tc)
     {
-        tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL));
         tc_start (tc);
     }
     else
@@ -206,7 +207,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* Slow down clock; this will result in fewer than 15 fps.  */
     if (tc)
     {
-        tc_squarewave_config (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
+        tc_config (tc, TC_MODE_CLOCK, TC_PERIOD_DIVISOR (TCM8230_CLOCK), 0);
     }
     else
     {
