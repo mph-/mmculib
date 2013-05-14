@@ -163,7 +163,6 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
         pwm = pwm_init (&pwm_cfg);
         if (!pwm)
             return 0;
-        pwm_enable (pwm);
         pwm_start (pwm);
     }
 
