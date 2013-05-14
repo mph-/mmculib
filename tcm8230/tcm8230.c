@@ -211,7 +211,8 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     }
     else
     {
-        /* TODO: slow down PWM clock.  */
+        pwm_period_set (pwm, PWM_PERIOD_DIVISOR (TCM8230_CLOCK));
+        pwm_duty_set (pwm, PWM_DUTY_DIVISOR (TCM8230_CLOCK, 50));
     }
  
     return 1;
