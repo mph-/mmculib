@@ -81,7 +81,7 @@ i2c_master_send_bit (i2c_t dev, bool bit)
     i2c_scl_set (dev, 0);
 
     i2c_delay (dev);
-    return 1;
+    return I2C_OK;
 }
 
 
