@@ -29,7 +29,8 @@
 */
 
 
-#include "ir_sirc.h"
+#include "ir_sirc_rx.h"
+#include "pio.h"
 #include "delay.h"
 
 
@@ -69,7 +70,7 @@ static inline uint8_t ir_sirc_rx_get (void)
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  */
-ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
+ir_sirc_rx_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
 {
     int i;
     int count;
@@ -77,11 +78,11 @@ ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
     bool data_err;
 
     /* Check for start code; if not present return.  */
-    if (!ir_rx_get ())
+    if (!ir_sirc_rx_get ())
         return IR_SIRC_RX_NONE;
 
     /* Wait for end of start code or timeout.  */
-    for (count = 0; ir_rx_get (); count++)
+    for (count = 0; ir_sirc_rx_get (); count++)
     {
         if (count >= IR_SIRC_RX_START_COUNT_MAX)
             return IR_SIRC_RX_START_ERR;
@@ -102,7 +103,7 @@ ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
 
         /* Wait for IR modulation to start or timeout (indicating
            detection of a false start code).  */
-        for (count = 0; !ir_rx_get (); count++)
+        for (count = 0; !ir_sirc_rx_get (); count++)
         {
             if (count >= IR_SIRC_RX_BREAK_COUNT_MAX)
                 return IR_SIRC_RX_BREAK_ERR;
@@ -114,7 +115,7 @@ ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
            too small a value for count.  This is likely to trigger
            a bit error.  */
         for (count = 0; count < IR_SIRC_RX_ONE_COUNT_MAX
-                 && ir_rx_get (); count++)
+                 && ir_sirc_rx_get (); count++)
         {
             DELAY_US (IR_SIRC_RX_DELAY_US);
         }

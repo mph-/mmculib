@@ -4,9 +4,10 @@
     @brief  Infrared serial driver for Sony SIRC protocol.
 */
 
-
 #ifndef IR_SIRC_RX_H
 #define IR_SIRC_RX_H
+
+#include "config.h"
 
 /** Status return codes.  */
 typedef enum ir_sirc_rx_ret 
@@ -33,7 +34,7 @@ typedef enum ir_sirc_rx_ret
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  */
-ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress);
+ir_sirc_rx_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress);
 
 
 /** Initialise IR serial driver.  */
