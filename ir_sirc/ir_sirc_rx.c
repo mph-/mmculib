@@ -123,7 +123,7 @@ ir_sirc_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
             data_err = 1;
             
         if (count >= IR_SIRC_RX_ZERO_COUNT_MAX)
-            data |= 0x80;
+            data |= BIT (20 - 1);
     }
 
     /* Perhaps should check for stop code.  If not found, there is
