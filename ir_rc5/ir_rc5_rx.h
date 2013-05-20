@@ -19,13 +19,14 @@ typedef enum ir_rc5_rx_ret
 } ir_rc5_rx_ret_t;
 
 
-/** Receive 20 bits of data over IR serial link.  
-    @param psystem pointer to byte to store received system
+/** Receive RC5 data packet over IR serial link.  
+    @param psystem pointer to byte to store received system data
     @param pcode pointer to byte to store received code
     @return status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
-    function blocks until the entire frame is received.  */
+    function blocks until the entire frame is received.  This must be called
+    frequently to ensure that a start bit is seen.  */
 ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcode);
 
 

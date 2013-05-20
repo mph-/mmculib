@@ -335,6 +335,7 @@ uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
 
 
 uint16_t tcm8230_width (void)
+
 {
     return width;
 }

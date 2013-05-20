@@ -52,7 +52,7 @@ static uint16_t ir_rc5_rx_wait_state (uint8_t state)
        of interference.  */
     for (us = 0; ir_rc5_rx_get () != state; us++)
     {
-        ir_rc5_rx_delay (1);
+        DELAY_US (1);
     }
     return us;
 }
@@ -74,7 +74,7 @@ static uint16_t ir_rc5_rx_wait_idle (void)
 }
 
 
-static uint8_t ir_rc5_rx_read_byte (const uint8_t bits, const uint16_t halfbit)
+static uint8_t ir_rc5_rx_read_bits (uint8_t bits, uint16_t halfbit)
 {
     uint8_t i;
     uint8_t data = 0;  
@@ -87,29 +87,31 @@ static uint8_t ir_rc5_rx_read_byte (const uint8_t bits, const uint16_t halfbit)
 
         if (ir_rc5_rx_get ())
             data |= BIT (i);
-
-        if (i != (bits - 1))
-            ir_rc5_rx_delay (halfbit);
     }
     return i;
 }
 
 
+/** Receive RC5 data packet over IR serial link.  
+    @param psystem pointer to byte to store received system data
+    @param pcode pointer to byte to store received code
+    @return status code
+    @note No error checking is performed.  If there is no activity on the
+    IR serial link, this function returns immediately.  Otherwise, this
+    function blocks until the entire frame is received.  This must be called
+    frequently to ensure that a start bit is seen.  */
 ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcode)
 {
     uint8_t system;
     uint8_t code;
+    uint8_t key;
     uint16_t halfbit;
-    
-    /* This assumes we have been called in the middle of the second
-       half of the first start bit.
-       
-       Here's the algorithm.
 
+    /* Here's the algorithm:
        - Wait for the input to go idle again (end of the second half
          of start bit #1), start counting
        - Count until the input goes low again (middle of start bit
-         #2), this is your halfbit width
+         #2), this is the halfbit width
        - Wait 1.5 halfbit widths, which takes us somewhere in the
          middle of the first half of the first data bit
        - Wait for the edge in the middle of the bit
@@ -120,29 +122,26 @@ ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcode)
        - Repeat 
     */
 
+    if (!ir_rc5_rx_ready_p ())
+        return IR_RC5_RX_NONE;
 
     /* Wait for end of second half of first start bit.  */
     ir_rc5_rx_wait_idle ();
 
-    /* Count width of first half of second start bit.  */
+    /* Determine period of first half of second start bit.  */
     halfbit = ir_rc5_rx_wait_transition ();
 
     /* Delay into the middle of the first half of the first data bit.  */
     ir_rc5_rx_delay (halfbit + (halfbit >> 1));
 
-    ir_rc5_rx_wait_transition ();
-    ir_rc5_rx_delay (halfbit >> 1);
+    /* Read key bit.  */
+    key = ir_rc5_rx_read_bits (1, halfbit);
 
-    /* Sample key bit here if you want.  */
+    /* Read system bits.  */
+    system = ir_rc5_rx_read_bits (5, halfbit);
 
-
-    /* Delay into the middle of the first half of the next data bit.  */
-    ir_rc5_rx_delay (halfbit);
-
-    system = ir_rc5_rx_read_byte (5, halfbit);
-
-    ir_rc5_rx_delay (halfbit);
-    code = ir_rc5_rx_read_byte (6, halfbit);
+    /* Read code bits.  */
+    code = ir_rc5_rx_read_bits (6, halfbit);
 
     *psystem = system;
     *pcode = code;
