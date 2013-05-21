@@ -153,11 +153,15 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data)
 static i2c_ret_t
 i2c_master_send_start (i2c_t dev)
 {
+    i2c_ret_t ret;
     /* The scl and sda lines should be high inputs at this point.  If
        not, some other master got in first.  */
     if (!i2c_sda_get (dev))
         return I2C_ERROR_CONFLICT;
 
+    ret = i2c_scl_ensure_high (dev);
+    if (ret != I2C_OK)
+        return ret;
     i2c_sda_set (dev, 0);
     i2c_delay (dev);
 
@@ -205,7 +209,7 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
     uint8_t i;
     uint8_t *data = buffer;
     i2c_ret_t ret;
-
+    
     if ((action & I2C_START) || (action & I2C_RESTART))
     {
         ret = i2c_master_send_start (dev);
@@ -221,7 +225,11 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
     for (i = 0; i < size; i++)
     {
         if (action & I2C_WRITE)
+        {
             ret = i2c_master_send_byte (dev, data[i]);
+            if (ret == I2C_SEEN_ACK)
+                ret = I2C_OK;
+        }
         else
             ret = i2c_master_recv_byte (dev, &data[i]);
 

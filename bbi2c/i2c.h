@@ -57,6 +57,7 @@ typedef enum i2c_action
 
 typedef enum i2c_ret
 {
+    I2C_SEEN_ACK = 1,
     I2C_OK = 0,
     I2C_ERROR_MATCH = -1,
     I2C_ERROR_NO_ACK = -2,

@@ -12,6 +12,7 @@
 
 #include "i2c_slave.h"
 #include "i2c_private.h"
+#include "pio.h"
 
 
 static i2c_ret_t
@@ -111,16 +112,19 @@ i2c_slave_recv_byte (i2c_t dev, uint8_t *data)
     int i;
     i2c_ret_t ret;
     uint8_t d = 0;
-
+    
     for (i = 0; i < 8; i++)
     {
         ret = i2c_slave_recv_bit (dev);
-        if (ret != I2C_OK)
+
+        if (ret < I2C_OK)
+        {
             return ret;
+        }
 
         d = (d << 1) | ret;
     }
-
+    
     *data = d;
 
     /* Don't send acknowledge here; this routine is also used for
@@ -169,6 +173,7 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
 
     if (!timeout_us)
         return I2C_ERROR_TIMEOUT;
+    
 
     while (timeout_us && i2c_sda_get (dev))
     {
@@ -179,6 +184,7 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
         DELAY_US (1);
         timeout_us--;
     }    
+
 
     if (!timeout_us)
         return I2C_ERROR_TIMEOUT;
@@ -199,19 +205,27 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     i2c_scl_set (dev, 1);
 
     if (!dev->seen_start)
-        i2c_slave_start_wait (dev, timeout_us);
+    {
+        ret = i2c_slave_start_wait (dev, timeout_us);
+        if (ret != I2C_OK)
+            return ret;
+    }
+
+        
     dev->seen_start = 0;
+    
 
     ret = i2c_slave_recv_byte (dev, &id);
     if (ret != I2C_OK)
         return ret;
-
+    
     /* TODO: If id is zero then a general call has been transmitted.
        All slaves should respond.  */
 
+    
     if ((id >> 1) != dev->slave->id)
-        return I2C_ERROR_MATCH;        
-
+        return I2C_ERROR_MATCH;
+    
     /* Send acknowledge.  */
     i2c_slave_send_ack (dev);
 
@@ -224,6 +238,7 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     for (i = 0; i < size; i++)
     {
         i2c_ret_t ret;
+           
 
         ret = i2c_slave_recv_byte (dev, &data[i]);
 
@@ -235,14 +250,15 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         if (ret == I2C_SEEN_START)
         {
             dev->seen_start = 1;
-
             /* Stretch clock to give some pondering time.  */        
             i2c_scl_set (dev, 0);
             return i;
         }
 
-        if (ret != I2C_OK)
+        if (ret < I2C_OK)
+        {
             return ret;
+        }
 
         /* Send acknowledge.  */
         i2c_slave_send_ack (dev);
