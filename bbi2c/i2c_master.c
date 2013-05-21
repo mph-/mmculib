@@ -155,6 +155,7 @@ static i2c_ret_t
 i2c_master_send_start (i2c_t dev)
 {
     i2c_ret_t ret;
+
     /* The scl and sda lines should be high inputs at this point.  If
        not, some other master got in first.  */
     if (!i2c_sda_get (dev))
