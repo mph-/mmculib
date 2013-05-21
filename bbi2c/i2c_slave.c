@@ -165,7 +165,8 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 i2c_ret_t
 i2c_slave_start_wait (i2c_t dev, int timeout_us)
 {
-    while (timeout_us && !i2c_scl_get (dev))
+    /* Wait until SDA goes low.  */
+    while (timeout_us && i2c_sda_get (dev))
     {
         DELAY_US (1);
         timeout_us--;
@@ -173,12 +174,11 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
 
     if (!timeout_us)
         return I2C_ERROR_TIMEOUT;
-    
 
-    while (timeout_us && i2c_sda_get (dev))
+    while (timeout_us && i2c_scl_get (dev))
     {
-        /* If scl goes low then we missed the start.  */
-        if (!i2c_scl_get (dev))
+        /* If sda goes high then we missed the start.  */
+        if (!i2c_sda_get (dev))
             return I2C_ERROR_BUSY;
 
         DELAY_US (1);
