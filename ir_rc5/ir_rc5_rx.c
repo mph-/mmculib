@@ -7,6 +7,20 @@
     Phillips RC5 protocol!
 */
 
+/* The Phillips RC-5 protocol uses the following format:
+   2 start bits
+   1 toggle bit
+   5 address bits
+   6 command bits
+ 
+   Manchester encoding is used for the bits.  The start bits are `1' bits.
+   `1' bits have the IR modulation on for the second half of the cycle.
+   `0' bits have the IR modulation on for the first half of the cycle.
+
+   While a button is pressed, a frame is repeatedly sent.  If the button
+   is repressed, the toggle bit is changed.
+*/
+
 
 #include "ir_rc5_rx.h"
 #include "pio.h"
@@ -81,70 +95,59 @@ static uint8_t ir_rc5_rx_read_bits (uint8_t bits, uint16_t halfbit)
     
     for (i = 0; i < bits; i++) 
     {
-        ir_rc5_rx_wait_transition ();
-
-        ir_rc5_rx_delay (halfbit >> 1);
-
         if (ir_rc5_rx_get ())
             data |= BIT (i);
+
+        ir_rc5_rx_wait_transition ();
+
+        ir_rc5_rx_delay (halfbit + (halfbit >> 1));
     }
-    return i;
+    return data;
 }
 
 
 /** Receive RC5 data packet over IR serial link.  
-    @param psystem pointer to byte to store received system data
-    @param pcode pointer to byte to store received code
+    @param paddress pointer to byte to store received address data
+    @param pcommand pointer to byte to store received command
+    @param ptoggle pointer to byte to store toggle status
     @return status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  This must be called
     frequently to ensure that a start bit is seen.  */
-ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcode)
+ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcommand, uint8_t *ptoggle)
 {
     uint8_t system;
-    uint8_t code;
-    uint8_t key;
+    uint8_t command;
+    uint8_t toggle;
     uint16_t halfbit;
-
-    /* Here's the algorithm:
-       - Wait for the input to go idle again (end of the second half
-         of start bit #1), start counting
-       - Count until the input goes low again (middle of start bit
-         #2), this is the halfbit width
-       - Wait 1.5 halfbit widths, which takes us somewhere in the
-         middle of the first half of the first data bit
-       - Wait for the edge in the middle of the bit
-       - Wait a half-halfbit width
-       - Sample.
-       - Wait a halfbit width
-       - Wait for an edge
-       - Repeat 
-    */
-
+    
+    /* Look to see if there is some IR modulation marking the second
+       half of the first start bit.  */
     if (!ir_rc5_rx_ready_p ())
         return IR_RC5_RX_NONE;
 
-    /* Wait for end of second half of first start bit.  */
+    /* Wait for end of the first start bit.  */
     ir_rc5_rx_wait_idle ();
 
     /* Determine period of first half of second start bit.  */
     halfbit = ir_rc5_rx_wait_transition ();
 
     /* Delay into the middle of the first half of the first data bit.  */
-    ir_rc5_rx_delay (halfbit + (halfbit >> 1));
+    ir_rc5_rx_delay (halfbit >> 1);
 
-    /* Read key bit.  */
-    key = ir_rc5_rx_read_bits (1, halfbit);
+    /* Read toggle bit.  */
+    toggle = ir_rc5_rx_read_bits (1, halfbit);
 
     /* Read system bits.  */
     system = ir_rc5_rx_read_bits (5, halfbit);
 
-    /* Read code bits.  */
-    code = ir_rc5_rx_read_bits (6, halfbit);
+    /* Read command bits.  */
+    command = ir_rc5_rx_read_bits (6, halfbit);
 
     *psystem = system;
-    *pcode = code;
+    *pcommand = code;
+    *ptoggle = toggle;
 
     return IR_RC5_RX_OK;
 }
