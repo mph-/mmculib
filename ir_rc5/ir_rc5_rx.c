@@ -153,6 +153,9 @@ ir_rc5_rx_ret_t ir_rc5_rx_read (uint8_t *psystem, uint8_t *pcode)
 /** Initialise IR serial receiver driver.  */
 void ir_rc5_rx_init (void)
 {
+    /* Ensure PIO clock activated for reading.  */
+    pio_init (IR_RC5_RX_PIO);
+
     /* Configure IR receiver PIO as input.  */
     pio_config_set (IR_RC5_RX_PIO, PIO_INPUT);
 }
