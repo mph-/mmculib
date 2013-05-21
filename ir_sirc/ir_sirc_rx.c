@@ -64,17 +64,15 @@ static inline uint8_t ir_sirc_rx_get (void)
 
 
 /** Receive 20 bits of data over IR serial link.  
-    @param pcommand pointer to byte to store received command
-    @param paddress pointer to word to store received address
-    @return status code
+    @return data or error status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  */
-ir_sirc_rx_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
+int32_t ir_sirc_rx_read (void)
 {
     int i;
     int count;
-    uint32_t data;
+    int32_t data;
     bool data_err;
 
     /* Check for start code; if not present return.  */
@@ -130,9 +128,7 @@ ir_sirc_rx_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress)
     /* Perhaps should check for stop code.  If not found, there is
        likely to have been interference from another transmitter.  */
 
-    *pcommand = data & 0x7f;
-    *paddress = data >> 7;
-    return data_err ? IR_SIRC_RX_DATA_ERR : IR_SIRC_RX_OK;
+    return data_err ? IR_SIRC_RX_DATA_ERR : data;
 }
 
 

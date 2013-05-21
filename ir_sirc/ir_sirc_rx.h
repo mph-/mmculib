@@ -12,8 +12,6 @@
 /** Status return codes.  */
 typedef enum ir_sirc_rx_ret 
 {
-    /** A valid frame has been received.  */
-    IR_SIRC_RX_OK = 1,
     /** No data to read.  */
     IR_SIRC_RX_NONE = 0,
     /** Invalid start code detected.  */
@@ -28,13 +26,11 @@ typedef enum ir_sirc_rx_ret
 
 
 /** Receive 20 bits of data over IR serial link.  
-    @param pcommand pointer to byte to store received command
-    @param paddress pointer to word to store received address
-    @return status code
+    @return data or error status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  */
-ir_sirc_rx_ret_t ir_sirc_rx_read (uint8_t *pcommand, uint16_t *paddress);
+int32_t ir_sirc_rx_read (void);
 
 
 /** Initialise IR serial driver.  */
