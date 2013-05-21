@@ -63,6 +63,8 @@ i2c_master_send_bit (i2c_t dev, bool bit)
 
     i2c_sda_set (dev, bit);
 
+    i2c_delay (dev);
+
     /* The receiver samples on the rising edge of scl but this is a
        slow transition.  Float scl high and wait until it goes high to
        ensure that the receiver sees the bit.  The slave can also
@@ -75,12 +77,11 @@ i2c_master_send_bit (i2c_t dev, bool bit)
     /* Check if lost arbitration.  */
     if (bit && !i2c_sda_get (dev))
         return 0;
-    
-    i2c_delay (dev);
- 
-    i2c_scl_set (dev, 0);
 
     i2c_delay (dev);
+    
+    i2c_scl_set (dev, 0);
+
     return I2C_OK;
 }
 
