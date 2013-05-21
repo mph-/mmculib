@@ -60,7 +60,9 @@ static uint16_t ir_rc5_rx_wait_state (uint8_t state)
     {
         if (ir_rc5_rx_get () != state)
             return us;
-        DELAY_US (1);
+        /* TODO: figure out how to determine the fudge term.  Ideally,
+           we should poll a counter incremented by the CPU clock.  */
+        DELAY_US (1 - 0.4);
     }
     return us;
 }
@@ -77,7 +79,7 @@ static uint16_t ir_rc5_rx_wait_transition (void)
 
 
 /** Receive RC5 data packet over IR serial link.  
-    @return status code
+    @return 14-bits of data or error status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  This must be called
@@ -86,23 +88,26 @@ int16_t ir_rc5_rx_read (void)
 {
     int16_t data;
     int i;
-    int us;
+    uint16_t us;
 
     /* Look to see if there is some IR modulation marking the second
-       half of the first start bit.  */
+       half of the first start bit.  It is possible that we may have
+       missed the start bit.  In this case we are likely to
+       time out.  */
     if (!ir_rc5_rx_ready_p ())
         return IR_RC5_RX_NONE;
 
     /* The old RC-5 format had two start bits; this made a bit-bashed
        software implementation easier.  The problem is that we have
-       been called just before the falling edge of the start bit.  */
+       been called just before the falling edge of the start bit.
+       So we have to special case these two bits.  */
 
     /* Search for the next falling transition.  */
     us = ir_rc5_rx_wait_state (0);
     if (us >= IR_RC5_BIT_PERIOD_US)
         return IR_RC5_RX_TIMEOUT;
 
-    if (us > (0.5 * IR_RC5_BIT_PERIOD_US))
+    if (us > (IR_RC5_BIT_PERIOD_US >> 1))
     {
         /* The field bit is 0.  */
         data = 2;
@@ -115,6 +120,7 @@ int16_t ir_rc5_rx_read (void)
         if (us >= IR_RC5_BIT_PERIOD_US)
             return IR_RC5_RX_TIMEOUT;
     }
+
     for (i = 2; i < 14; i++)
     {
         data <<= 1;
