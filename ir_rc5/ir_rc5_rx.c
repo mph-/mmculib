@@ -58,7 +58,7 @@ static uint16_t ir_rc5_rx_wait_state (uint8_t state)
     
     for (us = 0; us < IR_RC5_BIT_PERIOD_US; us++)
     {
-        if (ir_rc5_rx_get () != state)
+        if (ir_rc5_rx_get () == state)
             return us;
         /* TODO: figure out how to determine the fudge term.  Ideally,
            we should poll a counter incremented by the CPU clock.  */
@@ -125,7 +125,7 @@ int16_t ir_rc5_rx_read (void)
     {
         data <<= 1;
         
-        DELAY_US (0.5 * IR_RC5_BIT_PERIOD_US + 20);
+        DELAY_US (0.5 * IR_RC5_BIT_PERIOD_US + 100);
 
         us = ir_rc5_rx_wait_transition ();
         if (us >= IR_RC5_BIT_PERIOD_US)
