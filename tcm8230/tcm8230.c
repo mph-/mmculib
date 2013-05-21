@@ -7,7 +7,7 @@
 #include "tcm8230.h"
 
  
-#define TCM8230_TWI_ADDRESS 0x30
+#define TCM8230_TWI_ADDRESS 0x3C
  
 #define TCM8230_CLOCK_INITIAL 6.25e6
  
