@@ -13,14 +13,14 @@
 typedef enum ir_rc5_rx_ret 
 {
     /** No data to read.  */
-    IR_RC5_RX_NONE = -1,
+    IR_RC5_RX_NONE = 0,
     /** Timeout waiting for transition.  */
-    IR_RC5_RX_TIMEOUT = -2
+    IR_RC5_RX_TIMEOUT = -1
 } ir_rc5_rx_ret_t;
 
 
 /** Receive RC5 data packet over IR serial link.  
-    @return status code
+    @return data or error status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  This must be called
