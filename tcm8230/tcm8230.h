@@ -55,7 +55,9 @@ typedef enum tcm8230_error
     /** Timeout waiting for hsync.  */
     TCM8230_HSYNC_TIMEOUT = -2,
     /** Image buffer too small.  */
-    TCM8230_BUFFER_SMALL = -3
+    TCM8230_BUFFER_SMALL = -3,
+    /** Line not ready.  */
+    TCM8230_LINE_NOT_READY = -4
 } tcm8230_error_t;
 
 
@@ -67,10 +69,18 @@ int tcm8230_init (const tcm8230_cfg_t *cfg);
 int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us);
 
 
+int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes);
+
+
 uint16_t tcm8230_width (void);
 
 
 uint16_t tcm8230_height (void);
 
+
+bool tcm8230_frame_ready_p (void);
+
+
+bool tcm8230_line_ready_p (void);
 
 #endif

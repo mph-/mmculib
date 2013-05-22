@@ -226,56 +226,57 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
 bool tcm8230_vsync_high_wait (uint32_t timeout_us)
 {
     /* Wait for vertical sync. to go high.  */
-    while (timeout_us)
+    while (1)
     {
         if (pio_input_get (TCM8230_VD_PIO))
             return 1;
+        if (!timeout_us)
+            return 0;
         timeout_us--;
         DELAY_US (1);
     }
-    return 0;
 }
 
 
 bool tcm8230_hsync_high_wait (uint32_t timeout_us)
 {
     /* Wait for horizontal sync. to go high.  */
-    while (timeout_us)
+    while (1)
     {
         if (pio_input_get (TCM8230_HD_PIO))
             return 1;
+        if (!timeout_us)
+            return 0;
         timeout_us--;
         DELAY_US (1);
     }
-    return 0;
 }
 
 
 bool tcm8230_hsync_low_wait (uint32_t timeout_us)
 {
     /* Wait for horizontal sync. to go low.  */
-    while (timeout_us)
+    while (1)
     {
         if (! pio_input_get (TCM8230_HD_PIO))
             return 1;
+        if (!timeout_us)
+            return 0;
         timeout_us--;
         DELAY_US (1);
     }
-    return 0;
 }
 
 
-int16_t tcm8230_row_read (uint8_t *row, uint16_t bytes, uint16_t timeout_us)
+int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes)
 {
     uint16_t col;
     uint8_t *buffer;
 
     buffer = row;
 
-    /* Wait for horizontal sync. to go high.  Ideally should check for
-      low to high transition.  */
-    if (!tcm8230_hsync_high_wait (timeout_us))
-        return TCM8230_HSYNC_TIMEOUT;
+    if (! pio_input_get (TCM8230_HD_PIO))
+        return TCM8230_LINE_NOT_READY;
 
     for (col = 0; col < bytes * 2; col++)
     {
@@ -343,7 +344,12 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
     {
         int16_t ret;
 
-        ret = tcm8230_row_read (buffer, width * 2, TCM8230_HSYNC_TIMEOUT_US);
+        /* Wait for horizontal sync. to go high.  Ideally should check for
+           low to high transition.  */
+        if (!tcm8230_hsync_high_wait (TCM8230_HSYNC_TIMEOUT_US))
+            return TCM8230_HSYNC_TIMEOUT;
+
+        ret = tcm8230_line_read (buffer, width * 2);
         if (ret < 0)
             return ret;
         buffer += ret;
@@ -369,4 +375,16 @@ uint16_t tcm8230_width (void)
 uint16_t tcm8230_height (void)
 {
     return height;
+}
+
+
+bool tcm8230_frame_ready_p (void)
+{
+    return tcm8230_vsync_high_wait (0);
+}
+
+
+bool tcm8230_line_ready_p (void)
+{
+    return tcm8230_hsync_high_wait (0);
 }
