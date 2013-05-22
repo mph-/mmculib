@@ -265,18 +265,18 @@ bool tcm8230_hsync_low_wait (uint32_t timeout_us)
 }
 
 
-uint16_t tcm8230_row_read (uint8_t *row, uint16_t bytes)
+int16_t tcm8230_row_read (uint8_t *row, uint16_t bytes, uint16_t timeout_us)
 {
     uint16_t col;
     uint8_t *buffer;
 
     buffer = row;
 
-    /* Wait for horizontal sync. to go high.  
-       TODO: should add timeout.  */
-    while (! pio_input_get (TCM8230_HD_PIO))
-        continue;
-    
+    /* Wait for horizontal sync. to go high.  Ideally should check for
+      low to high transition.  */
+    if (!tcm8230_hsync_high_wait (timeout_us))
+        return TCM8230_HSYNC_TIMEOUT;
+
     for (col = 0; col < bytes * 2; col++)
     {
         
@@ -305,30 +305,32 @@ uint16_t tcm8230_row_read (uint8_t *row, uint16_t bytes)
 }
 
 
-uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
+int32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
 {
     uint16_t row;
     uint8_t *buffer;
     
     /* Check if user buffer large enough.  */
     if (bytes < 2u * height * width)
-        return 0;
+        return TCM8230_BUFFER_SMALL;
 
     buffer = image;
 
+    /* Should look for low to high transition signifying start of frame.  */
     if (! tcm8230_vsync_high_wait (TCM8230_VSYNC_TIMEOUT_US))
-        return 0;
+        return TCM8230_VSYNC_TIMEOUT;
 
     for (row = 0; row < height; row++)
     {
+        int16_t ret;
 
-        if (! tcm8230_hsync_high_wait (TCM8230_HSYNC_TIMEOUT_US))
-            return 0;
-
-        buffer += tcm8230_row_read (buffer, width * 2);
+        ret = tcm8230_row_read (buffer, width * 2, TCM8230_HSYNC_TIMEOUT_US);
+        if (ret < 0)
+            return ret;
+        buffer += ret;
 
         if (! tcm8230_hsync_low_wait (TCM8230_HSYNC_TIMEOUT_US))
-            return 0;
+            return TCM8230_HSYNC_TIMEOUT;
 
         /* For small image formats there is plenty of spare time
            here...  */

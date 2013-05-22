@@ -45,10 +45,24 @@ typedef struct tcm8230_cfg_struct
 } tcm8230_cfg_t;
 
 
+/** Status return codes.  */
+typedef enum tcm8230_error
+{
+    /** No data to read.  */
+    TCM8230_NONE = 0,
+    /** Timeout waiting for vsync.  */
+    TCM8230_VSYNC_TIMEOUT = -1,
+    /** Timeout waiting for hsync.  */
+    TCM8230_HSYNC_TIMEOUT = -2,
+    /** Image buffer too small.  */
+    TCM8230_BUFFER_SMALL = -3
+} tcm8230_error_t;
+
+
 int tcm8230_init (const tcm8230_cfg_t *cfg);
 
 
-uint32_t tcm8230_capture (uint8_t *image, uint32_t bytes);
+int32_t tcm8230_capture (uint8_t *image, uint32_t bytes);
 
 
 uint16_t tcm8230_width (void);
