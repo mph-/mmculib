@@ -316,6 +316,21 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
 
     buffer = image;
 
+    /* It appears that the VD signal changes on the rising edge of DCLK
+       but the HD signal changes on the falling edge of DCLK.  
+       
+       After VD goes high, there are 156 DCLKs before HD goes high to
+       signify the first row (the data in this period is blanking).
+       The time between HD going high again is 1560 DCLKs.
+
+       In normal power mode a frame is 507 active lines and 18
+       blanking lines (525 lines) total.
+
+       In low power mode a frame is 254 active lines and 9
+       blanking lines (263 lines) total.
+    */
+
+
     /* Should look for low to high transition signifying start of frame.  */
     if (! tcm8230_vsync_high_wait (TCM8230_VSYNC_TIMEOUT_US))
         return TCM8230_VSYNC_TIMEOUT;
