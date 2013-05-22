@@ -305,7 +305,9 @@ int16_t tcm8230_row_read (uint8_t *row, uint16_t bytes, uint16_t timeout_us)
 }
 
 
-int32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
+/** This blocks until it captures a frame.  This may be up to nearly two image
+    capture periods.  */
+int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
 {
     uint16_t row;
     uint8_t *buffer;
@@ -330,9 +332,11 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes)
        blanking lines (263 lines) total.
     */
 
+    if (timeout_us == 0)
+        timeout_us = 1;
 
     /* Should look for low to high transition signifying start of frame.  */
-    if (! tcm8230_vsync_high_wait (TCM8230_VSYNC_TIMEOUT_US))
+    if (! tcm8230_vsync_high_wait (timeout_us))
         return TCM8230_VSYNC_TIMEOUT;
 
     for (row = 0; row < height; row++)

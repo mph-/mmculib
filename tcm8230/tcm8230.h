@@ -62,7 +62,9 @@ typedef enum tcm8230_error
 int tcm8230_init (const tcm8230_cfg_t *cfg);
 
 
-int32_t tcm8230_capture (uint8_t *image, uint32_t bytes);
+/** This blocks until it captures a frame.  This may be up to nearly two image
+    capture periods.  */
+int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us);
 
 
 uint16_t tcm8230_width (void);
