@@ -20,7 +20,7 @@ typedef enum ir_rc5_rx_ret
 
 
 /** Receive RC5 data packet over IR serial link.  
-    @return data or error status code
+    @return 14-bits of data or error status code
     @note No error checking is performed.  If there is no activity on the
     IR serial link, this function returns immediately.  Otherwise, this
     function blocks until the entire frame is received.  This must be called
