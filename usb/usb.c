@@ -371,10 +371,11 @@ usb_awake_p (usb_t usb)
 }
 
 
-void
+/** Return non-zero if configured.  */
+bool
 usb_poll (usb_t usb)
 {
-    udp_poll (usb->udp);
+    return udp_poll (usb->udp);
 }
 
 

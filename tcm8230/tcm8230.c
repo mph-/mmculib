@@ -280,7 +280,6 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes)
 
     for (col = 0; col < bytes * 2; col++)
     {
-        
         /* TODO: should add timeout.  */
         while (! pio_input_get (TCM8230_DCLK_PIO))
             continue;

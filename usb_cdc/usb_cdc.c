@@ -270,9 +270,10 @@ usb_cdc_puts (usb_cdc_t usb_cdc, const char *str)
 }
 
 
-void
+/** Return non-zero if configured.  */
+bool
 usb_cdc_update (void)
 {
     /* This is needed to signal USB device.  */
-    usb_poll ((&usb_cdc_dev)->usb);
+    return usb_poll ((&usb_cdc_dev)->usb);
 }

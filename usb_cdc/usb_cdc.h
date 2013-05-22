@@ -42,22 +42,23 @@ bool
 usb_cdc_read_ready_p (usb_cdc_t usb_cdc);
 
 
-/* Read character.  */
+/** Read character.  */
 int8_t
 usb_cdc_getc (usb_cdc_t usb_cdc);
 
 
-/* Write character.  */
+/** Write character.  */
 int8_t
 usb_cdc_putc (usb_cdc_t usb_cdc, char ch);
 
 
-/* Write string.  This blocks until the string is buffered.  */
+/** Write string.  This blocks until the string is buffered.  */
 int8_t
 usb_cdc_puts (usb_cdc_t usb_cdc, const char *str);
 
 
-void
+/** Return non-zero if configured.  */
+bool
 usb_cdc_update (void);
 
 #endif

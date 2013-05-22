@@ -72,7 +72,8 @@ usb_status_t usb_read_async (usb_t usb, void *buffer,
                              usb_callback_t callback, 
                              void *arg);
 
-void usb_poll (usb_t usb);
+/** Return non-zero if configured.  */
+bool usb_poll (usb_t usb);
 
 bool usb_configured_p (usb_t usb);
 
