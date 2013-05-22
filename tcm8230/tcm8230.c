@@ -141,6 +141,10 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     width = modes[cfg->picsize].width;
     height = modes[cfg->picsize].height;
 
+   /* Initialise PIO controller; assuming all the inputs are on the
+      same controller.  */
+    pio_init (TCM8230_VD_PIO);
+
     /* Configure PIOs.  */
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_HD_PIO, PIO_INPUT);
