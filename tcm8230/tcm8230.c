@@ -39,8 +39,8 @@ enum {TCM8230_DOUTSW_ON = 0,
 enum {TCM8230_DATAHZ_OUT = 0,
       TCM8230_DATAHZ_HIZ = 1 << 6};
  
-enum {TCM8230_PICFMT_YUV = 0,
-      TCM8230_PICFMT_RGB = 1 << 1};
+enum {TCM8230_PICFMT_YUV422 = 0,
+      TCM8230_PICFMT_RGB565 = 1 << 1};
  
 enum {TCM8230_CM_COLOR = 0,
       TCM8230_CM_BW = 1};
@@ -62,6 +62,8 @@ enum {TCM8230_TESTPIC_NOTOUT = 0,
 enum {TCM8230_PICSEL_COLORBAR = 0,
       TCM8230_PICSEL_RAMP1 = 1,
       TCM8230_PICSEL_RAMP2 = 2};
+
+enum {TCM8230_D_MASK1 = 1 << 6};
  
  
 typedef struct tcm8230_mode_struct
@@ -185,15 +187,6 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* Configure sensor using I2C.  */
     i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
  
-    /* Turn on data output, set picture size, and black and
-       white operation.  */
-    tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
-                       | (cfg->picsize << 2) | TCM8230_PICFMT_RGB | TCM8230_CM_BW);
-
- 
-    /* CHECKME.  */
-    DELAY_US (10);
- 
     /* Set 15 fps.  */
     tcm8230_reg_write (i2c, 0x02, TCM8230_FPS_15 | TCM8230_ACF_50 
                        | TCM8230_DCLKP_NORMAL | TCM8230_ACFDET_AUTO);
@@ -202,8 +195,20 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* CHECKME.  */
     DELAY_US (10);
  
+    /* Turn on data output, set picture size, and black and
+       white operation.  */
+    //tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
+    //                   | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565 | TCM8230_CM_BW);
+    tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
+                       | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565);
+
+ 
+    /* CHECKME.  */
+    DELAY_US (10);
+ 
     /* Turn off codes and set HD to go low after 256 DCLKs.  */
-    tcm8230_reg_write (i2c, 0x1E, TCM8230_CODESW_OFF | TCM8230_CODESEL_ORIGINAL
+    tcm8230_reg_write (i2c, 0x1E, TCM8230_D_MASK1 
+                       | TCM8230_CODESW_OFF | TCM8230_CODESEL_ORIGINAL
                        | TCM8230_HSYNCSEL_ALT | TCM8230_TESTPIC_NOTOUT
                        | TCM8230_PICSEL_COLORBAR);
 
