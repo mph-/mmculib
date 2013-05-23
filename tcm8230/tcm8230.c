@@ -273,7 +273,7 @@ bool tcm8230_hsync_low_wait (uint32_t timeout_us)
 }
 
 
-int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes)
+int16_t tcm8230_line_read (uint8_t *row, uint16_t cols)
 {
     uint16_t col;
     uint8_t *buffer;
@@ -283,7 +283,7 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes)
     if (! pio_input_get (TCM8230_HD_PIO))
         return TCM8230_LINE_NOT_READY;
 
-    for (col = 0; col < bytes * 2; col++)
+    for (col = 0; col < cols; col++)
     {
         /* TODO: should add timeout.  */
         while (! pio_input_get (TCM8230_DCLK_PIO))
@@ -306,7 +306,7 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t bytes)
             continue;
     }
     
-    return bytes;
+    return cols * 2;
 }
 
 
