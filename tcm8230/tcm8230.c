@@ -15,7 +15,6 @@
 #define TCM8230_CLOCK 2e6
 #endif
 
-#define TCM8230_VSYNC_TIMEOUT_US (1000 * 1000 / 50)
 #define TCM8230_HSYNC_TIMEOUT_US (5000 * 2)
  
  
@@ -136,6 +135,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     tc_t tc;
     pwm_t pwm;
     i2c_t i2c;
+    uint8_t value;
 
     if (cfg->picsize > TCM8230_PICSIZE_SQCIF_ZOOM)
         return 0;
@@ -195,13 +195,14 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* CHECKME.  */
     DELAY_US (10);
  
-    /* Turn on data output, set picture size, and black and
-       white operation.  */
-    //tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
-    //                   | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565 | TCM8230_CM_BW);
-    tcm8230_reg_write (i2c, 0x03, TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
-                       | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565);
+    /* Turn on data output, set picture size, and data format.  */
+    value = TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
+        | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565;
 
+    if (! cfg->colour)
+        value |=  TCM8230_CM_BW;
+
+    tcm8230_reg_write (i2c, 0x03, value);
  
     /* CHECKME.  */
     DELAY_US (10);
@@ -283,18 +284,8 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t cols)
     if (! pio_input_get (TCM8230_HD_PIO))
         return TCM8230_LINE_NOT_READY;
 
-    for (col = 0; col < cols; col++)
+    for (col = 0; col < cols * 2; col++)
     {
-        /* TODO: should add timeout.  */
-        while (! pio_input_get (TCM8230_DCLK_PIO))
-            continue;
-        
-        *buffer++ = piobus_input_get (TCM8230_DATA_PIOBUS);
-        
-        /* TODO: should add timeout.  */
-        while (pio_input_get (TCM8230_DCLK_PIO))
-            continue;
-        
         /* TODO: should add timeout.  */
         while (! pio_input_get (TCM8230_DCLK_PIO))
             continue;
@@ -365,7 +356,6 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
 
 
 uint16_t tcm8230_width (void)
-
 {
     return width;
 }

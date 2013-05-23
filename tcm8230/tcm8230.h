@@ -41,6 +41,7 @@ enum {VGA_WIDTH = 640,
 typedef struct tcm8230_cfg_struct
 {
     tcm8230_picsize_t picsize;
+    bool colour;
     /* Add other parameters here.  */
 } tcm8230_cfg_t;
 
