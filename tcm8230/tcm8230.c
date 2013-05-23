@@ -16,7 +16,7 @@
 #endif
 
 #define TCM8230_VSYNC_TIMEOUT_US (1000 * 1000 / 50)
-#define TCM8230_HSYNC_TIMEOUT_US (TCM8230_VSYNC_TIMEOUT_US / 100)
+#define TCM8230_HSYNC_TIMEOUT_US (5000 * 2)
  
  
 /* Register 0x02 control fields.  */
@@ -332,12 +332,8 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
        blanking lines (263 lines) total.
     */
 
-    if (timeout_us == 0)
-        timeout_us = 1;
-
-    /* Should look for low to high transition signifying start of frame.  */
     if (! tcm8230_vsync_high_wait (timeout_us))
-        return TCM8230_VSYNC_TIMEOUT;
+        return TCM8230_VSYNC_HIGH_TIMEOUT;
 
     for (row = 0; row < height; row++)
     {
@@ -346,19 +342,18 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
         /* Wait for horizontal sync. to go high.  Ideally should check for
            low to high transition.  */
         if (!tcm8230_hsync_high_wait (TCM8230_HSYNC_TIMEOUT_US))
-            return TCM8230_HSYNC_TIMEOUT;
+            return TCM8230_HSYNC_HIGH_TIMEOUT;
 
-        ret = tcm8230_line_read (buffer, width * 2);
+        ret = tcm8230_line_read (buffer, width);
         if (ret < 0)
             return ret;
         buffer += ret;
 
-        if (! tcm8230_hsync_low_wait (TCM8230_HSYNC_TIMEOUT_US))
-            return TCM8230_HSYNC_TIMEOUT;
-
         /* For small image formats there is plenty of spare time
            here...  */
-        
+
+        if (! tcm8230_hsync_low_wait (TCM8230_HSYNC_TIMEOUT_US))
+            return TCM8230_HSYNC_LOW_TIMEOUT;
     }
     return buffer - image;
 }
