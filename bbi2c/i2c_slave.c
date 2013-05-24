@@ -108,7 +108,7 @@ i2c_slave_recv_bit (i2c_t dev)
         timeout--;
 
         if (val != i2c_sda_get (dev))
-            return val ? I2C_SEEN_RESTART : I2C_SEEN_STOP;
+            return val ? I2C_SEEN_START : I2C_SEEN_STOP;
     }
     if (!timeout)
     {
@@ -286,14 +286,14 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         i2c_ret_t ret;
         uint8_t byte;
 
-        ret = i2c_slave_recv_byte (dev, byte);
+        ret = i2c_slave_recv_byte (dev, &byte);
 
         /* If saw a stop then cannot read as many bytes as requested.  */
         if (ret == I2C_SEEN_STOP)
             return i;
 
         /* Saw a repeated start.  */
-        if (ret == I2C_SEEN_RESTART)
+        if (ret == I2C_SEEN_START)
         {
             dev->seen_restart = 1;
             /* Stretch clock to give some pondering time.  */        
