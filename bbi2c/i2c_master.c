@@ -199,8 +199,8 @@ i2c_master_send_stop (i2c_t dev)
 static i2c_ret_t
 i2c_master_send_addr (i2c_t dev, bool read)
 {
-    /* Send 7-bit slave address followed by bit to indicate
-       read/write.  
+    /* Send 7-bit slave address followed by a zero bit for writes or
+       a one bit for reads.
 
        For 10-bit slave addresses, the second byte is part of the
        data packet.  */

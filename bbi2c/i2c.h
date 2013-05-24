@@ -68,7 +68,8 @@ typedef enum i2c_ret
     I2C_ERROR_SCL_STUCK_HIGH = -7,
     I2C_ERROR_PROTOCOL = -8,
     I2C_SEEN_START = -9,
-    I2C_SEEN_STOP = -10
+    I2C_SEEN_STOP = -10,
+    I2C_ERROR_SCL_STUCK_HIGH2 = -11
 } i2c_ret_t;
 
 #endif

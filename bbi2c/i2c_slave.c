@@ -52,6 +52,21 @@ i2c_slave_send_ack (i2c_t dev)
 }
 
 
+static i2c_ret_t
+i2c_slave_send_nak (i2c_t dev)
+{
+    i2c_ret_t ret;
+
+    ret = i2c_slave_send_bit (dev, 1);
+    if (ret != I2C_OK)
+        return ret;
+
+    i2c_sda_set (dev, 1);
+
+    return I2C_OK;
+}
+
+
 static i2c_ret_t 
 i2c_slave_send_byte (i2c_t dev, uint8_t data)
 {
@@ -85,7 +100,7 @@ i2c_slave_recv_bit (i2c_t dev)
 
     val = i2c_sda_get (dev);
 
-    /* Wait for scl to go low or for SDA to transistion
+    /* Wait for scl to go low or for SDA to transition
        indicating a start or a stop bit.  */
     while (timeout && i2c_scl_get (dev))
     {
@@ -93,13 +108,12 @@ i2c_slave_recv_bit (i2c_t dev)
         timeout--;
 
         if (val != i2c_sda_get (dev))
-            return val ? I2C_SEEN_START : I2C_SEEN_STOP;
-
+            return val ? I2C_SEEN_RESTART : I2C_SEEN_STOP;
     }
     if (!timeout)
     {
         /* scl seems to be stuck high.  */
-        return I2C_ERROR_SCL_STUCK_HIGH;
+        return I2C_ERROR_SCL_STUCK_HIGH2;
     }
 
     return val;
@@ -150,7 +164,7 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
     
     dev->bus = bus_cfg;
     dev->slave = slave_cfg;
-    dev->seen_start = 0;
+    dev->seen_restart = 0;
 
     /* Ensure PIO clock enabled for PIO reading.  */
     pio_init (dev->bus->sda);
@@ -201,6 +215,7 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
 }
 
 
+/** Read a sequence of bytes from i2c master.  */
 i2c_ret_t
 i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 {
@@ -209,24 +224,51 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     uint8_t *data = buffer;
     uint8_t i;
 
+    /* There are four cases to deal with:
+
+       1. When the i2c master writes a sequence of bytes it sends a
+       start bit, the slave address (with read/write bit cleared), the
+       register address, the data, and then a stop bit.
+
+       2. When an i2c master writes to a device register it sends a
+       start bit, the slave address (with read/write bit cleared), the
+       register address, the data, and then a stop bit.  This case is
+       the same as the previous case, with the device address being
+       the first byte of the data sequence.
+
+       3. When the i2c master reads a sequence of bytes it sends a
+       start bit, the slave address (with read/write bit set), waits
+       for the data, and then sends a stop bit.
+
+       4. When an i2c master reads from a device register it sends a
+       start bit, the slave address (with read/write bit cleared), the
+       register address, a restart bit, the slave address (with
+       read/write bit set), waits for the data, and then sends a stop
+       bit.  This is similar to cases 1 and 4 but with a restart bit
+       instead of a stop bit.
+
+       In each case, we assume that the entire payload is read.
+    */
+
     /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
 
-    if (!dev->seen_start)
-    {
-        ret = i2c_slave_start_wait (dev, timeout_us);
-        if (ret != I2C_OK)
+    /* Wait for start bit.  */
+    ret = i2c_slave_start_wait (dev, timeout_us);
+    if (ret != I2C_OK)
             return ret;
-    }
 
+    /* Read slave address.  */
     ret = i2c_slave_recv_byte (dev, &id);
     if (ret != I2C_OK)
         return ret;
     
     /* TODO: If id is zero then a general call has been transmitted.
        All slaves should respond.  */
-
     
+    
+    /* If the slave address does not match, perhaps we should wait 
+       until the stop bit is seen?  */
     if ((id >> 1) != dev->slave->id)
         return I2C_ERROR_MATCH;
     
@@ -239,21 +281,21 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 
 
     /* Receive data packets.  */
-    for (i = 0; i < size; i++)
+    for (i = 0; ; i++)
     {
         i2c_ret_t ret;
-           
+        uint8_t byte;
 
-        ret = i2c_slave_recv_byte (dev, &data[i]);
+        ret = i2c_slave_recv_byte (dev, byte);
 
         /* If saw a stop then cannot read as many bytes as requested.  */
         if (ret == I2C_SEEN_STOP)
             return i;
 
         /* Saw a repeated start.  */
-        if (ret == I2C_SEEN_START)
+        if (ret == I2C_SEEN_RESTART)
         {
-            dev->seen_start = 1;
+            dev->seen_restart = 1;
             /* Stretch clock to give some pondering time.  */        
             i2c_scl_set (dev, 0);
             return i;
@@ -264,14 +306,16 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
             return ret;
         }
 
-        /* Send acknowledge.  */
-        i2c_slave_send_ack (dev);
+        if (i < size)
+        {
+            data[i] = byte;
+            i2c_slave_send_ack (dev);
+        }
+        else
+        {
+            i2c_slave_send_nak (dev);
+        }
     }
-
-    /* Not all data read, so stretch clock to give some pondering
-       time.  */        
-    i2c_scl_set (dev, 0);
-    return i;
 }
 
 
@@ -286,7 +330,13 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     /* Ensure scl is an input after an error or if clock stretched.  */
     i2c_scl_set (dev, 1);
 
-    i2c_slave_start_wait (dev, timeout_us);
+    /* If a restart has been already seen don't look for a start bit.  */
+    if (!dev->seen_restart)
+    {
+        ret = i2c_slave_start_wait (dev, timeout_us);
+        if (ret != I2C_OK)
+            return ret;
+    }
 
     ret = i2c_slave_recv_byte (dev, &id);
     if (ret != I2C_OK)

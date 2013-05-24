@@ -32,7 +32,7 @@ struct i2c_dev_struct
 {
     const i2c_bus_cfg_t *bus;
     const i2c_slave_cfg_t *slave;
-    bool seen_start;
+    bool seen_restart;
 };
 
 
