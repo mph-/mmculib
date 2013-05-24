@@ -75,7 +75,7 @@ i2c_slave_recv_bit (i2c_t dev)
 {
     i2c_ret_t ret;
     bool val;
-    int timeout = I2C_CLOCK_STRETCH_TIMEOUT_US;
+    int timeout = I2C_TIMEOUT_US;
 
     /* The scl line should be low at this point.  */
 
@@ -165,8 +165,12 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
 i2c_ret_t
 i2c_slave_start_wait (i2c_t dev, int timeout_us)
 {
-    /* Wait until SDA goes low.  */
-    while (timeout_us && i2c_sda_get (dev))
+    /* The sda and scl should both be high otherwise we missed the start.  */
+    if (!i2c_sda_get (dev) || !i2c_scl_get (dev))
+        return I2C_ERROR_BUSY;
+
+    /* Wait for sda or scl to go low.  */
+    while (timeout_us && i2c_sda_get (dev) && i2c_scl_get (dev))
     {
         DELAY_US (1);
         timeout_us--;
@@ -175,16 +179,20 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
     if (!timeout_us)
         return I2C_ERROR_TIMEOUT;
 
+    /* If clock went low something else is going on.  */
+    if (!i2c_scl_get (dev))
+        return I2C_ERROR_BUSY;
+
+    /* Wait for clock to go low.  */
     while (timeout_us && i2c_scl_get (dev))
     {
-        /* If sda goes high then we missed the start.  */
+        /* If sda goes high again then we missed the start.  */
         if (!i2c_sda_get (dev))
             return I2C_ERROR_BUSY;
 
         DELAY_US (1);
         timeout_us--;
     }    
-
 
     if (!timeout_us)
         return I2C_ERROR_TIMEOUT;
@@ -210,10 +218,6 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         if (ret != I2C_OK)
             return ret;
     }
-
-        
-    dev->seen_start = 0;
-    
 
     ret = i2c_slave_recv_byte (dev, &id);
     if (ret != I2C_OK)
