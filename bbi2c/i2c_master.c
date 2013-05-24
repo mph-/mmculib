@@ -139,7 +139,7 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data)
     for (i = 0; i < 8; i++)
     {
         ret = i2c_master_recv_bit (dev);
-        if (ret != I2C_OK)
+        if (ret < 0)
             return ret;
 
         d = (d << 1) | ret;
