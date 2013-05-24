@@ -18,6 +18,11 @@
 #endif
 
 
+#ifndef I2C_TIMEOUT_US
+#define I2C_TIMEOUT_US 5000
+#endif
+
+
 #ifndef I2C_DELAY_US
 #define I2C_DELAY_US 4
 #endif
@@ -84,7 +89,7 @@ i2c_scl_wait_high (i2c_t dev)
 static i2c_ret_t
 i2c_scl_wait_low (i2c_t dev)
 {
-    int timeout = I2C_CLOCK_STRETCH_TIMEOUT_US;
+    int timeout = I2C_TIMEOUT_US;
         
     while (timeout && i2c_scl_get (dev))
     {
