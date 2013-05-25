@@ -3,12 +3,46 @@
     @date   12 April 2013
     @brief  Bit-bashed I2C slave (TWI)
 
-    This is written on a whim and is completely untested.
+    This implements a polled I2C slave.  Two PIOs are required for SCL
+    and SDA.  Ideally, they should have schmitt trigger inputs to
+    handle the slow rising edges of an open-drain bus. 
 
-    Two PIOs are required for SCL and SDA.  Ideally, they should have
-    schmitt trigger inputs to handle the slow rising edges of an
-    open-drain bus.
+    The polling of the start bit needs to be improved.
+
+    The implementation could be simplified using a state machine.
+ */
+
+/*
+SCL	SDA	State	Next 	Output
+1	1	I	I	
+1	0	I	A	Start
+0	1	I	E	Error
+0	0	I	E	Error
+1	1	E	I
+1	0	E	E
+0	1	E	E
+0	0	E	E
+1	1	A	I	Stop
+1	0	A	A	
+0	1	A	E	Error
+0	0	A	B
+1	1	B	E	Error
+1	0	B	A	0
+0	1	B	C
+0	0	B	B
+1	1	C	D	1
+1	0	C	E	Error
+0	1	C	C
+0	0	C	B
+1	1	D	D
+1	0	D	A	Restart
+0	1	D	C
+0	0	D	E	Error
+
+State D is similar to the idle state (I) except that a stop has not been detected.
+State E is an error state due to an invalid transition.
 */
+
 
 #include "i2c_slave.h"
 #include "i2c_private.h"
@@ -132,9 +166,7 @@ i2c_slave_recv_byte (i2c_t dev, uint8_t *data)
         ret = i2c_slave_recv_bit (dev);
 
         if (ret < I2C_OK)
-        {
             return ret;
-        }
 
         d = (d << 1) | ret;
     }
