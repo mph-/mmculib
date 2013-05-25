@@ -89,7 +89,11 @@ i2c_master_send_bit (i2c_t dev, bool bit)
 static i2c_ret_t
 i2c_master_recv_ack (i2c_t dev)
 {
-    return i2c_master_recv_bit (dev);
+    i2c_ret_t ret;
+    ret = i2c_master_recv_bit (dev);
+    if (ret != 0)
+        ret = I2C_ERROR_NO_ACK;
+    return ret;
 }
 
 
@@ -230,11 +234,7 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
     for (i = 0; i < size; i++)
     {
         if (action & I2C_WRITE)
-        {
             ret = i2c_master_send_byte (dev, data[i]);
-            if (ret == I2C_SEEN_ACK)
-                ret = I2C_OK;
-        }
         else
             ret = i2c_master_recv_byte (dev, &data[i]);
 
