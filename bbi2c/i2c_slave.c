@@ -142,7 +142,7 @@ i2c_slave_recv_bit (i2c_t dev)
         timeout--;
 
         if (val != i2c_sda_get (dev))
-            return val ? I2C_SEEN_START : I2C_SEEN_STOP;b /* Unsure about this */
+            return val ? I2C_SEEN_START : I2C_SEEN_STOP;
     }
     if (!timeout)
     {
