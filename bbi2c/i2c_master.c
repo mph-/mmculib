@@ -227,7 +227,10 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
 
         ret = i2c_master_send_addr (dev, action & I2C_READ);
         if (ret != I2C_OK)
+        {
+            i2c_master_send_stop (dev);
             return ret;
+        }
     }
 
     /* Send or receive data packets.  */
@@ -239,7 +242,10 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
             ret = i2c_master_recv_byte (dev, &data[i]);
 
         if (ret != I2C_OK)
+        {
+            i2c_master_send_stop (dev);
             return ret;
+        }
     }
 
     if (action & I2C_STOP)

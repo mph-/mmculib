@@ -215,7 +215,7 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
     if (!i2c_sda_get (dev) || !i2c_scl_get (dev))
         return I2C_ERROR_BUSY;
 
-    /* While clock is high look for the data to go low */
+    /* While clock is high look for the data to go low.  */
     while (timeout_us && i2c_scl_get (dev))
     {
         if (!i2c_sda_get (dev))
@@ -273,7 +273,7 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     /* Wait for start bit.  */
     ret = i2c_slave_start_wait (dev, timeout_us);
     if (ret != I2C_OK)
-            return ret;
+        return ret;
 
     /* Read slave address.  */
     ret = i2c_slave_recv_byte (dev, &id);
