@@ -376,6 +376,9 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         i2c_ret_t ret;
 
         ret = i2c_slave_send_byte (dev, data[i]);
+
+        i2c_sda_set (dev, 1);
+
         if (ret < 0)
             return ret;
 
