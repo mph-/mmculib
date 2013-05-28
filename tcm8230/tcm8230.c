@@ -24,7 +24,8 @@ enum {TCM8230_FPS_30 = 0,
  
 enum {TCM8230_ACF_50 = 0,
       TCM8230_ACF_60 = 1 << 6};
- 
+
+/* DCLK polarity; normal is data valid on rising edge.  */ 
 enum {TCM8230_DCLKP_NORMAL = 0,
       TCM8230_DCLKP_REVERSE = 1 << 1};
  
