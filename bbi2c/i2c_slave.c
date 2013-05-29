@@ -389,7 +389,7 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         
         /* The master stops sending an ack when it has received enough data.  */
         if (ret != 0)
-            return i;
+            return i + 1;
     }
     return i;
 }
