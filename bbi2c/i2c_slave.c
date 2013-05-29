@@ -175,7 +175,7 @@ i2c_slave_recv_byte (i2c_t dev, uint8_t *data)
 
     /* Don't send acknowledge here; this routine is also used for
        reading the slave address and we should only send an ack if the
-       address matechs.  */
+       address matches.  */
 
     return I2C_OK;
 }
@@ -219,7 +219,7 @@ i2c_slave_start_wait (i2c_t dev, int timeout_us)
     while (timeout_us && i2c_scl_get (dev))
     {
         if (!i2c_sda_get (dev))
-            return I2C_OK;
+            return i2c_scl_wait_low (dev);
         
         DELAY_US (1);
         timeout_us--;
