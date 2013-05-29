@@ -377,6 +377,7 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
 
         ret = i2c_slave_send_byte (dev, data[i]);
 
+        /* Ensure SDA high before checking ack bit.  */
         i2c_sda_set (dev, 1);
 
         if (ret < 0)
@@ -385,8 +386,10 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
         ret = i2c_slave_recv_bit (dev);
         if (ret < 0)
             return ret;
+        
+        /* The master stops sending an ack when it has received enough data.  */
         if (ret != 0)
-            return I2C_ERROR_NO_ACK;
+            return i;
     }
     return i;
 }

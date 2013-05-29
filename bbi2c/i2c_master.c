@@ -151,7 +151,7 @@ i2c_master_recv_byte (i2c_t dev, uint8_t *data)
 
     *data = d;
 
-    return i2c_master_send_ack (dev);
+    return I2C_OK;
 }
 
 
@@ -237,9 +237,16 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
     for (i = 0; i < size; i++)
     {
         if (action & I2C_WRITE)
+        {
             ret = i2c_master_send_byte (dev, data[i]);
+        }
         else
+        {
             ret = i2c_master_recv_byte (dev, &data[i]);
+
+            /* Send ack (0) for every byte except the last one.  */
+            i2c_master_send_bit (dev, i == size - 1);
+        }
 
         if (ret != I2C_OK)
         {
