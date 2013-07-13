@@ -7,6 +7,7 @@
 #define BITS_H
 
 
+/* FIXME for last being the highest bit for a word.  */
 #define BITS_MASK(first, last) ((1 << ((last) + 1)) - (1 << (first)))
 
 #define BITS_CLR(reg, first, last) ((reg) &= BITS_MASK (first, last))
@@ -19,5 +20,8 @@
 #define BITS_INSERT(reg, val, first, last) \
     (reg) = ((reg) & ~BITS_MASK (first, last))  \
         | (((val) & BITS_MASK (0, last - first)) << (first))
+
+#define BITS(val, first, last) \
+    (((val) & BITS_MASK (0, last - first)) << (first))
 
 #endif
