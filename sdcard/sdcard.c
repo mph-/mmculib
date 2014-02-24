@@ -1057,7 +1057,7 @@ sdcard_init (const sdcard_cfg_t *cfg)
         return 0;
     dev = sdcard_devices + sdcard_devices_num;
 
-    memset (dev, 0, sizeof (dev));
+    memset (dev, 0, sizeof (*dev));
     dev->spi = spi_init (&cfg->spi);
     if (!dev->spi)
         return 0;
