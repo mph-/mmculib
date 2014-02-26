@@ -14,7 +14,7 @@ include $(MMCULIB_DIR)/drivers.mk
 
 
 # Include the architecture dependent dependencies and peripheral support.
-ifneq (, $(findstring AT91, $(MCU)))
+ifneq (, $(findstring SAM, $(MCU)))
 # AT91SAM7 family
 ifndef MAT91LIB_DIR
 MAT91LIB_DIR = $(MMCULIB_DIR)/../mat91lib
