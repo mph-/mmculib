@@ -1,7 +1,7 @@
 /** @file   ir_rc5_rx.c
     @author M. P. Hayes, UCECE
     @date   21 May 2013
-    @brief  Infrared serial driver for Phillips RC5 protocol.
+    @brief  Infrared serial receiver driver for Phillips RC5 protocol.
 */
 
 /* The Phillips RC-5 protocol uses the following format of 14 bits:
@@ -42,7 +42,7 @@
     @return IR receiver state (1 = IR modulation detected).  */
 static inline uint8_t ir_rc5_rx_get (void)
 {
-    return pio_input_get (IR_RC5_RX_PIO) == IR_RC5_RX_ACTIVE_STATE;
+    return pio_input_get (IR_RX_PIO) == IR_RC5_RX_ACTIVE_STATE;
 }
 
 
@@ -143,9 +143,9 @@ int16_t ir_rc5_rx_read (void)
 void ir_rc5_rx_init (void)
 {
     /* Ensure PIO clock activated for reading.  */
-    pio_init (IR_RC5_RX_PIO);
+    pio_init (IR_RX_PIO);
 
     /* Configure IR receiver PIO as input.  */
-    pio_config_set (IR_RC5_RX_PIO, PIO_INPUT);
+    pio_config_set (IR_RX_PIO, PIO_INPUT);
 }
 

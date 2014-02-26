@@ -1,7 +1,7 @@
 /** @file   ir_rc5_rx.h
     @author M. P. Hayes, UCECE
     @date   21 May 2013
-    @brief  Infrared serial driver for Phillips RC5 protocol.
+    @brief  Infrared serial receiver driver for Phillips RC5 protocol.
 */
 
 #ifndef IR_RC5_RX_H
@@ -28,7 +28,7 @@ typedef enum ir_rc5_rx_ret
 int16_t ir_rc5_rx_read (void);
 
 
-/** Initialise IR serial driver.  */
+/** Initialise IR serial receiver driver.  */
 void ir_rc5_rx_init (void);
 
 #endif
