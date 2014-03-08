@@ -3,11 +3,7 @@
     @date   12 April 2013
     @brief  Bit-bashed I2C master (TWI)
 
-    This is written on a whim and is completely untested.
-
-    Two PIOs are required for SCL and SDA.  Ideally, they should have
-    schmitt trigger inputs to handle the slow rising edges of an
-    open-drain bus.
+    Two PIOs are required for SCL and SDA. 
 */
 
 #include "i2c_master.h"
@@ -243,7 +239,6 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
         else
         {
             ret = i2c_master_recv_byte (dev, &data[i]);
-
             /* Send ack (0) for every byte except the last one.  */
             i2c_master_send_bit (dev, i == size - 1);
         }
