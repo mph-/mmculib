@@ -184,6 +184,8 @@ usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, usb_cdc_size_t length)
 }
 
 
+/* Checks if at least one character can be read without
+   blocking.  */
 bool
 usb_cdc_read_ready_p (usb_cdc_t usb_cdc)
 {
@@ -208,18 +210,7 @@ usb_cdc_configured_p (usb_cdc_t usb_cdc)
 void
 usb_cdc_shutdown (void)
 {
-    AT91PS_UDP pUDP = AT91C_BASE_UDP;
-
-    /* The USB_CDC transceiver is enabled by default.  */
-
-    /* Enable System Peripheral USB_CDC Clock.  */
-    AT91C_BASE_PMC->PMC_PCER = BIT (AT91C_ID_UDP);
-
-    /* Disable transceiver.  */
-    pUDP->UDP_TXVC = 0x100;
-
-    /* Disable System Peripheral USB_CDC Clock.  */
-    AT91C_BASE_PMC->PMC_PCDR = BIT (AT91C_ID_UDP);
+    usb_shutdown ();
 }
 
 
@@ -233,7 +224,6 @@ usb_cdc_init (void)
 
     return usb_cdc;
 }
-
 
 
 /** Read character.  This blocks until the character can be read.  */
