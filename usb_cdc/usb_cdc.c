@@ -180,7 +180,9 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 usb_cdc_size_t
 usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, usb_cdc_size_t length)
 {
-    return usb_read (usb_cdc->usb, buffer, length);
+    /* Ignore length and read only one char to avoid timeout resetting
+       endpoint.  */
+    return usb_read (usb_cdc->usb, buffer, 1);
 }
 
 
