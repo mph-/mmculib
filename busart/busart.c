@@ -20,6 +20,10 @@
 #define BUSART1_ENABLE (USART_NUM >= 2)
 #endif
 
+#if !defined(BUSART0_ENABLE) && !defined(BUSART1_ENABLE)
+#error "Neither BUSART0_ENABLE or BUSART1_ENABLE defined"
+#endif
+
 
 struct busart_dev_struct
 {
