@@ -106,7 +106,7 @@ max9939_gain_set (spi_pga_t pga, uint8_t gain_index)
 
 
 static spi_pga_offset_t
-max9939_offset_set1 (spi_pga_t pga, uint index, bool negative, bool measure)
+max9939_offset_set1 (spi_pga_t pga, uint8_t index, bool negative, bool measure)
 {
     spi_pga_offset_t offset;
     uint8_t command[1];
