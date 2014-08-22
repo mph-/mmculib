@@ -219,3 +219,35 @@ ring_read_advance (ring_t *ring, ring_size_t size)
 {
     return ring->out = ring_read_next (ring, size);
 }
+
+
+/** Search for character in ring buffer. 
+    @param ring pointer to ring buffer structure
+    @param ch character to find
+    @return non-zero if character found.  */
+bool
+ring_find (ring_t *ring, char ch)
+{
+    ring_size_t count;
+    int tmp;
+    char *ptr;
+
+    /* Determine number of entries in ring buffer.  */
+    count = RING_READ_NUM (ring, tmp);
+
+    /* Return if nothing to read.  */
+    if (!count)
+        return 0;
+
+    /* This could be optimised with two searches.  */
+    ptr = ring->out;
+    while (count--)
+    {
+        if (*ptr++ == ch)
+            return 1;
+        if (ptr >= ring->end)
+            ptr = ring->top;
+    }
+
+    return 0;
+}
