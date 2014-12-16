@@ -7,6 +7,7 @@
 #include "busart.h"
 #include "peripherals.h"
 #include <string.h>
+#include <stdlib.h>
 
 
 /** A BUSART can be disabled in the target.h file, e.g., using
@@ -81,6 +82,19 @@ busart_init (uint8_t channel,
 
     if (!dev)
         return 0;
+
+    if (!tx_buffer)
+        tx_buffer = malloc (tx_size);
+    if (!tx_buffer)
+        return 0;
+
+    if (!rx_buffer)
+        rx_buffer = malloc (rx_size);
+    if (!rx_buffer)
+    {
+        free (tx_buffer);
+        return 0;
+    }
 
     ring_init (&dev->tx_ring, tx_buffer, tx_size);
     
