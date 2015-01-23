@@ -232,7 +232,7 @@ usb_cdc_init (void)
 int8_t
 usb_cdc_getc (usb_cdc_t usb_cdc)
 {
-    uint8_t ch;
+    uint8_t ch = 0;
 
     usb_cdc_read (usb_cdc, &ch, sizeof (ch));
     return ch;
