@@ -226,7 +226,7 @@ busart_write_finished_p (busart_t busart)
 int8_t
 busart_getc (busart_t busart)
 {
-    uint8_t ch;
+    uint8_t ch = 0;
 
     busart_read_block (busart, &ch, sizeof (ch));
     return ch;
