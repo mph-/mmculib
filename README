@@ -1,5 +1,75 @@
-TODO
-Convert files to use doxygen markup
+Introduction:
+
+This library (mmculib) contains a number of microprocessor independent
+device drivers and miscellaneous functions.  It is primarily designed
+for a bare-metal system.  mmculib relies on another library (such as
+mat91lib) for microprocessor dependent support (such as low level
+drivers for PIO, PWM. timer-counter (TC), etc.).
+
+Compilation:
+
+Here's an example of a Makefile to generate a program for the SAM4S16B
+using mmculib and mat91lib.
+
+# Executable file to create.
+TARGET = target.bin
+
+SRC = target.c foo.c bar.c
+
+# Drivers from mmculib to use
+DRIVERS = usb_cdc busart
+# Peripherals from mat91lib to use
+PERIPHERALS = ssc tc adc ac
+
+# Microcontroller variety
+MCU = SAM4S16B
+# Link for ROM or RAM
+RUN_MODE = ROM
+# Optimisation options
+OPT = -Os
+# Path to mmculib top-level
+MMCULIB_DIR = ../../mmculib
+include $(MMCULIB_DIR)/mmculib.mk
+
+The heavy-lifting is performed by the makefile fragment, mmculib.mk.
+This automatically includes mat91lib.mk and the makefile fragments for
+each driver and peripheral.
+
+Other makefile variables that can be set to control the compilation are:
+INCLUDES --- A list of paths to search for include files
+VPATH    --- A list of paths to search for source files
+CFLAGS   --- C compilation flags
+
+
+
+Device driver API guidelines:
+
+Each driver should support the following block read/write functions
+where the addr parameter is optional.  Note the buffer is type void *
+so that any object can be read/written without casting.  Len is the
+transfer size in bytes.  The return value is the actual number of
+bytes read or written.  Dev is a handle created by foo_init.  The
+readv and writev forms are for reading/writing using a vector of
+descriptors.  These forms are useful for coalescing I/O to minimise
+writes (say to flash memory) or for atomic operations.
+
+
+foo_ret_t
+foo_read (foo_t dev, foo_addr_t addr, void *buffer, foo_size_t len);
+
+
+foo_ret_t
+foo_write (foo_t dev, foo_addr_t addr, const void *buffer, foo_size_t len);
+
+
+foo_ret_t
+foo_writev (foo_t dev, foo_addr_t addr, iovec_t *iov, iovec_count_t iov_count);
+
+
+foo_ret_t
+foo_readv (foo_t dev, foo_addr_t addr, iovec_t *iov, iovec_count_t iov_count);
+
+Note, these routines should not block, well only for a very short time.
 
 
 bits.h			Bit twidding macros
@@ -34,7 +104,7 @@ led_flash.h
 led.h
 lmatrix.c		LED matrix driver
 lmatrix.h
-mmelody.c		Interpret and sequence monophonic melodies.
+mmelody.c		Interpret and sequence monophonic melodies
 mmelody.h
 mpwm.c
 mpwm.h
@@ -86,32 +156,7 @@ uint8toa.c		8-bit unsigned integer -> ASCII
 uint8toa.h
 
 
-Device driver API guidelines:
-
-Each driver should support the following block read/write functions
-where the addr parameter is optional.  Note the buffer is type void *
-so that any object can be read/written without casting.  Len is the
-transfer size in bytes.  The return value is the actual number of
-bytes read or written.  Dev is a handle created by foo_init.  The
-readv and writev forms are for reading/writing using a vector of
-descriptors.  These forms are useful for coalescing I/O to minimise
-writes (say to flash memory) or for atomic operations.
-
-
-extern foo_ret_t
-foo_read (foo_t dev, foo_addr_t addr, void *buffer, foo_size_t len);
-
-
-extern foo_ret_t
-foo_write (foo_t dev, foo_addr_t addr, const void *buffer, foo_size_t len);
-
-
-extern foo_ret_t
-foo_writev (foo_t dev, foo_addr_t addr, iovec_t *iov, iovec_count_t iov_count);
-
-
-extern foo_ret_t
-foo_readv (foo_t dev, foo_addr_t addr, iovec_t *iov, iovec_count_t iov_count);
-
+TODO
+Convert files to use doxygen markup
 
 
