@@ -218,7 +218,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* Slow down clock; this will result in fewer than 15 fps.  */
     if (tc)
     {
-        tc_config (tc, TC_MODE_CLOCK, TC_PERIOD_DIVISOR (TCM8230_CLOCK), 0);
+        tc_period_set (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
     }
     else
     {
