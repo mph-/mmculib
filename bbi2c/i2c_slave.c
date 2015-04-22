@@ -195,7 +195,7 @@ i2c_slave_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
     dev = &device;
     
     dev->bus = bus_cfg;
-    dev->slave = slave_cfg;
+    dev->slave_addr = slave_cfg->id;
     dev->seen_restart = 0;
 
     /* Ensure PIO clock enabled for PIO reading.  */
@@ -286,7 +286,7 @@ i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     
     /* If the slave address does not match, perhaps we should wait 
        until the stop bit is seen?  */
-    if ((id >> 1) != dev->slave->id)
+    if ((id >> 1) != dev->slave_addr)
         return I2C_ERROR_MATCH;
     
     /* Send acknowledge.  */
@@ -359,7 +359,7 @@ i2c_slave_write (i2c_t dev, void *buffer, uint8_t size, int timeout_us)
     if (ret != I2C_OK)
         return ret;
 
-    if ((id >> 1) != dev->slave->id)
+    if ((id >> 1) != dev->slave_addr)
         return I2C_ERROR_MATCH;        
 
     /* Send acknowledge.  */

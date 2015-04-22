@@ -204,7 +204,7 @@ i2c_master_send_addr (i2c_t dev, bool read)
 
        For 10-bit slave addresses, the second byte is part of the
        data packet.  */
-    return i2c_master_send_byte (dev, (dev->slave->id << 1) | (read != 0));
+    return i2c_master_send_byte (dev, (dev->slave_addr << 1) | (read != 0));
 }
 
 
@@ -262,10 +262,13 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
 
 
 i2c_ret_t
-i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, uint8_t addr_size,
+i2c_master_addr_read (i2c_t dev, i2c_id_t slave_addr,
+                      i2c_addr_t addr, uint8_t addr_size,
                       void *buffer, uint8_t size)
 {
     i2c_ret_t ret;
+
+    dev->slave_addr = slave_addr;
 
     ret = i2c_master_transfer (dev, &addr, addr_size, 
                                I2C_START | I2C_WRITE);
@@ -278,10 +281,13 @@ i2c_master_addr_read (i2c_t dev, i2c_addr_t addr, uint8_t addr_size,
 
 
 i2c_ret_t
-i2c_master_addr_write (i2c_t dev, i2c_addr_t addr, uint8_t addr_size,
+i2c_master_addr_write (i2c_t dev, i2c_id_t slave_addr,
+                       i2c_addr_t addr, uint8_t addr_size,
                        void *buffer, uint8_t size)
 {
     i2c_ret_t ret;
+
+    dev->slave_addr = slave_addr;
 
     ret = i2c_master_transfer (dev, &addr, addr_size, 
                                I2C_START | I2C_WRITE);
@@ -293,7 +299,7 @@ i2c_master_addr_write (i2c_t dev, i2c_addr_t addr, uint8_t addr_size,
 
 
 i2c_t
-i2c_master_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
+i2c_master_init (const i2c_bus_cfg_t *bus_cfg)
 {
     i2c_dev_t *dev;
 
@@ -304,7 +310,7 @@ i2c_master_init (const i2c_bus_cfg_t *bus_cfg, const i2c_slave_cfg_t *slave_cfg)
     i2c_devices_num++;    
 
     dev->bus = bus_cfg;
-    dev->slave = slave_cfg;
+    dev->slave_addr = 0;
 
     /* Ensure PIO clock enabled for PIO reading.  */
     pio_init (dev->bus->sda);

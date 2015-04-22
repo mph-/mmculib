@@ -31,7 +31,7 @@
 struct i2c_dev_struct
 {
     const i2c_bus_cfg_t *bus;
-    const i2c_slave_cfg_t *slave;
+    i2c_id_t slave_addr;
     bool seen_restart;
 };
 

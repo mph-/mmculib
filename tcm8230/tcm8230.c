@@ -95,21 +95,15 @@ static const i2c_bus_cfg_t i2c_bus_cfg =
 };
 
 
-static const i2c_slave_cfg_t i2c_cfg =
-{
-    .id = TCM8230_TWI_ADDRESS
-};
-
-
 static uint16_t width;
 static uint16_t height;
-
 
 
 static void
 tcm8230_reg_write (i2c_t i2c, uint8_t addr, uint8_t value)
 {
-    i2c_master_addr_write (i2c, addr, 1, &value, sizeof (value));
+    i2c_master_addr_write (i2c, TCM8230_TWI_ADDRESS, addr, 1,
+                           &value, sizeof (value));
 }
 
 
@@ -186,7 +180,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
 
 
     /* Configure sensor using I2C.  */
-    i2c = i2c_master_init (&i2c_bus_cfg, &i2c_cfg);
+    i2c = i2c_master_init (&i2c_bus_cfg);
  
     /* Set 15 fps.  */
     tcm8230_reg_write (i2c, 0x02, TCM8230_FPS_15 | TCM8230_ACF_50 
