@@ -136,8 +136,8 @@ int32_t ir_sirc_rx_read (void)
 void ir_sirc_rx_init (void)
 {
     /* Ensure PIO clock activated for reading.  */
-    pio_init (IR_RX_PIO);
+    pio_init (IR_SIRC_RX_PIO);
 
     /* Configure IR receiver PIO as input.  */
-    pio_config_set (IR_RX_PIO, PIO_INPUT);
+    pio_config_set (IR_SIRC_RX_PIO, PIO_INPUT);
 }

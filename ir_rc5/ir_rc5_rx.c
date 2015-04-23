@@ -42,7 +42,7 @@
     @return IR receiver state (1 = IR modulation detected).  */
 static inline uint8_t ir_rc5_rx_get (void)
 {
-    return pio_input_get (IR_RX_PIO) == IR_RC5_RX_ACTIVE_STATE;
+    return pio_input_get (IR_RC5_RX_PIO) == IR_RC5_RX_ACTIVE_STATE;
 }
 
 
@@ -143,9 +143,9 @@ int16_t ir_rc5_rx_read (void)
 void ir_rc5_rx_init (void)
 {
     /* Ensure PIO clock activated for reading.  */
-    pio_init (IR_RX_PIO);
+    pio_init (IR_RC5_RX_PIO);
 
     /* Configure IR receiver PIO as input.  */
-    pio_config_set (IR_RX_PIO, PIO_INPUT);
+    pio_config_set (IR_RC5_RX_PIO, PIO_INPUT);
 }
 

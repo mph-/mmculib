@@ -43,11 +43,15 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
     {
     case SPI_PGA_MAX9939:
         spi_pga->ops = &max9939_ops;
+        /* Each data transfer is a single byte so the CS framing
+           is not important.  */
         break;
 
     case SPI_PGA_MCP6S21:
     case SPI_PGA_MCP6S2X:
         spi_pga->ops = &mcp6s2x_ops;
+        /* The CS needs to be get low for the two 8 bit transfers.  */
+        spi_cs_mode_set (spi_pga->spi, SPI_CS_MODE_FRAME);
         break;
 
     default:

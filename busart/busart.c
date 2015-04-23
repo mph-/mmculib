@@ -7,6 +7,7 @@
 #include "busart.h"
 #include "peripherals.h"
 #include <string.h>
+#include <stdlib.h>
 
 
 /** A BUSART can be disabled in the target.h file, e.g., using
@@ -81,6 +82,19 @@ busart_init (uint8_t channel,
 
     if (!dev)
         return 0;
+
+    if (!tx_buffer)
+        tx_buffer = malloc (tx_size);
+    if (!tx_buffer)
+        return 0;
+
+    if (!rx_buffer)
+        rx_buffer = malloc (rx_size);
+    if (!rx_buffer)
+    {
+        free (tx_buffer);
+        return 0;
+    }
 
     ring_init (&dev->tx_ring, tx_buffer, tx_size);
     
@@ -209,35 +223,38 @@ busart_write_finished_p (busart_t busart)
 
 
 /** Read character.  This blocks until the character can be read.  */
-int8_t
+int
 busart_getc (busart_t busart)
 {
-    uint8_t ch;
+    uint8_t ch = 0;
 
-    busart_read_block (busart, &ch, sizeof (ch));
+    if (busart_read_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+        return -1;
     return ch;
 }
 
 
 /** Write character.  This blocks until the character can be
     written.  */
-int8_t
+int
 busart_putc (busart_t busart, char ch)
 {
     if (ch == '\n')
         busart_putc (busart, '\r');    
 
-    busart_write_block (busart, &ch, sizeof (ch));
+    if (busart_write_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+        return -1;
     return ch;
 }
 
 
 /** Write string.  This blocks until the string is buffered.  */
-int8_t
+int
 busart_puts (busart_t busart, const char *str)
 {
     while (*str)
-        busart_putc (busart, *str++);
+        if (busart_putc (busart, *str++) < 0)
+            return -1;
     return 1;
 }
 

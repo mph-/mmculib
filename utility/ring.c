@@ -263,3 +263,4 @@ ring_clear (ring_t *ring)
 {
     ring->in = ring->out = ring->top;
 }
+
