@@ -229,39 +229,42 @@ usb_cdc_init (void)
 
 
 /** Read character.  This blocks until the character can be read.  */
-int8_t
+int
 usb_cdc_getc (usb_cdc_t usb_cdc)
 {
-    uint8_t ch = 0;
+    int ret = -1;
 
-    usb_cdc_read (usb_cdc, &ch, sizeof (ch));
+    if (! usb_cdc_read (usb_cdc, &ret, sizeof (ret)))
+        return -1;
 
-    if (ch == '\r')
-        ch = '\n';
+    if (ret == '\r')
+        ret = '\n';
 
-    return ch;
+    return ret;
 }
 
 
 /** Write character.  This blocks until the character can be
     written.  */
-int8_t
+int
 usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
 {
     if (ch == '\n')
         usb_cdc_putc (usb_cdc, '\r');    
 
-    usb_cdc_write (usb_cdc, &ch, sizeof (ch));
+    if (! usb_cdc_write (usb_cdc, &ch, sizeof (ch)))
+        return -1;
     return ch;
 }
 
 
 /** Write string.  This blocks until the string is buffered.  */
-int8_t
+int
 usb_cdc_puts (usb_cdc_t usb_cdc, const char *str)
 {
     while (*str)
-        usb_cdc_putc (usb_cdc, *str++);
+        if (usb_cdc_putc (usb_cdc, *str++) < 0)
+            return -1;
     return 1;
 }
 
