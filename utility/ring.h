@@ -183,4 +183,11 @@ ring_getc (ring_t *ring)
 bool
 ring_find (ring_t *ring, char ch);
 
+
+/** Empties the ring buffer to it's original state.
+    @param ring, pointer to ring buffer structure. */
+void
+ring_clear (ring_t *ring);
+
+
 #endif

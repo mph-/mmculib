@@ -59,8 +59,11 @@ ring_init (ring_t *ring, void *buffer, ring_size_t size)
     if (!ring || !buffer)
         return 0;
 
-    ring->in = ring->out = ring->top = buffer;
+    ring->top = buffer;
     ring->end = (char *)buffer + size;
+
+    ring_clear (ring);
+
     return size;
 }
 
@@ -251,3 +254,13 @@ ring_find (ring_t *ring, char ch)
 
     return 0;
 }
+
+
+/** Empties the ring buffer to it's original state.
+    @param ring, pointer to ring buffer structure. */
+void
+ring_clear (ring_t *ring)
+{
+    ring->in = ring->out = ring->top;
+}
+
