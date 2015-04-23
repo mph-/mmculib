@@ -153,8 +153,8 @@ ring_putc (ring_t *ring, char c)
 
 /** Read single character from ring buffer.
     @param ring pointer to ring buffer structure
-    @return character or zero if unsuccessful.  */
-static inline char
+    @return character or -1 if unsuccessful.  */
+static inline int
 ring_getc (ring_t *ring)
 {
     int tmp;
@@ -164,7 +164,7 @@ ring_getc (ring_t *ring)
     /* Determine number of free entries in ring buffer
        and give up if full.  */
     if (!RING_READ_NUM (ring, tmp))
-        return 0;
+        return -1;
 
     ptr = ring->out;
     c = *ptr++;
