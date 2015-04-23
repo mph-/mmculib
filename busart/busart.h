@@ -88,4 +88,8 @@ busart_putc (busart_t busart, char ch);
 extern int8_t
 busart_puts (busart_t busart, const char *str);
 
+
+/* Clears the busart's transmit and receive buffers.  */
+extern void
+busart_clear (busart_t busart);
 #endif

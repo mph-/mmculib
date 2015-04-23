@@ -240,3 +240,14 @@ busart_puts (busart_t busart, const char *str)
         busart_putc (busart, *str++);
     return 1;
 }
+
+
+/** Clears the busart's transmit and receive buffers.  */
+void
+busart_clear (busart_t busart)
+{
+    busart_dev_t *dev = busart;
+
+    ring_clear (&dev->rx_ring);
+    ring_clear (&dev->tx_ring);
+}

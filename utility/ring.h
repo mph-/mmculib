@@ -176,4 +176,18 @@ ring_getc (ring_t *ring)
 }
 
 
+/** Search for character in ring buffer. 
+    @param ring pointer to ring buffer structure
+    @param ch character to find
+    @return non-zero if character found.  */
+bool
+ring_find (ring_t *ring, char ch);
+
+
+/** Empties the ring buffer to it's original state.
+    @param ring, pointer to ring buffer structure. */
+void
+ring_clear (ring_t *ring);
+
+
 #endif
