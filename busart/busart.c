@@ -223,34 +223,37 @@ busart_write_finished_p (busart_t busart)
 
 
 /** Read character.  This blocks until the character can be read.  */
-int8_t
+int
 busart_getc (busart_t busart)
 {
     uint8_t ch = 0;
 
-    busart_read_block (busart, &ch, sizeof (ch));
+    if (busart_read_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+        return -1;
     return ch;
 }
 
 
 /** Write character.  This blocks until the character can be
     written.  */
-int8_t
+int
 busart_putc (busart_t busart, char ch)
 {
     if (ch == '\n')
         busart_putc (busart, '\r');    
 
-    busart_write_block (busart, &ch, sizeof (ch));
+    if (busart_write_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+        return -1;
     return ch;
 }
 
 
 /** Write string.  This blocks until the string is buffered.  */
-int8_t
+int
 busart_puts (busart_t busart, const char *str)
 {
     while (*str)
-        busart_putc (busart, *str++);
+        if (busart_putc (busart, *str++) < 0)
+            return -1;
     return 1;
 }
