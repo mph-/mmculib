@@ -1,5 +1,5 @@
 PROJECT_NAME = mmculib
-RELEASE_NUM = 1.0.1
+RELEASE_NUM = 1.1.1
 
 RELEASE_NAME = $(PROJECT_NAME)-$(RELEASE_NUM)
 RELEASE_TAG = $(shell echo $(PROJECT_NAME)-$(RELEASE_NUM) | tr . _ | tr 'a-z' 'A-Z')
