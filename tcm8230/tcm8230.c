@@ -102,8 +102,8 @@ static uint16_t height;
 static void
 tcm8230_reg_write (i2c_t i2c, uint8_t addr, uint8_t value)
 {
-    i2c_master_addr_write (i2c, TCM8230_TWI_ADDRESS, addr, 1,
-                           &value, sizeof (value));
+    i2c_master_write (i2c, TCM8230_TWI_ADDRESS, addr, 1,
+                      &value, sizeof (value));
 }
 
 
