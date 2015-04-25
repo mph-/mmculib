@@ -262,9 +262,9 @@ i2c_master_transfer (i2c_t dev, void *buffer, uint8_t size, i2c_action_t action)
 
 
 i2c_ret_t
-i2c_master_read (i2c_t dev, i2c_id_t slave_addr,
-                 i2c_addr_t addr, uint8_t addr_size,
-                 void *buffer, uint8_t size)
+i2c_master_addr_read (i2c_t dev, i2c_id_t slave_addr,
+                      i2c_addr_t addr, uint8_t addr_size,
+                      void *buffer, uint8_t size)
 {
     i2c_ret_t ret;
 
@@ -281,9 +281,17 @@ i2c_master_read (i2c_t dev, i2c_id_t slave_addr,
 
 
 i2c_ret_t
-i2c_master_write (i2c_t dev, i2c_id_t slave_addr,
-                  i2c_addr_t addr, uint8_t addr_size,
-                  void *buffer, uint8_t size)
+i2c_master_read (i2c_t i2c, i2c_id_t slave_addr,
+                 void *buffer, uint8_t size)
+{
+    return i2c_master_read (i2c, slave_addr, 0, 0, buffer, size);
+}
+
+
+i2c_ret_t
+i2c_master_addr_write (i2c_t dev, i2c_id_t slave_addr,
+                       i2c_addr_t addr, uint8_t addr_size,
+                       void *buffer, uint8_t size)
 {
     i2c_ret_t ret;
 
@@ -295,6 +303,14 @@ i2c_master_write (i2c_t dev, i2c_id_t slave_addr,
         return ret;
 
     return i2c_master_transfer (dev, buffer, size, I2C_WRITE | I2C_STOP);
+}
+
+
+i2c_ret_t
+i2c_master_write (i2c_t i2c, i2c_id_t slave_addr,
+                  void *buffer, uint8_t size)
+{
+    return i2c_master_write (i2c, slave_addr, 0, 0, buffer, size);
 }
 
 
