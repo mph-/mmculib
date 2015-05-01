@@ -12,6 +12,7 @@
 #include "config.h"
 #include "pio.h"
 #include "delay.h"
+#include "i2c.h"
 
 #ifndef I2C_CLOCK_STRETCH_TIMEOUT_US
 #define I2C_CLOCK_STRETCH_TIMEOUT_US 50

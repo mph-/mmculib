@@ -284,7 +284,7 @@ i2c_ret_t
 i2c_master_read (i2c_t i2c, i2c_id_t slave_addr,
                  void *buffer, uint8_t size)
 {
-    return i2c_master_read (i2c, slave_addr, 0, 0, buffer, size);
+    return i2c_master_addr_read (i2c, slave_addr, 0, 0, buffer, size);
 }
 
 
@@ -310,7 +310,7 @@ i2c_ret_t
 i2c_master_write (i2c_t i2c, i2c_id_t slave_addr,
                   void *buffer, uint8_t size)
 {
-    return i2c_master_write (i2c, slave_addr, 0, 0, buffer, size);
+    return i2c_master_addr_write (i2c, slave_addr, 0, 0, buffer, size);
 }
 
 
