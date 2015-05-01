@@ -226,10 +226,25 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
 
 bool tcm8230_vsync_high_wait (uint32_t timeout_us)
 {
-    /* Wait for vertical sync. to go high.  */
+  /* Wait for vertical sync. to go high.  */
     while (1)
     {
         if (pio_input_get (TCM8230_VD_PIO))
+            return 1;
+        if (!timeout_us)
+            return 0;
+        timeout_us--;
+        DELAY_US (1);
+    }
+}
+
+
+bool tcm8230_vsync_low_wait (uint32_t timeout_us)
+{
+  /* Wait for vertical sync. to go low.  */
+    while (1)
+    {
+        if (! pio_input_get (TCM8230_VD_PIO))
             return 1;
         if (!timeout_us)
             return 0;
@@ -322,6 +337,9 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
        In low power mode a frame is 254 active lines and 9
        blanking lines (263 lines) total.
     */
+
+    if (! tcm8230_vsync_low_wait (timeout_us))
+        return TCM8230_VSYNC_LOW_TIMEOUT;
 
     if (! tcm8230_vsync_high_wait (timeout_us))
         return TCM8230_VSYNC_HIGH_TIMEOUT;

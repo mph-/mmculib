@@ -53,16 +53,18 @@ typedef enum tcm8230_error
     TCM8230_NONE = 0,
     /** Timeout waiting for vsync going high.  */
     TCM8230_VSYNC_HIGH_TIMEOUT = -1,
+    /** Timeout waiting for vsync going low.  */
+    TCM8230_VSYNC_LOW_TIMEOUT = -2,
     /** Timeout waiting for hsync going high.  */
-    TCM8230_HSYNC_HIGH_TIMEOUT = -2,
+    TCM8230_HSYNC_HIGH_TIMEOUT = -3,
     /** Timeout waiting for hsync going low.  */
-    TCM8230_HSYNC_LOW_TIMEOUT = -3,
+    TCM8230_HSYNC_LOW_TIMEOUT = -4,
     /** Image buffer too small.  */
-    TCM8230_BUFFER_SMALL = -4,
+    TCM8230_BUFFER_SMALL = -5,
     /** Line not ready.  */
-    TCM8230_LINE_NOT_READY = -5,
+    TCM8230_LINE_NOT_READY = -6,
     /** Missed VSYNC.  */
-    TCM8230_VSYNC_MISSED = -6
+    TCM8230_VSYNC_MISSED = -7
 } tcm8230_error_t;
 
 
