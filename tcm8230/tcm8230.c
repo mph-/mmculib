@@ -6,6 +6,13 @@
 #include "i2c_master.h"
 #include "tcm8230.h"
 
+/* The DCLK appears to run at a frequency of EXTCLK / 4.  With 2 bytes
+   per pixel, a horizontal line in SQCIF mode (96 pixels) requires 192
+   clocks.  Thus with EXTCLK at 2 MHz, a horizontal line takes 500 us,
+   repeating every 6.12 ms. 
+
+   The VSYNC period is 804 ms; high for 776 ms, 28 ms.  */
+*/   
  
 #define TCM8230_TWI_ADDRESS 0x3C
  
@@ -337,9 +344,6 @@ int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
        In low power mode a frame is 254 active lines and 9
        blanking lines (263 lines) total.
     */
-
-    if (! tcm8230_vsync_low_wait (timeout_us))
-        return TCM8230_VSYNC_LOW_TIMEOUT;
 
     if (! tcm8230_vsync_high_wait (timeout_us))
         return TCM8230_VSYNC_HIGH_TIMEOUT;
