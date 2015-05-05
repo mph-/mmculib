@@ -6,12 +6,24 @@
 #include "i2c_master.h"
 #include "tcm8230.h"
 
-/* The DCLK appears to run at a frequency of EXTCLK / 4.  With 2 bytes
-   per pixel, a horizontal line in SQCIF mode (96 pixels) requires 192
-   clocks.  Thus with EXTCLK at 2 MHz, a horizontal line takes 500 us,
-   repeating every 6.12 ms. 
+/* DCLK has a frequency of EXTCLK / 4.  Thus with EXTCLK at 2 MHz,
+   DCLK is 500 kHz.
 
-   The VSYNC period is 804 ms; high for 776 ms, 28 ms.  */
+   Two DCLKs are required per pixel.
+   
+   With EXTCLK at 2 MHz, SQCIF frame format (128 x 96 pixels), and
+   low-power mode:
+
+   HD is high for 128 * 2 / 500e3 = 512 us.
+   HD is low for (1560 - 128 * 2) / 500e3 = 2.61 ms.
+   The HD period is 1560 / 500e3 = 3.12 ms.
+
+   VD is high for 254 lines, 254 * 1560 / 500e3 = 792.48 ms.
+   VD is low for 9 lines, 9 * 1560 / 500e3 = 28.08 ms.
+   The VD period is 263 lines, 263 * 1560 / 500e3 = 820.56 ms.
+
+   This corresponds to a frame rate of 1.22 Hz.  To achieve 15 frames
+   per second requires a 25 MHz EXTCLK.
 */   
  
 #define TCM8230_TWI_ADDRESS 0x3C
@@ -22,7 +34,7 @@
 #define TCM8230_CLOCK 2e6
 #endif
 
-#define TCM8230_HSYNC_TIMEOUT_US (5000 * 2)
+#define TCM8230_HSYNC_TIMEOUT_US 10000
  
  
 /* Register 0x02 control fields.  */
@@ -319,7 +331,8 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t cols)
 
 
 /** This blocks until it captures a frame.  This may be up to nearly two image
-    capture periods.  */
+    capture periods.  You should poll tcm8230_frame_ready_p first to see when
+    VSYNC goes low.  */
 int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
 {
     uint16_t row;
