@@ -7,20 +7,20 @@
 #define BITS_H
 
 
-#define BITS_MASK(first, last) ((1 << ((last))) - (1 << (first)))
+#define BITS_MASK(first, last) ((1 << ((last) + 1)) - (1 << (first)))
 
-#define BITS_CLR(reg, first, last) ((reg) &= BITS_MASK (first, last))
+#define BITS_CLR(reg, first, last) ((reg) &= BITS_MASK ((first), (last)))
 
-#define BITS_SET(reg, first, last) ((reg) |= BITS_MASK (first, last))
+#define BITS_SET(reg, first, last) ((reg) |= BITS_MASK ((first), (last)))
 
 #define BITS_EXTRACT(reg, first, last) \
-    (((reg) & BITS_MASK (first, last)) >> (first))
+    (((reg) & BITS_MASK ((first), (last))) >> (first))
 
 #define BITS_INSERT(reg, val, first, last) \
-    (reg) = ((reg) & ~BITS_MASK (first, last))  \
-        | (((val) & BITS_MASK (0, last - first)) << (first))
+    (reg) = ((reg) & ~BITS_MASK ((first), (last)))  \
+        | (((val) & BITS_MASK (0, (last) - (first))) << (first))
 
 #define BITS(val, first, last) \
-    (((val) & BITS_MASK (0, last - first)) << (first))
+    (((val) & BITS_MASK (0, (last) - (first))) << (first))
 
 #endif
