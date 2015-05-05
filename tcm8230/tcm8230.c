@@ -213,8 +213,11 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     value = TCM8230_DOUTSW_ON | TCM8230_DATAHZ_OUT 
         | (cfg->picsize << 2) | TCM8230_PICFMT_RGB565;
 
-    if (! cfg->colour)
+    if (0 && ! cfg->colour)
+    {
+        /* This does not seem to work properly.  FIXME.  */
         value |=  TCM8230_CM_BW;
+    }
 
     tcm8230_reg_write (i2c, 0x03, value);
  
