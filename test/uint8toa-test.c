@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "uint8toa.h"
+#include "../utility/uint8toa.h"
 
 int main (void)
 {
