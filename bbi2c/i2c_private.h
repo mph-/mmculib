@@ -116,7 +116,7 @@ i2c_scl_ensure_high (i2c_t dev)
 
 
 static void
-i2c_delay (i2c_t dev)
+i2c_delay (__unused__ i2c_t dev)
 {
     /* This could be generalised for different speed buses.  */
     DELAY_US (I2C_DELAY_US);

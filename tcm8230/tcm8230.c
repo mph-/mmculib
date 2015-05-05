@@ -173,7 +173,8 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     piobus_config_set (TCM8230_DATA_PIOBUS, PIO_INPUT);
  
 
-    /* Generate EXTCLK.  */
+    /* Generate EXTCLK.  Try TC then fall back to PWM driver.  */
+    pwm = 0;
     tc = tc_init (&tc_cfg);
     if (tc)
     {
