@@ -125,12 +125,14 @@ tcm8230_reg_write (i2c_t i2c, uint8_t addr, uint8_t value)
                            &value, sizeof (value));
 }
 
+#define TC_PRESCALE 2
 
 static const tc_cfg_t tc_cfg =
 {
     .pio = TCM8230_EXTCLK_PIO,
     .mode = TC_MODE_CLOCK,
-    .period = TC_PERIOD_DIVISOR (TCM8230_CLOCK_INITIAL)
+    .frequency = TCM8230_CLOCK_INITIAL,
+    .prescale = TC_PRESCALE
 };
 
 
@@ -235,7 +237,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     /* Slow down clock; this will result in fewer than 15 fps.  */
     if (tc)
     {
-        tc_period_set (tc, TC_PERIOD_DIVISOR (TCM8230_CLOCK));
+        tc_frequency_set (tc, TCM8230_CLOCK);
     }
     else
     {

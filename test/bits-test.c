@@ -19,5 +19,10 @@ int main(void)
     if (status != 14)
         printf ("BITS_INSERT error\n");
 
+    status = 0;
+    BITS_INSERT (status, 1, 31, 31);
+    if (status != (1 << 31))
+        printf ("BITS_INSERT error\n");
+
     return 0;
 }

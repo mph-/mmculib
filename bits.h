@@ -6,8 +6,8 @@
 #ifndef BITS_H
 #define BITS_H
 
-
-#define BITS_MASK(first, last) ((1 << ((last) + 1)) - (1 << (first)))
+#define WORD_HIGHBIT (sizeof(unsigned) * 8 - 1)
+#define BITS_MASK(first, last) (((unsigned) -1 >> (WORD_HIGHBIT - (last))) & ~((1U << (first)) - 1))
 
 #define BITS_CLR(reg, first, last) ((reg) &= BITS_MASK ((first), (last)))
 
