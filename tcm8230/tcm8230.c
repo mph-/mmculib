@@ -6,7 +6,28 @@
 #include "i2c_master.h"
 #include "tcm8230.h"
 
-/* DCLK has a frequency of EXTCLK / 4.  Thus with EXTCLK at 2 MHz,
+/* This driver bit-bashes a TCM8230 image sensor.  
+
+   It assumes that the data lines D0-D7 are contiguous on the same
+   port.
+
+   I2C/TWI is required to configure the TCM8230.  This can be
+   bit-bashed with any two PIO lines.
+
+   A TC or PWM output is required to drive EXTCLK.  It appears that
+   the EXTCLK frequency needs to be at least 6.25 MHz when configuring
+   the TCM8230 via I2C (TWI).  The frequency of EXTCLK can then be
+   reduced to allow grabbing of the data by polling a PIO port.
+
+   When the TCM8230 is correctly configured, it will start the DCLK,
+   HD, and VD signals and put the pixel data on the D0-D7 data lines.
+
+   The TCM8230 requires three power supplies.  If the 2.5 V supply is
+   not provided, all the pixels return black (97, 8) in colour
+   (RGB565) mode.
+
+
+   DCLK has a frequency of EXTCLK / 4.  Thus with EXTCLK at 2 MHz,
    DCLK is 500 kHz.
 
    Two DCLKs are required per pixel.
@@ -219,7 +240,7 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     if (0 && ! cfg->colour)
     {
         /* This does not seem to work properly.  FIXME.  */
-        value |=  TCM8230_CM_BW;
+        value |= TCM8230_CM_BW;
     }
 
     tcm8230_reg_write (i2c, 0x03, value);
@@ -338,7 +359,7 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t cols)
 
 /** This blocks until it captures a frame.  This may be up to nearly two image
     capture periods.  You should poll tcm8230_frame_ready_p first to see when
-    VSYNC goes low.  */
+    VSYNC (VD) goes low.  */
 int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
 {
     uint16_t row;
