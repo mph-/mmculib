@@ -16,9 +16,6 @@
 #include <string.h>
 
 
-enum {LINEBUFFER_SIZE = 32};
-
-
 struct tty_struct
 {
     linebuffer_t *linebuffer;
@@ -95,13 +92,15 @@ tty_printf (tty_t *tty, const char *fmt, ...)
     va_list ap;
     int ret;
     int len;
-    char buffer[128];
+    char buffer[TTY_OUTPUT_BUFFER_SIZE];
 
     
     /* Check in case USB detached....  This could happen in the middle
        of a transfer; should make the driver more robust.  */
     if (tty->update && !tty->update ())
         return 0;
+
+    /* FIXME for buffer overrun.  */
     
     va_start (ap, fmt);
     ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
@@ -139,7 +138,7 @@ tty_init (tty_cfg_t *cfg, void *dev)
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
 
-    tty->linebuffer = linebuffer_init (LINEBUFFER_SIZE);
+    tty->linebuffer = linebuffer_init (TTY_INPUT_BUFFER_SIZE);
 
     return tty;
 }

@@ -4,6 +4,14 @@
 #include "config.h"
 #include "sys.h"
 
+#ifndef TTY_INPUT_BUFFER_SIZE
+#define TTY_INPUT_BUFFER_SIZE 80
+#endif
+
+#ifndef TTY_OUTPUT_BUFFER_SIZE
+#define TTY_OUTPUT_BUFFER_SIZE 1024
+#endif
+
 struct tty_cfg_struct
 {
     bool (*update)(void);
