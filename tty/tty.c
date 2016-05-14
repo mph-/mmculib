@@ -1,7 +1,7 @@
 /** @file   tty.c
     @author M. P. Hayes, UCECE
     @date   24 January 2008
-    @brief  Tty control module for Treetap7.
+    @brief  A non-blocking TTY driver.  It does not support termio.  
 */
 
 #include "config.h"
@@ -30,7 +30,7 @@ struct tty_struct
 static char
 tty_getc1 (tty_t *tty)
 {
-    char ch;
+    int ch;
 
     if (!tty->read (tty->dev, &ch, sizeof (ch)))
         return 0;
@@ -40,7 +40,7 @@ tty_getc1 (tty_t *tty)
 
 
 static int
-tty_putc1 (tty_t *tty, char ch)
+tty_putc1 (tty_t *tty, int ch)
 {
     if (tty->write (tty->dev, &ch, sizeof (ch)) <= 0)
         return -1;
@@ -49,10 +49,36 @@ tty_putc1 (tty_t *tty, char ch)
 }
 
 
+int
+tty_putc (tty_t *tty, int ch)
+{
+    /* Convert newline to carriage return/line feed.  */
+    if (ch ==  '\n')
+        tty_putc1 (tty, '\r');
+
+    return tty_putc1 (tty, ch);
+}
+
+
+int
+tty_puts (tty_t *tty, const char *s)
+{
+    int ret;
+
+    while (*s)
+    {
+        ret = tty_putc (tty, *s++);
+        if (ret < 0)
+            return ret;
+    }
+    return 1;
+}
+
+
 bool
 tty_poll (tty_t *tty)
 {
-    char ch;
+    int ch;
 
     if (tty->update && !tty->update ())
         return 0;
@@ -94,7 +120,6 @@ tty_printf (tty_t *tty, const char *fmt, ...)
     int len;
     char buffer[TTY_OUTPUT_BUFFER_SIZE];
 
-    
     /* Check in case USB detached....  This could happen in the middle
        of a transfer; should make the driver more robust.  */
     if (tty->update && !tty->update ())
@@ -106,11 +131,7 @@ tty_printf (tty_t *tty, const char *fmt, ...)
     ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
     va_end (ap);
 
-    len = strlen (buffer);
-
-    tty->write (tty->dev, buffer, len);
-
-    return ret;
+    return tty_puts (tty, buffer);
 }
 
 

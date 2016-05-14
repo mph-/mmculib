@@ -29,9 +29,16 @@ typedef struct tty_cfg_struct tty_cfg_t;
 int
 tty_getc (tty_t *tty);
 
+int
+tty_putc (tty_t *tty, int ch);
+
 
 char *
 tty_gets (tty_t *tty, char *buffer, int size);
+
+
+int
+tty_puts (tty_t *tty, const char *s);
 
 
 int
