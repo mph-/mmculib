@@ -32,7 +32,7 @@ tty_getc1 (tty_t *tty)
 {
     int ch;
 
-    if (!tty->read (tty->dev, &ch, sizeof (ch)))
+    if (!tty->read (tty->dev, &ch, 1))
         return 0;
 
     return ch;
@@ -42,7 +42,7 @@ tty_getc1 (tty_t *tty)
 static int
 tty_putc1 (tty_t *tty, int ch)
 {
-    if (tty->write (tty->dev, &ch, sizeof (ch)) <= 0)
+    if (tty->write (tty->dev, &ch, 1) <= 0)
         return -1;
 
     return ch;

@@ -1,16 +1,27 @@
+/** @file   tty.h
+    @author M. P. Hayes
+    @date   12 May 2016
+    @brief  A non-blocking TTY driver.  It does not support termio.  
+*/
+
 #ifndef TTY_H
 #define TTY_H
 
 #include "config.h"
 #include "sys.h"
 
+
+/* The longest input linebuffer size.  */
 #ifndef TTY_INPUT_BUFFER_SIZE
 #define TTY_INPUT_BUFFER_SIZE 80
 #endif
 
+
+/* The longest line for tty_printf.  */
 #ifndef TTY_OUTPUT_BUFFER_SIZE
 #define TTY_OUTPUT_BUFFER_SIZE 1024
 #endif
+
 
 struct tty_cfg_struct
 {
