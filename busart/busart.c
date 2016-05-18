@@ -125,7 +125,7 @@ busart_write (busart_t busart, const void *data, ring_size_t size)
 
 
 /** Write size bytes.  This will block until the desired number of
-    bytes have been written.  */
+    bytes have been written into the transmit ring buffer.  */
 ring_size_t
 busart_write_block (busart_t busart, const void *data, ring_size_t size)
 {

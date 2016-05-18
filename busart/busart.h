@@ -2,6 +2,9 @@
     @author M. P. Hayes, UCECE
     @date   15 May 2007
     @brief  Buffered USART interface.
+    @note By default hardware handshaking is not used for flow
+    control.  This can be enabled by defining USART0_USE_HANDSHAKING
+    or USART1_USE_HANDSHAKING in target.h
 */
 #ifndef BUSART_H
 #define BUSART_H
