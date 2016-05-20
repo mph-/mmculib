@@ -135,6 +135,40 @@ tty_printf (tty_t *tty, const char *fmt, ...)
 }
 
 
+/** Read size bytes.  This will block until the desired number of
+    bytes have been read.  */
+int16_t
+tty_read (tty_t *tty, void *data, uint16_t size)
+{
+    uint16_t left = size;
+    char *buffer = data;
+
+    while (left)
+    {
+        *buffer++ = tty_getc (tty);
+        left--;
+    }
+    return size;
+}
+
+
+/** Write size bytes.  This will block until the desired number of
+    bytes have been transmitted.  */
+int16_t
+tty_write (tty_t *tty, const void *data, uint16_t size)
+{
+    uint16_t left = size;
+    const char *buffer = data;
+
+    while (left)
+    {
+        tty_putc (tty, *buffer++);
+        left--;
+    }
+    return size;
+}
+
+
 void
 tty_shutdown (tty_t *tty)
 {
