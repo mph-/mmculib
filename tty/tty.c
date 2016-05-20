@@ -144,7 +144,7 @@ tty_shutdown (tty_t *tty)
 
 
 tty_t *
-tty_init (tty_cfg_t *cfg, void *dev)
+tty_init (const tty_cfg_t *cfg, void *dev)
 {
     tty_t *tty;
 
