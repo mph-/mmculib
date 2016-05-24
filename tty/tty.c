@@ -98,6 +98,11 @@ tty_poll (tty_t *tty)
 }
 
 
+/** This is a non-blocking version of fgetc.  
+    @param tty a pointer to the tty device
+    @return next character from line buffer otherwise -1 if no character
+            is available.
+*/
 int
 tty_getc (tty_t *tty)
 {
@@ -105,6 +110,15 @@ tty_getc (tty_t *tty)
 }
 
 
+/** This is a non-blocking version of fgets.   If the tty linebuffer
+    contains a newline, then the linebuffer is copied into the user's
+    buffer up to and including the newline, provided the user's buffer
+    is large enough.
+    @param tty a pointer to the tty device
+    @param buffer is a pointer to a buffer
+    @param size is the number of bytes in the buffer
+    @return buffer if a line from the linebuffer has been copied otherwise 0. 
+*/
 char *
 tty_gets (tty_t *tty, char *buffer, int size)
 {
