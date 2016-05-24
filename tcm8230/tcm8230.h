@@ -73,7 +73,8 @@ int tcm8230_init (const tcm8230_cfg_t *cfg);
 
 /** This blocks until it captures a frame.  This may be up to nearly two image
     capture periods.  You should poll tcm8230_frame_ready_p first to see when
-    VSYNC goes low.  */
+    VSYNC (VD) goes low.   If you call this function with VSYNC high you will
+    miss the start of the image.  */
 int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us);
 
 
@@ -90,5 +91,17 @@ bool tcm8230_frame_ready_p (void);
 
 
 bool tcm8230_line_ready_p (void);
+
+
+bool tcm8230_vsync_high_wait (uint32_t timeout_us);
+
+
+bool tcm8230_vsync_low_wait (uint32_t timeout_us);
+
+
+bool tcm8230_hsync_high_wait (uint32_t timeout_us);
+
+
+bool tcm8230_hsync_low_wait (uint32_t timeout_us);
 
 #endif

@@ -180,10 +180,6 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
     width = modes[cfg->picsize].width;
     height = modes[cfg->picsize].height;
 
-   /* Initialise PIO controller; assuming all the inputs are on the
-      same controller.  */
-    pio_init (TCM8230_VD_PIO);
-
     /* Configure PIOs.  */
     pio_config_set (TCM8230_VD_PIO, PIO_INPUT);
     pio_config_set (TCM8230_HD_PIO, PIO_INPUT);
@@ -255,7 +251,8 @@ int tcm8230_init (const tcm8230_cfg_t *cfg)
                        | TCM8230_PICSEL_COLORBAR);
 
  
-    /* Slow down clock; this will result in fewer than 15 fps.  */
+    /* Slow down clock; this will result in fewer than 15 fps but it makes
+       it easier to poll.  */
     if (tc)
     {
         tc_frequency_set (tc, TCM8230_CLOCK);
@@ -359,7 +356,8 @@ int16_t tcm8230_line_read (uint8_t *row, uint16_t cols)
 
 /** This blocks until it captures a frame.  This may be up to nearly two image
     capture periods.  You should poll tcm8230_frame_ready_p first to see when
-    VSYNC (VD) goes low.  */
+    VSYNC (VD) goes low.   If you call this function with VSYNC high you will
+    miss the start of the image.  */
 int32_t tcm8230_capture (uint8_t *image, uint32_t bytes, uint32_t timeout_us)
 {
     uint16_t row;
