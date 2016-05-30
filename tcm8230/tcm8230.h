@@ -68,6 +68,7 @@ typedef enum tcm8230_error
 } tcm8230_error_t;
 
 
+/** Initialise image sensor.  */
 int tcm8230_init (const tcm8230_cfg_t *cfg);
 
 
