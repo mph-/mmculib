@@ -2,6 +2,12 @@
     @author M. P. Hayes, UCECE
     @date   24 January 2008
     @brief  A non-blocking TTY driver.  It does not support termio.  
+    @note The TTY device is a stream oriented device that handles line
+          buffering mode.  In this mode, strings are not passed to the
+          application until a line has been received.  The TTY driver
+          converts incoming carriage returns (usually sent when the Enter key
+          is pressed) to newlines.  When sending a newline it also prepends a
+          carriage return character.
 */
 
 #include "config.h"
@@ -75,26 +81,29 @@ tty_puts (tty_t *tty, const char *s)
 }
 
 
+/** Read characters (if any) from input stream and store in
+    the linebuffer.  */
 bool
 tty_poll (tty_t *tty)
 {
     int ch;
 
-    if (tty->update && !tty->update ())
-        return 0;
+    while (1)
+    {
+        if (tty->update && !tty->update ())
+            return 0;
 
-    ch = tty_getc1 (tty);
-    if (!ch)
-        return 1;
+        ch = tty_getc1 (tty);
+        if (!ch)
+            return 1;
 
-    /* Echo character.  */
-    tty_putc1 (tty, ch);
-    if (ch == '\r')
-        tty_putc1 (tty, '\n');
-
-    linebuffer_add (tty->linebuffer, ch);
-
-    return 1;
+        /* Echo character.  */
+        tty_putc1 (tty, ch);
+        if (ch == '\r')
+            tty_putc1 (tty, '\n');
+        
+        linebuffer_add (tty->linebuffer, ch);
+    }
 }
 
 
