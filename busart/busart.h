@@ -21,6 +21,16 @@ typedef busart_dev_t *busart_t;
 #define BUSART_BAUD_DIVISOR(BAUD_RATE) USART0_BAUD_DIVISOR(BAUD_RATE)
 
 
+/** Initialise buffered USART driver
+    @param channel the USART channel number
+    @param baud_divisor the divisor required for the desired baud rate
+    @param tx_buffer a buffer used for the transmit ring buffer (if zero one is
+           allocated with malloc)
+    @param tx_size size of the transmit ring buffer in bytes
+    @param rx_buffer a buffer used for the receive ring buffer (if zero one is
+           allocated with malloc)
+    @param rx_size size of the receive ring buffer in bytes
+*/
 busart_t
 busart_init (uint8_t channel,
              uint16_t baud_divisor,
