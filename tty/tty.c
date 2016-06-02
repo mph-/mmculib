@@ -219,6 +219,7 @@ tty_t *
 tty_init (const tty_cfg_t *cfg, void *dev)
 {
     tty_t *tty;
+    uint16_t linebuffer_size;
 
     tty = malloc (sizeof (*tty));
     if (!tty)
@@ -231,7 +232,11 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
 
-    tty->linebuffer = linebuffer_init (TTY_INPUT_BUFFER_SIZE);
+    linebuffer_size = cfg->linebuffer_size;
+    if (! linebuffer_size)
+        linebuffer_size = TTY_INPUT_BUFFER_SIZE;
+
+    tty->linebuffer = linebuffer_init (linebuffer_size);
 
     return tty;
 }

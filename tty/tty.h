@@ -35,6 +35,7 @@ struct tty_cfg_struct
     void (*shutdown)(void);
     sys_read_t read;
     sys_write_t write;
+    uint16_t linebuffer_size;
 };
 
 
