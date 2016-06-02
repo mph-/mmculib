@@ -189,7 +189,7 @@ int16_t
 tty_write (tty_t *tty, const void *data, uint16_t size)
 {
     uint16_t count = 0;
-    char *buffer = data;
+    const char *buffer = data;
 
     for (count = 0; count < size; count++)
     {
@@ -235,4 +235,3 @@ tty_init (const tty_cfg_t *cfg, void *dev)
 
     return tty;
 }
-

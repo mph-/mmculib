@@ -63,52 +63,54 @@ struct busart_dev_struct
 
 
 /** Initialise buffered USART driver
-    @param channel the USART channel number
-    @param baud_divisor the divisor required for the desired baud rate
-    @param tx_buffer a buffer used for the transmit ring buffer (if zero one is
-           allocated with malloc)
-    @param tx_size size of the transmit ring buffer in bytes
-    @param rx_buffer a buffer used for the receive ring buffer (if zero one is
-           allocated with malloc)
-    @param rx_size size of the receive ring buffer in bytes
+    @param cfg pointer to configuration structure.
+    @return pointer to busart device structure.
 */
 busart_t 
-busart_init (uint8_t channel,
-             uint16_t baud_divisor,
-             char *tx_buffer, ring_size_t tx_size,
-             char *rx_buffer, ring_size_t rx_size)
+busart_init (const busart_cfg_t *cfg)
 {
     busart_dev_t *dev = 0;
+    uint16_t baud_divisor;
+    char *tx_buffer;
+    char *rx_buffer;
+
+    if (cfg->baud_rate == 0)
+        baud_divisor = cfg->baud_divisor;
+    else
+        baud_divisor = BUSART_BAUD_DIVISOR (cfg->baud_rate);
 
 #if BUSART0_ENABLE
-    if (channel == 0)
+    if (cfg->channel == 0)
         dev = busart0_init (baud_divisor);
 #endif
 
 #if BUSART1_ENABLE
-    if (channel == 1)
+    if (cfg->channel == 1)
         dev = busart1_init (baud_divisor);
 #endif
 
     if (!dev)
         return 0;
 
+    tx_buffer = cfg->tx_buffer;
+    rx_buffer = cfg->rx_buffer;
+
     if (!tx_buffer)
-        tx_buffer = malloc (tx_size);
+        tx_buffer = malloc (cfg->tx_size);
     if (!tx_buffer)
         return 0;
 
     if (!rx_buffer)
-        rx_buffer = malloc (rx_size);
+        rx_buffer = malloc (cfg->rx_size);
     if (!rx_buffer)
     {
         free (tx_buffer);
         return 0;
     }
 
-    ring_init (&dev->tx_ring, tx_buffer, tx_size);
+    ring_init (&dev->tx_ring, tx_buffer, cfg->tx_size);
     
-    ring_init (&dev->rx_ring, rx_buffer, rx_size);
+    ring_init (&dev->rx_ring, rx_buffer, cfg->rx_size);
 
     /* Enable the rx interrupt now.  The tx interrupt is enabled
        when we perform a write.  */
@@ -120,8 +122,8 @@ busart_init (uint8_t channel,
 
 /** Write size bytes.  Currently this only writes as many bytes (up to
     the desired size) that can currently fit in the ring buffer.   */
-ring_size_t
-busart_write (busart_t busart, const void *data, ring_size_t size)
+ssize_t
+busart_write (busart_t busart, const void *data, size_t size)
 {
     int ret;
     busart_dev_t *dev = busart;
@@ -136,15 +138,15 @@ busart_write (busart_t busart, const void *data, ring_size_t size)
 
 /** Write size bytes.  This will block until the desired number of
     bytes have been written into the transmit ring buffer.  */
-ring_size_t
-busart_write_block (busart_t busart, const void *data, ring_size_t size)
+ssize_t
+busart_write_block (busart_t busart, const void *data, size_t size)
 {
-    ring_size_t left = size;
+    ssize_t left = size;
     const char *buffer = data;
 
     while (left)
     {
-        ring_size_t ret;
+        ssize_t ret;
 
         ret = busart_write (busart, buffer, left);
         buffer += ret;
@@ -156,8 +158,8 @@ busart_write_block (busart_t busart, const void *data, ring_size_t size)
 
 /** Read as many bytes as there are available in the ring buffer up to
     the specifed size.  */
-ring_size_t
-busart_read (busart_t busart, void *data, ring_size_t size)
+ssize_t
+busart_read (busart_t busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
 
@@ -167,15 +169,15 @@ busart_read (busart_t busart, void *data, ring_size_t size)
 
 /** Read size bytes.  This will block until the desired number of
     bytes have been read.  */
-ring_size_t
-busart_read_block (busart_t busart, void *data, ring_size_t size)
+ssize_t
+busart_read_block (busart_t busart, void *data, size_t size)
 {
-    ring_size_t left = size;
+    ssize_t left = size;
     char *buffer = data;
 
     while (left)
     {
-        ring_size_t ret;
+        ssize_t ret;
 
         ret = busart_read (busart, buffer, left);
         buffer += ret;
