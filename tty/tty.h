@@ -83,14 +83,12 @@ bool
 tty_poll (tty_t *tty);
 
 
-/** Read size bytes.  This will block until the desired number of
-    bytes have been read.  */
+/** Read size bytes.  */
 int16_t
 tty_read (tty_t *tty, void *data, uint16_t size);
 
 
-/** Write size bytes.  This will block until the desired number of
-    bytes have been transmitted.  */
+/** Write size bytes.  */
 int16_t
 tty_write (tty_t *tty, const void *data, uint16_t size);
 

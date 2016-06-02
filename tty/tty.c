@@ -14,7 +14,7 @@
 #include "linebuffer.h"
 #include "tty.h"
 #include "sys.h"
-
+#include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -158,35 +158,50 @@ tty_printf (tty_t *tty, const char *fmt, ...)
 }
 
 
-/** Read size bytes.  This will block until the desired number of
-    bytes have been read.  */
+/** Read size bytes.  */
 int16_t
 tty_read (tty_t *tty, void *data, uint16_t size)
 {
-    uint16_t left = size;
+    uint16_t count = 0;
     char *buffer = data;
 
-    while (left)
+    tty_poll (tty);
+
+    for (count = 0; count < size; count++)
     {
-        *buffer++ = tty_getc (tty);
-        left--;
+        int ch;
+
+        ch = tty_getc (tty);
+        if (ch < 0)
+        {
+            if (count == 0 && errno == EAGAIN)
+                return -1;
+            return count;
+        }
+        *buffer++ = ch;
     }
     return size;
 }
 
 
-/** Write size bytes.  This will block until the desired number of
-    bytes have been transmitted.  */
+/** Write size bytes.  */
 int16_t
 tty_write (tty_t *tty, const void *data, uint16_t size)
 {
-    uint16_t left = size;
-    const char *buffer = data;
+    uint16_t count = 0;
+    char *buffer = data;
 
-    while (left)
+    for (count = 0; count < size; count++)
     {
-        tty_putc (tty, *buffer++);
-        left--;
+        int ret;
+
+        ret = tty_putc (tty, *buffer++);
+        if (ret < 0)
+        {
+            if (count == 0 && errno == EAGAIN)
+                return -1;
+            return count;
+        }
     }
     return size;
 }
