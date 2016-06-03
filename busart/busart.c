@@ -3,6 +3,7 @@
     @date   15 May 2007
     @brief  Buffered USART implementation.  */
 
+#include "errno.h"
 #include "ring.h"
 #include "busart.h"
 #include "peripherals.h"
@@ -125,13 +126,19 @@ busart_init (const busart_cfg_t *cfg)
 ssize_t
 busart_write (busart_t busart, const void *data, size_t size)
 {
-    int ret;
+    ssize_t ret;
     busart_dev_t *dev = busart;
 
     ret = ring_write (&dev->tx_ring, data, size);
 
     dev->tx_irq_enable ();
 
+    if (ret == 0 && size != 0)
+    {
+        /* Would block.  */
+        errno = EAGAIN;
+        return -1;
+    }
     return ret;
 }
 
@@ -162,8 +169,17 @@ ssize_t
 busart_read (busart_t busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
+    ssize_t ret;
 
-    return ring_read (&dev->rx_ring, data, size);
+    ret = ring_read (&dev->rx_ring, data, size);
+
+    if (ret == 0 && size != 0)
+    {
+        /* Would block.  */
+        errno = EAGAIN;
+        return -1;
+    }
+    return ret;
 }
 
 

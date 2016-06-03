@@ -33,13 +33,13 @@ struct tty_struct
 };
 
 
-static char
+static int
 tty_getc1 (tty_t *tty)
 {
     int ch;
 
-    if (!tty->read (tty->dev, &ch, 1))
-        return 0;
+    if (tty->read (tty->dev, &ch, 1) != 1)
+        return -1;
 
     return ch;
 }
@@ -94,7 +94,7 @@ tty_poll (tty_t *tty)
             return 0;
 
         ch = tty_getc1 (tty);
-        if (!ch)
+        if (ch < 0)
             return 1;
 
         /* Echo character.  */

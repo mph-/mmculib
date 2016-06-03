@@ -58,9 +58,9 @@ bool usb_halt_p (usb_t usb, udp_ep_t endpoint);
 
 bool usb_read_ready_p (usb_t usb);
 
-usb_size_t usb_read (usb_t usb, void *buffer, usb_size_t length);
+ssize_t usb_read (usb_t usb, void *buffer, size_t length);
 
-usb_size_t usb_write (usb_t usb, const void *buffer, usb_size_t length);
+ssize_t usb_write (usb_t usb, const void *buffer, size_t length);
 
 usb_status_t usb_write_async (usb_t usb, const void *buffer, 
                               unsigned int length, 
