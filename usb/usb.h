@@ -23,6 +23,14 @@ typedef enum
 } usb_status_t;
 
 
+/** usb configuration structure.  */
+typedef struct
+{
+    /* Non-zero for blocking I/O.  */
+    bool block;
+}
+usb_cfg_t;
+
 typedef udp_setup_t usb_setup_t;
 
 typedef udp_transfer_t usb_transfer_t;
@@ -58,9 +66,9 @@ bool usb_halt_p (usb_t usb, udp_ep_t endpoint);
 
 bool usb_read_ready_p (usb_t usb);
 
-usb_size_t usb_read (usb_t usb, void *buffer, usb_size_t length);
+ssize_t usb_read (usb_t usb, void *buffer, size_t length);
 
-usb_size_t usb_write (usb_t usb, const void *buffer, usb_size_t length);
+ssize_t usb_write (usb_t usb, const void *buffer, size_t length);
 
 usb_status_t usb_write_async (usb_t usb, const void *buffer, 
                               unsigned int length, 
@@ -79,7 +87,7 @@ bool usb_configured_p (usb_t usb);
 
 bool usb_awake_p (usb_t usb);
 
-usb_t usb_init (const usb_descriptors_t *descriptors,
+usb_t usb_init (const usb_cfg_t *cfg, const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler);
 
 

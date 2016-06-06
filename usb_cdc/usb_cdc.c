@@ -177,8 +177,8 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 }
 
 
-usb_cdc_size_t
-usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, __unused__ usb_cdc_size_t length)
+size_t
+usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, __unused__ ssize_t length)
 {
     /* Ignore length and read only one char to avoid timeout resetting
        endpoint.  */
@@ -195,8 +195,8 @@ usb_cdc_read_ready_p (usb_cdc_t usb_cdc)
 }
 
 
-usb_cdc_size_t
-usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, usb_cdc_size_t length)
+size_t
+usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, ssize_t length)
 {
     return usb_write (usb_cdc->usb, buffer, length);
 }
@@ -217,11 +217,14 @@ usb_cdc_shutdown (void)
 
 
 usb_cdc_t
-usb_cdc_init (void)
+usb_cdc_init (const usb_cdc_cfg_t *cfg)
 {
+    usb_cfg_t usb_cfg;
     usb_cdc_t usb_cdc = &usb_cdc_dev;
 
-    usb_cdc->usb = usb_init (&usb_cdc_descriptors, 
+    usb_cfg.block = cfg->block;
+
+    usb_cdc->usb = usb_init (&usb_cfg, &usb_cdc_descriptors, 
                              (void *)usb_cdc_request_handler);
 
     return usb_cdc;
@@ -276,3 +279,11 @@ usb_cdc_update (void)
     /* This is needed to signal USB device.  */
     return usb_poll ((&usb_cdc_dev)->usb);
 }
+
+
+const sys_file_ops_t usb_cdc_file_ops =
+{
+    .read = (void *)usb_cdc_read,
+    .write = (void *)usb_cdc_write
+};
+

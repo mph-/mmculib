@@ -13,13 +13,21 @@ typedef usb_cdc_dev_t *usb_cdc_t;
 
 typedef usb_size_t usb_cdc_size_t;
 
+/** usb cdc configuration structure.  */
+typedef struct
+{
+    /* Non-zero for blocking I/O.  */
+    bool block;
+}
+usb_cdc_cfg_t;
 
-usb_cdc_size_t
-usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, usb_cdc_size_t length);
+
+size_t
+usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, ssize_t length);
 
 
-usb_cdc_size_t
-usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, usb_cdc_size_t length);
+size_t
+usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, ssize_t length);
 
 
 bool
@@ -35,7 +43,7 @@ usb_cdc_shutdown (void);
 
 
 usb_cdc_t 
-usb_cdc_init (void);
+usb_cdc_init (const usb_cdc_cfg_t *cfg);
 
 
 bool
@@ -60,5 +68,8 @@ usb_cdc_puts (usb_cdc_t usb_cdc, const char *str);
 /** Return non-zero if configured.  */
 bool
 usb_cdc_update (void);
+
+
+const sys_file_ops_t usb_cdc_file_ops;
 
 #endif

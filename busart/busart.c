@@ -3,6 +3,7 @@
     @date   15 May 2007
     @brief  Buffered USART implementation.  */
 
+#include "errno.h"
 #include "ring.h"
 #include "busart.h"
 #include "peripherals.h"
@@ -62,43 +63,55 @@ struct busart_dev_struct
 */
 
 
+/** Initialise buffered USART driver
+    @param cfg pointer to configuration structure.
+    @return pointer to busart device structure.
+*/
 busart_t 
-busart_init (uint8_t channel,
-             uint16_t baud_divisor,
-             char *tx_buffer, ring_size_t tx_size,
-             char *rx_buffer, ring_size_t rx_size)
+busart_init (const busart_cfg_t *cfg)
 {
     busart_dev_t *dev = 0;
+    uint16_t baud_divisor;
+    char *tx_buffer;
+    char *rx_buffer;
+
+    if (cfg->baud_rate == 0)
+        baud_divisor = cfg->baud_divisor;
+    else
+        baud_divisor = BUSART_BAUD_DIVISOR (cfg->baud_rate);
 
 #if BUSART0_ENABLE
-    if (channel == 0)
+    if (cfg->channel == 0)
         dev = busart0_init (baud_divisor);
 #endif
 
 #if BUSART1_ENABLE
-    if (channel == 1)
+    if (cfg->channel == 1)
         dev = busart1_init (baud_divisor);
 #endif
 
     if (!dev)
         return 0;
 
+    tx_buffer = cfg->tx_buffer;
+    rx_buffer = cfg->rx_buffer;
+
     if (!tx_buffer)
-        tx_buffer = malloc (tx_size);
+        tx_buffer = malloc (cfg->tx_size);
     if (!tx_buffer)
         return 0;
 
     if (!rx_buffer)
-        rx_buffer = malloc (rx_size);
+        rx_buffer = malloc (cfg->rx_size);
     if (!rx_buffer)
     {
         free (tx_buffer);
         return 0;
     }
 
-    ring_init (&dev->tx_ring, tx_buffer, tx_size);
+    ring_init (&dev->tx_ring, tx_buffer, cfg->tx_size);
     
-    ring_init (&dev->rx_ring, rx_buffer, rx_size);
+    ring_init (&dev->rx_ring, rx_buffer, cfg->rx_size);
 
     /* Enable the rx interrupt now.  The tx interrupt is enabled
        when we perform a write.  */
@@ -110,68 +123,43 @@ busart_init (uint8_t channel,
 
 /** Write size bytes.  Currently this only writes as many bytes (up to
     the desired size) that can currently fit in the ring buffer.   */
-ring_size_t
-busart_write (busart_t busart, const void *data, ring_size_t size)
+ssize_t
+busart_write (busart_t busart, const void *data, size_t size)
 {
-    int ret;
+    ssize_t ret;
     busart_dev_t *dev = busart;
 
     ret = ring_write (&dev->tx_ring, data, size);
 
     dev->tx_irq_enable ();
 
-    return ret;
-}
-
-
-/** Write size bytes.  This will block until the desired number of
-    bytes have been written into the transmit ring buffer.  */
-ring_size_t
-busart_write_block (busart_t busart, const void *data, ring_size_t size)
-{
-    ring_size_t left = size;
-    const char *buffer = data;
-
-    while (left)
+    if (ret == 0 && size != 0)
     {
-        ring_size_t ret;
-
-        ret = busart_write (busart, buffer, left);
-        buffer += ret;
-        left -= ret;
+        /* Would block.  */
+        errno = EAGAIN;
+        return -1;
     }
-    return size;
+    return ret;
 }
 
 
 /** Read as many bytes as there are available in the ring buffer up to
     the specifed size.  */
-ring_size_t
-busart_read (busart_t busart, void *data, ring_size_t size)
+ssize_t
+busart_read (busart_t busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
+    ssize_t ret;
 
-    return ring_read (&dev->rx_ring, data, size);
-}
+    ret = ring_read (&dev->rx_ring, data, size);
 
-
-/** Read size bytes.  This will block until the desired number of
-    bytes have been read.  */
-ring_size_t
-busart_read_block (busart_t busart, void *data, ring_size_t size)
-{
-    ring_size_t left = size;
-    char *buffer = data;
-
-    while (left)
+    if (ret == 0 && size != 0)
     {
-        ring_size_t ret;
-
-        ret = busart_read (busart, buffer, left);
-        buffer += ret;
-        left -= ret;
+        /* Would block.  */
+        errno = EAGAIN;
+        return -1;
     }
-    return size;
+    return ret;
 }
 
 
@@ -222,33 +210,32 @@ busart_write_finished_p (busart_t busart)
 }
 
 
-/** Read character.  This blocks until the character can be read.  */
+/** Read character.  */
 int
 busart_getc (busart_t busart)
 {
     uint8_t ch = 0;
 
-    if (busart_read_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+    if (busart_read (busart, &ch, sizeof (ch)) != sizeof (ch))
         return -1;
     return ch;
 }
 
 
-/** Write character.  This blocks until the character can be
-    written.  */
+/** Write character.  */
 int
 busart_putc (busart_t busart, char ch)
 {
     if (ch == '\n')
         busart_putc (busart, '\r');    
 
-    if (busart_write_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+    if (busart_write (busart, &ch, sizeof (ch)) != sizeof (ch))
         return -1;
     return ch;
 }
 
 
-/** Write string.  This blocks until the string is buffered.  */
+/** Write string.  */
 int
 busart_puts (busart_t busart, const char *str)
 {
@@ -268,3 +255,10 @@ busart_clear (busart_t busart)
     ring_clear (&dev->rx_ring);
     ring_clear (&dev->tx_ring);
 }
+
+
+const sys_file_ops_t busart_file_ops =
+{
+    .read = (void *)busart_read,
+    .write = (void *)busart_write
+};

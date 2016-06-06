@@ -2,13 +2,19 @@
     @author M. P. Hayes, UCECE
     @date   24 January 2008
     @brief  A non-blocking TTY driver.  It does not support termio.  
+    @note The TTY device is a stream oriented device that handles line
+          buffering mode.  In this mode, strings are not passed to the
+          application until a line has been received.  The TTY driver
+          converts incoming carriage returns (usually sent when the Enter key
+          is pressed) to newlines.  When sending a newline it also prepends a
+          carriage return character.
 */
 
 #include "config.h"
 #include "linebuffer.h"
 #include "tty.h"
 #include "sys.h"
-
+#include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,13 +33,13 @@ struct tty_struct
 };
 
 
-static char
+static int
 tty_getc1 (tty_t *tty)
 {
-    int ch;
+    char ch = 0;
 
-    if (!tty->read (tty->dev, &ch, 1))
-        return 0;
+    if (tty->read (tty->dev, &ch, 1) != 1)
+        return -1;
 
     return ch;
 }
@@ -75,26 +81,29 @@ tty_puts (tty_t *tty, const char *s)
 }
 
 
+/** Read characters (if any) from input stream and store in
+    the linebuffer.  */
 bool
 tty_poll (tty_t *tty)
 {
     int ch;
 
-    if (tty->update && !tty->update ())
-        return 0;
+    while (1)
+    {
+        if (tty->update && !tty->update ())
+            return 0;
 
-    ch = tty_getc1 (tty);
-    if (!ch)
-        return 1;
+        ch = tty_getc1 (tty);
+        if (ch < 0)
+            return 1;
 
-    /* Echo character.  */
-    tty_putc1 (tty, ch);
-    if (ch == '\r')
-        tty_putc1 (tty, '\n');
-
-    linebuffer_add (tty->linebuffer, ch);
-
-    return 1;
+        /* Echo character.  */
+        tty_putc1 (tty, ch);
+        if (ch == '\r')
+            tty_putc1 (tty, '\n');
+        
+        linebuffer_add (tty->linebuffer, ch);
+    }
 }
 
 
@@ -149,35 +158,50 @@ tty_printf (tty_t *tty, const char *fmt, ...)
 }
 
 
-/** Read size bytes.  This will block until the desired number of
-    bytes have been read.  */
+/** Read size bytes.  */
 int16_t
 tty_read (tty_t *tty, void *data, uint16_t size)
 {
-    uint16_t left = size;
+    uint16_t count = 0;
     char *buffer = data;
 
-    while (left)
+    tty_poll (tty);
+
+    for (count = 0; count < size; count++)
     {
-        *buffer++ = tty_getc (tty);
-        left--;
+        int ch;
+
+        ch = tty_getc (tty);
+        if (ch < 0)
+        {
+            if (count == 0 && errno == EAGAIN)
+                return -1;
+            return count;
+        }
+        *buffer++ = ch;
     }
     return size;
 }
 
 
-/** Write size bytes.  This will block until the desired number of
-    bytes have been transmitted.  */
+/** Write size bytes.  */
 int16_t
 tty_write (tty_t *tty, const void *data, uint16_t size)
 {
-    uint16_t left = size;
+    uint16_t count = 0;
     const char *buffer = data;
 
-    while (left)
+    for (count = 0; count < size; count++)
     {
-        tty_putc (tty, *buffer++);
-        left--;
+        int ret;
+
+        ret = tty_putc (tty, *buffer++);
+        if (ret < 0)
+        {
+            if (count == 0 && errno == EAGAIN)
+                return -1;
+            return count;
+        }
     }
     return size;
 }
@@ -195,6 +219,7 @@ tty_t *
 tty_init (const tty_cfg_t *cfg, void *dev)
 {
     tty_t *tty;
+    uint16_t linebuffer_size;
 
     tty = malloc (sizeof (*tty));
     if (!tty)
@@ -207,8 +232,19 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
 
-    tty->linebuffer = linebuffer_init (TTY_INPUT_BUFFER_SIZE);
+    linebuffer_size = cfg->linebuffer_size;
+    if (! linebuffer_size)
+        linebuffer_size = TTY_INPUT_BUFFER_SIZE;
+
+    tty->linebuffer = linebuffer_init (linebuffer_size);
 
     return tty;
 }
+
+
+const sys_file_ops_t tty_file_ops =
+{
+    .read = (void *)tty_read,
+    .write = (void *)tty_write,
+};
 

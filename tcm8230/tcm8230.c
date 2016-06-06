@@ -45,6 +45,16 @@
 
    This corresponds to a frame rate of 1.22 Hz.  To achieve 15 frames
    per second requires a 25 MHz EXTCLK.
+
+   When debugging:
+   1.  Check that all the regulators are enabled to power the image sensor
+       before tcm8230_init is called.
+   2.  Check that EXTCLK is driven my the MCU after tcm8230_init is called.
+   3.  Check that the SDA and SCL lines toggle when tcm8230_init is called.
+       Three bytes should be sent from the MCU and the image sensor should
+       acknowledge each.
+   4.  Check the DCLK, HD, and VD signals are driven by the image sensor
+       after tcm8230_init is called.
 */   
  
 #define TCM8230_TWI_ADDRESS 0x3C
