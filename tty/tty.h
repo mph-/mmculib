@@ -101,4 +101,6 @@ tty_init (const tty_cfg_t *cfg, void *dev);
 void
 tty_shutdown (tty_t *tty);
 
+
+const sys_file_ops_t tty_file_ops;
 #endif

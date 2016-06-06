@@ -36,7 +36,7 @@ struct tty_struct
 static int
 tty_getc1 (tty_t *tty)
 {
-    int ch;
+    char ch = 0;
 
     if (tty->read (tty->dev, &ch, 1) != 1)
         return -1;
@@ -240,3 +240,11 @@ tty_init (const tty_cfg_t *cfg, void *dev)
 
     return tty;
 }
+
+
+const sys_file_ops_t tty_file_ops =
+{
+    .read = (void *)tty_read,
+    .write = (void *)tty_write,
+};
+

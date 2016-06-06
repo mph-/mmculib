@@ -143,26 +143,6 @@ busart_write (busart_t busart, const void *data, size_t size)
 }
 
 
-/** Write size bytes.  This will block until the desired number of
-    bytes have been written into the transmit ring buffer.  */
-ssize_t
-busart_write_block (busart_t busart, const void *data, size_t size)
-{
-    ssize_t left = size;
-    const char *buffer = data;
-
-    while (left)
-    {
-        ssize_t ret;
-
-        ret = busart_write (busart, buffer, left);
-        buffer += ret;
-        left -= ret;
-    }
-    return size;
-}
-
-
 /** Read as many bytes as there are available in the ring buffer up to
     the specifed size.  */
 ssize_t
@@ -180,26 +160,6 @@ busart_read (busart_t busart, void *data, size_t size)
         return -1;
     }
     return ret;
-}
-
-
-/** Read size bytes.  This will block until the desired number of
-    bytes have been read.  */
-ssize_t
-busart_read_block (busart_t busart, void *data, size_t size)
-{
-    ssize_t left = size;
-    char *buffer = data;
-
-    while (left)
-    {
-        ssize_t ret;
-
-        ret = busart_read (busart, buffer, left);
-        buffer += ret;
-        left -= ret;
-    }
-    return size;
 }
 
 
@@ -250,33 +210,32 @@ busart_write_finished_p (busart_t busart)
 }
 
 
-/** Read character.  This blocks until the character can be read.  */
+/** Read character.  */
 int
 busart_getc (busart_t busart)
 {
     uint8_t ch = 0;
 
-    if (busart_read_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+    if (busart_read (busart, &ch, sizeof (ch)) != sizeof (ch))
         return -1;
     return ch;
 }
 
 
-/** Write character.  This blocks until the character can be
-    written.  */
+/** Write character.  */
 int
 busart_putc (busart_t busart, char ch)
 {
     if (ch == '\n')
         busart_putc (busart, '\r');    
 
-    if (busart_write_block (busart, &ch, sizeof (ch)) != sizeof (ch))
+    if (busart_write (busart, &ch, sizeof (ch)) != sizeof (ch))
         return -1;
     return ch;
 }
 
 
-/** Write string.  This blocks until the string is buffered.  */
+/** Write string.  */
 int
 busart_puts (busart_t busart, const char *str)
 {
@@ -296,3 +255,10 @@ busart_clear (busart_t busart)
     ring_clear (&dev->rx_ring);
     ring_clear (&dev->tx_ring);
 }
+
+
+const sys_file_ops_t busart_file_ops =
+{
+    .read = (void *)busart_read,
+    .write = (void *)busart_write
+};

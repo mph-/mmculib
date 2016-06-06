@@ -386,15 +386,17 @@ usb_shutdown (void)
 }
 
 
-
-usb_t usb_init (const usb_descriptors_t *descriptors,
+usb_t usb_init (const usb_cfg_t *cfg,
+                const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler)
 {
     static usb_dev_t usb_dev;
-
+    udp_cfg_t udp_cfg;
     usb_t usb = &usb_dev;
 
-    usb->udp = udp_init ((void *)usb_request_handler, usb);
+    udp_cfg.block = cfg->block;    
+
+    usb->udp = udp_init (&udp_cfg, (void *)usb_request_handler, usb);
 
     usb->descriptors = descriptors;
     usb->request_handler = request_handler;

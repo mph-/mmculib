@@ -23,6 +23,14 @@ typedef enum
 } usb_status_t;
 
 
+/** usb configuration structure.  */
+typedef struct
+{
+    /* Non-zero for blocking I/O.  */
+    bool block;
+}
+usb_cfg_t;
+
 typedef udp_setup_t usb_setup_t;
 
 typedef udp_transfer_t usb_transfer_t;
@@ -79,7 +87,7 @@ bool usb_configured_p (usb_t usb);
 
 bool usb_awake_p (usb_t usb);
 
-usb_t usb_init (const usb_descriptors_t *descriptors,
+usb_t usb_init (const usb_cfg_t *cfg, const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler);
 
 
