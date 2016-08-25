@@ -152,7 +152,7 @@ busart_read (busart_t busart, void *data, size_t size)
     ssize_t ret;
 
     ret = ring_read (&dev->rx_ring, data, size);
-
+    
     if (ret == 0 && size != 0)
     {
         /* Would block.  */
@@ -160,6 +160,28 @@ busart_read (busart_t busart, void *data, size_t size)
         return -1;
     }
     return ret;
+}
+
+
+/** Read size bytes.  Block until all the bytes have been read or
+    until timeout occurs.  */
+ssize_t
+busart_read_timeout (busart_t busart, void *data, size_t size,
+                      uint32_t timeout_us)
+{
+    return sys_read_timeout (busart, data, size, timeout_us,
+                             (void *)busart_read);
+}
+
+
+/** Write size bytes.  Block until all the bytes have been transferred
+    to the transmit ring buffer or until timeout occurs.  */
+ssize_t
+busart_write_timeout (busart_t busart, const void *data, size_t size,
+                      uint32_t timeout_us)
+{
+    return sys_write_timeout (busart, data, size, timeout_us,
+                              (void *)busart_write);
 }
 
 

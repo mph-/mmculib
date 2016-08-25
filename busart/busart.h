@@ -68,6 +68,20 @@ ssize_t
 busart_write (busart_t busart, const void *data, size_t size);
 
 
+/** Read size bytes.  Block until all the bytes have been read or
+    until timeout occurs.  */
+ssize_t
+busart_read_timeout (busart_t busart, void *data, size_t size,
+                     uint32_t timeout_us);
+
+
+/** Write size bytes.  Block until all the bytes have been transferred
+    to the transmit ring buffer or until timeout occurs.  */
+ssize_t
+busart_write_timeout (busart_t busart, const void *data, size_t size,
+                      uint32_t timeout_us);
+
+
 /* Return the number of bytes immediately available for reading.  */
 ring_size_t
 busart_read_num (busart_t busart);
