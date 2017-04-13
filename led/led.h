@@ -25,7 +25,7 @@ typedef led_obj_t *led_t;
 static inline void
 led_set (led_t led, uint8_t state)
 {
-    pio_output_set (led->pio, led->active ? !state : state);
+    pio_output_set (led->pio, led->active ? state : !state);
 }
 
 

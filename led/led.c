@@ -12,11 +12,11 @@
    logic high output level.  */
 
 
-/* Create a new LED device.  */
+/** Create a new LED device and ensure LED off.  */
 led_t
 led_init (const led_cfg_t *cfg)
 {
-    pio_config_set (cfg->pio, cfg->active ? PIO_OUTPUT_HIGH : PIO_OUTPUT_LOW);
+    pio_config_set (cfg->pio, cfg->active ? PIO_OUTPUT_LOW : PIO_OUTPUT_HIGH);
 
     return cfg;
 }
