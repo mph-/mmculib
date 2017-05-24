@@ -67,13 +67,30 @@ tty_putc (tty_t *tty, int ch)
 
 
 int
+tty_putc_block (tty_t *tty, int ch)
+{
+    int ret;    
+
+    /* TODO: add timeout.  */
+    do
+    {
+        ret = tty_putc (tty, ch);
+    }
+    while (ret < 0 && errno == -EAGAIN);
+    return ret;
+}
+
+
+/** Blocking string write.  */
+int
 tty_puts (tty_t *tty, const char *s)
 {
     int ret;
 
     while (*s)
     {
-        ret = tty_putc (tty, *s++);
+        ret = tty_putc_block (tty, *s++);
+
         if (ret < 0)
             return ret;
     }
