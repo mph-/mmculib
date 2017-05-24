@@ -53,6 +53,11 @@ int
 tty_getc (tty_t *tty);
 
 
+/** This is non-blocking of fputc.
+    @param tty a pointer to the tty device
+    @param ch character to send
+    @return ch if okay otherwise -1 for error.
+*/
 int
 tty_putc (tty_t *tty, int ch);
 
@@ -70,10 +75,36 @@ char *
 tty_gets (tty_t *tty, char *buffer, int size);
 
 
+/** This is blocking of fputc.
+    @param tty a pointer to the tty device
+    @param ch character to send
+    @return ch if okay otherwise -1 for error.
+*/
+int
+tty_putc_block (tty_t *tty, int ch);
+
+
+/** This is a non-blocking version of fputs.
+    @param tty a pointer to the tty device
+    @param s pointer to string to send
+    @return 1 if okay otherwise -1 for error.    
+*/
 int
 tty_puts (tty_t *tty, const char *s);
 
 
+/** This is a blocking version of fputs.
+    @param tty a pointer to the tty device
+    @param s pointer to string to send
+    @return 1 if okay otherwise -1 for error.    
+*/
+int
+tty_puts_block (tty_t *tty, const char *s);
+
+
+/** This is a blocking version of fprintf.
+    @param tty a pointer to the tty device
+*/
 int
 tty_printf (tty_t *tty, const char *fmt, ...);
 

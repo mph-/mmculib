@@ -95,13 +95,30 @@ tty_putc_block (tty_t *tty, int ch)
 
 /** Blocking string write.  */
 int
-tty_puts (tty_t *tty, const char *s)
+tty_puts_block (tty_t *tty, const char *s)
 {
     int ret;
 
     while (*s)
     {
         ret = tty_putc_block (tty, *s++);
+
+        if (ret < 0)
+            return ret;
+    }
+    return 1;
+}
+
+
+/** Non-blocking string write.  */
+int
+tty_puts (tty_t *tty, const char *s)
+{
+    int ret;
+
+    while (*s)
+    {
+        ret = tty_putc (tty, *s++);
 
         if (ret < 0)
             return ret;
@@ -172,18 +189,17 @@ tty_printf (tty_t *tty, const char *fmt, ...)
     int len;
     char buffer[TTY_OUTPUT_BUFFER_SIZE];
 
-    /* Check in case USB detached....  This could happen in the middle
-       of a transfer; should make the driver more robust.  */
-    if (tty->update && !tty->update ())
-        return 0;
-
-    /* FIXME for buffer overrun.  */
+    /* FIXME for buffer overrun.  Currently, the output will be
+       truncated to a length given by TTY_OUTPUT_BUFFER_SIZE.  */
     
     va_start (ap, fmt);
     ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
     va_end (ap);
 
-    return tty_puts (tty, buffer);
+    if (tty_puts_block (tty, buffer) < 0)
+        return -1;
+
+    return ret;
 }
 
 
