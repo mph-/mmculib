@@ -66,18 +66,30 @@ tty_putc (tty_t *tty, int ch)
 }
 
 
-int
-tty_putc_block (tty_t *tty, int ch)
+static int
+tty_putc1_block (tty_t *tty, int ch)
 {
     int ret;    
 
     /* TODO: add timeout.  */
     do
     {
-        ret = tty_putc (tty, ch);
+        ret = tty_putc1 (tty, ch);
     }
-    while (ret < 0 && errno == -EAGAIN);
-    return ret;
+    while (ret < 0 && errno == EAGAIN);
+
+    return ch;
+}
+
+
+int
+tty_putc_block (tty_t *tty, int ch)
+{
+    /* Convert newline to carriage return/line feed.  */
+    if (ch ==  '\n')
+        tty_putc1_block (tty, '\r');
+    
+    return tty_putc1_block (tty, ch);
 }
 
 
