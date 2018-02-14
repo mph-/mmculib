@@ -1,6 +1,11 @@
 #ifndef USB_H
 #define USB_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "udp.h"
 #include "usb_dsc.h"
@@ -93,4 +98,9 @@ usb_t usb_init (const usb_cfg_t *cfg, const usb_descriptors_t *descriptors,
 
 void usb_shutdown (void);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

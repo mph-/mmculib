@@ -1,6 +1,11 @@
 #ifndef TARGET_H
 #define TARGET_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 /* CPU clock frequency.  */
 #define F_CPU 8000000
 
@@ -48,4 +53,9 @@
 */
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

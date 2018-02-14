@@ -1,6 +1,11 @@
 #ifndef USB_MSD_H
 #define USB_MSD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "msd.h"
 
 typedef enum
@@ -19,4 +24,9 @@ void usb_msd_shutdown (void);
 
 void usb_msd_write_protect_set (uint8_t lun_id, bool enable);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -6,6 +6,11 @@
 #ifndef TEXTVIEW_H
 #define TEXTVIEW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 
@@ -66,4 +71,9 @@ textview_wrap_set (textview_t this, uint8_t enable);
 void
 textview_update (textview_t this);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -6,6 +6,11 @@
 #ifndef LED_H
 #define LED_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "pio.h"
 
@@ -42,4 +47,9 @@ led_toggle (led_t led)
    operate on.  */
 extern led_t
 led_init (const led_cfg_t *cfg);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

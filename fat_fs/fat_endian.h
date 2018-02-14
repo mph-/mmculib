@@ -6,6 +6,11 @@
 #ifndef FAT_ENDIAN_H
 #define FAT_ENDIAN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 static inline uint16_t le16_to_cpu (uint16_t val)
 {
     return val;
@@ -54,4 +59,9 @@ static inline void le32_set (void *ptr, uint32_t val)
 }
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -9,6 +9,11 @@
 #ifndef I2C_SLAVE_H
 #define I2C_SLAVE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "i2c.h"
 
 i2c_t
@@ -23,4 +28,9 @@ i2c_ret_t
 i2c_slave_read (i2c_t dev, void *buffer, uint8_t size, int timeout_us);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -6,6 +6,11 @@
 #ifndef BITS_H
 #define BITS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #define WORD_HIGHBIT (sizeof(unsigned) * 8 - 1)
 #define BITS_MASK(first, last) (((unsigned) -1 >> (WORD_HIGHBIT - (last))) & ~((1U << (first)) - 1))
 
@@ -23,4 +28,9 @@
 #define BITS(val, first, last) \
     (((val) & BITS_MASK (0, (last) - (first))) << (first))
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

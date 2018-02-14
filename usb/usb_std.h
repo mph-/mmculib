@@ -1,6 +1,11 @@
 #ifndef USB_STD_H_
 #define USB_STD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 /**
  * \name USB standard request identifier
  * 
@@ -49,4 +54,9 @@ enum
 #define USB_VENDOR_REQUEST                  0x02
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /*USB_STD_H_*/
+

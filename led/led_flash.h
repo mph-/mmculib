@@ -6,6 +6,11 @@
 #ifndef LED_FLASH_H
 #define LED_FLASH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "led.h"
 
@@ -15,4 +20,9 @@
 extern void
 led_flash (led_t led, uint8_t blinks, uint8_t delayms);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

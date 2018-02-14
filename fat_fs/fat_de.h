@@ -7,6 +7,11 @@
 #ifndef FAT_DE_H
 #define FAT_DE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 #include "fat_de.h"
 
@@ -65,4 +70,9 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster);
 void
 fat_de_slot_delete (fat_t *fat, fat_dir_t *dir, uint32_t cluster);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

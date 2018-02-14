@@ -13,6 +13,11 @@
 #ifndef U1WIRE_H
 #define U1WIRE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** One wire bus error codes.  */
@@ -131,4 +136,9 @@ u1wire_init (u1wire_obj_t *device);
 extern void
 u1wire_debug (u1wire_t dev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

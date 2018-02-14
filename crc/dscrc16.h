@@ -6,6 +6,11 @@
 #ifndef DSCRC16_H
 #define DSCRC16_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #ifndef CRC161520_H
 #define CRC161520_H
 
@@ -20,4 +25,9 @@ extern crc16_t dscrc16_byte (crc16_t crc, uint8_t val);
 extern crc16_t dscrc16 (crc16_t crc, void *bytes, uint8_t size);
 
 #endif
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /* DSCRC16_H  */
+

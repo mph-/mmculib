@@ -7,6 +7,11 @@
 #ifndef IR_SIRC_RX_H
 #define IR_SIRC_RX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** Status return codes.  */
@@ -36,4 +41,9 @@ int32_t ir_sirc_rx_read (void);
 /** Initialise IR serial driver.  */
 void ir_sirc_rx_init (void);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

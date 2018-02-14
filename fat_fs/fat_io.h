@@ -7,6 +7,11 @@
 #ifndef FAT_IO
 #define FAT_IO
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 
 typedef uint32_t fat_sector_t;
@@ -37,4 +42,9 @@ fat_io_cache_flush (fat_t *fat);
 void
 fat_io_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, fat_dev_write_t dev_write);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

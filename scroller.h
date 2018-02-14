@@ -6,6 +6,11 @@
 #ifndef SCROLLER_H
 #define SCROLLER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -56,4 +61,9 @@ scroller_dir_get (scroller_t scroller)
     return scroller->dir;
 }
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

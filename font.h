@@ -7,6 +7,11 @@
 #ifndef FONT_H
 #define FONT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "fontdef.h"
 
@@ -27,4 +32,9 @@ extern bool
 font_display (char ch, font_t *font,
               font_callback_t display,
               void *data);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

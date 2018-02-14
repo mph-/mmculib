@@ -6,6 +6,11 @@
 #ifndef STEXT_H
 #define STEXT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 #include "seq.h"
@@ -56,4 +61,9 @@ stext_update (stext_t stext)
 {
     return seq_update (stext->seq);
 }
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

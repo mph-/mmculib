@@ -9,6 +9,11 @@
 #ifndef I2C_H
 #define I2C_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "pio.h"
 
@@ -71,4 +76,9 @@ typedef enum i2c_ret
     I2C_ERROR_SCL_STUCK_HIGH2 = -11
 } i2c_ret_t;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

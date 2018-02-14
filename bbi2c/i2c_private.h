@@ -9,6 +9,11 @@
 #ifndef I2C_PRIVATE_H
 #define I2C_PRIVATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "pio.h"
 #include "delay.h"
@@ -123,4 +128,9 @@ i2c_delay (__unused__ i2c_t dev)
 }
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

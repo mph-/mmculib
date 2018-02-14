@@ -1,6 +1,11 @@
 #ifndef TRACE_H
 #define TRACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include <stdio.h>
 
@@ -20,5 +25,10 @@
 
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

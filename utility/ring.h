@@ -7,6 +7,11 @@
 #ifndef _RING_H
 #define _RING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef uint16_t ring_size_t;
@@ -190,4 +195,9 @@ void
 ring_clear (ring_t *ring);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

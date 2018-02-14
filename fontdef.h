@@ -7,6 +7,11 @@
 #ifndef FONTDEF_H
 #define FONTDEF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -30,4 +35,9 @@ typedef const struct
 } font_t;
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

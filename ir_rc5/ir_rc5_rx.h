@@ -7,6 +7,11 @@
 #ifndef IR_RC5_RX_H
 #define IR_RC5_RX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** Status return codes.  */
@@ -31,4 +36,9 @@ int16_t ir_rc5_rx_read (void);
 /** Initialise IR serial receiver driver.  */
 void ir_rc5_rx_init (void);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

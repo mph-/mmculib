@@ -6,6 +6,11 @@
 #ifndef SEQ_H
 #define SEQ_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef struct
@@ -62,4 +67,9 @@ seq_get (seq_t seq)
    function).  Returns non-zero at end of sequence.  */
 extern int8_t seq_update (seq_t seq);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

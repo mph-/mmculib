@@ -6,6 +6,11 @@
 #ifndef U1WIRE_ENUMERATE_H
 #define U1WIRE_ENUMERATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "u1wire.h"
 
 typedef struct
@@ -45,4 +50,9 @@ for (device = u1wire_enumerate (&info); device;
 */
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

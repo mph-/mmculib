@@ -1,6 +1,11 @@
 #ifndef USB_CDC_H
 #define USB_CDC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "usb.h"
 
@@ -72,4 +77,9 @@ usb_cdc_update (void);
 
 const sys_file_ops_t usb_cdc_file_ops;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

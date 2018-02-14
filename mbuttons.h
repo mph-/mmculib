@@ -7,6 +7,11 @@
 #ifndef MBUTTONS_H
 #define MBUTTONS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "button.h"
 
 /* This supports multiplexed buttons; either as a matrix or a vector.
@@ -100,6 +105,11 @@ mbuttons_wakeup_p (mbuttons_t mbuttons)
     return 0;
 }
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 
 

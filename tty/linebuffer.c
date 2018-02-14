@@ -6,6 +6,7 @@
 */
 
 #include <stdlib.h>
+#include "errno.h"
 #include "utility/ring.h"
 #include "linebuffer.h"
 
@@ -47,7 +48,10 @@ int
 linebuffer_getc (linebuffer_t *linebuffer)
 {
     if (!ring_find (&linebuffer->ring, '\n'))
+    {
+        errno = EAGAIN;
         return -1;
+    }
 
     return ring_getc (&linebuffer->ring);
 }

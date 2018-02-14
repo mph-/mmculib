@@ -7,6 +7,11 @@
 #ifndef IOVEC_H
 #define IOVEC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef unsigned int iovec_size_t;
@@ -20,4 +25,9 @@ typedef struct iovec
 
 typedef unsigned int iovec_count_t;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

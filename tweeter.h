@@ -6,6 +6,11 @@
 #ifndef TWEETER_H
 #define TWEETER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 #include "ticker.h"
@@ -77,4 +82,9 @@ tweeter_init (tweeter_obj_t *dev,
               uint16_t poll_rate,
               tweeter_scale_t *scale_table);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

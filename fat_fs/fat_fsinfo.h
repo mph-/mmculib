@@ -7,6 +7,11 @@
 #ifndef FAT_FSINFO_H
 #define FAT_FSINFO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 
 void
@@ -37,4 +42,9 @@ void
 fat_fsinfo_write (fat_t *fat);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

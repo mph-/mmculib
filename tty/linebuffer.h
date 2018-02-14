@@ -9,6 +9,11 @@
 #ifndef LINEBUFFER_H
 #define LINEBUFFER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 typedef struct linebuffer_struct linebuffer_t;
 
 /** Initialise line buffer.
@@ -47,4 +52,9 @@ linebuffer_getc (linebuffer_t *linebuffer);
 char *
 linebuffer_gets (linebuffer_t *linebuffer, char *buffer, int size);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

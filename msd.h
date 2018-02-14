@@ -1,6 +1,11 @@
 #ifndef MSD_H
 #define MSD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef uint16_t msd_size_t;
@@ -91,4 +96,9 @@ static inline msd_addr_t msd_media_bytes_get (msd_t *msd)
     return msd->media_bytes;
 }
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

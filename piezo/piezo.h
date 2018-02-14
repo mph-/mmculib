@@ -7,6 +7,11 @@
 #ifndef PIEZO_H
 #define PIEZO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "delay.h"
 #include "pio.h"
@@ -41,4 +46,9 @@ piezo_set (piezo_t piezo, uint8_t val)
     pio_output_set (piezo->pio, val);
 }
         
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

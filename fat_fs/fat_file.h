@@ -7,6 +7,11 @@
 #ifndef FAT_FILE_H
 #define FAT_FILE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 #include <sys/types.h>
 
@@ -41,4 +46,9 @@ void fat_file_debug (fat_file_t *file);
 bool fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, 
                fat_dev_write_t dev_write);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

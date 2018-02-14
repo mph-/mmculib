@@ -6,6 +6,11 @@
 #ifndef CLEDS_H
 #define CLEDS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "port.h"
 #include "led.h"
@@ -86,4 +91,9 @@ cleds_common_cycle (cleds_t cleds)
     cleds_common_set (cleds, newrow);
     return newrow;
 }
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

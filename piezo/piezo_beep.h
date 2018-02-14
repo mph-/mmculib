@@ -7,6 +7,11 @@
 #ifndef PIEZO_BEEP_H
 #define PIEZO_BEEP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "piezo.h"
 
@@ -36,4 +41,9 @@ piezo_beep_short (piezo_t dev);
 extern void
 piezo_beep_long (piezo_t dev);
         
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

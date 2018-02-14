@@ -8,6 +8,11 @@
 #ifndef RF_H
 #define RF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "nrf_config.h"
 
 
@@ -163,4 +168,9 @@ rf_write ().
 
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

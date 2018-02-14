@@ -7,6 +7,11 @@
 #ifndef MENU_H
 #define MENU_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 #ifndef ARRAY_SIZE
@@ -118,4 +123,9 @@ menu_init (int rows,
            void (*display)(const char *title, int row,
                            const char *item_name, bool highlight));
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

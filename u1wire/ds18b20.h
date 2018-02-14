@@ -6,6 +6,11 @@
 #ifndef DS18B20_H
 #define DS18B20_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "u1wire.h"
 
@@ -61,4 +66,9 @@ ds18b20_device_p (u1wire_obj_t *dev);
     otherwise NULL  */
 extern u1wire_t
 ds18b20_init (u1wire_obj_t *dev);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

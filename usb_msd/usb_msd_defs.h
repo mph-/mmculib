@@ -1,6 +1,11 @@
 #ifndef USB_MSD_DEFS_H_
 #define USB_MSD_DEFS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 //! MSD Interface Class Code
@@ -94,4 +99,9 @@ typedef struct
     uint8_t bCSWStatus;     //!< Indicates the success or failure of the command.
 } usb_msd_csw_t;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /*USB_MSD_H_*/
+

@@ -6,6 +6,11 @@
 #ifndef MDRAW_H
 #define MDRAW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -49,4 +54,9 @@ mdraw_update (mdraw_t this);
 extern void 
 mdraw_plot (mdraw_t this, uint8_t *data, uint8_t size, uint8_t offset, uint8_t val);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -6,6 +6,11 @@
 #ifndef GLCD_H
 #define GLCD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "pio.h"
 #include "spi.h"
@@ -109,4 +114,9 @@ glcd_init (glcd_dev_t *obj, const glcd_cfg_t *cfg);
 extern void
 glcd_shutdown (glcd_dev_t *obj);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

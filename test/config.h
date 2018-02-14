@@ -1,6 +1,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 /* Data typedefs.  */
 /* Data typedefs.  */
 #include <stdint.h>
@@ -34,5 +39,10 @@ typedef uint8_t bool;
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof (array[0]))
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

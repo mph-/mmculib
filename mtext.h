@@ -6,6 +6,11 @@
 #ifndef MTEXT_H
 #define MTEXT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 #include "scroller.h"
@@ -95,4 +100,9 @@ mtext_mode_get (mtext_t mtext)
     return mtext->mode;
 }
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

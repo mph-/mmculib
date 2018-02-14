@@ -6,6 +6,11 @@
 #ifndef NRF_CONFIG_H
 #define NRF_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 /* This protocol is implemented on the nRF2401 chip.  */
 #include "nrf2401.h"
 
@@ -47,4 +52,9 @@ typedef nrf_cfg_t rf_cfg_t;
 #define RF_DATA_READY_P(DEV) \
     nrf_data_ready_p (DEV)
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

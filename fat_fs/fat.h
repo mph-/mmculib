@@ -7,6 +7,11 @@
 #ifndef FAT_H_
 #define FAT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include <unistd.h>
 #include "fat_trace.h"
@@ -75,5 +80,10 @@ struct fat_struct
 typedef struct fat_struct fat_t;
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

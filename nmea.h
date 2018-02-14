@@ -6,6 +6,11 @@
 #ifndef NMEA_H
 #define NMEA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 #ifndef NMEA_BUFFER_SIZE
@@ -19,4 +24,9 @@ extern
 void nmea_puts (const char *string);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

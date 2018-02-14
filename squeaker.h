@@ -6,6 +6,11 @@
 #ifndef SQUEAKER_H
 #define SQUEAKER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 #include "ticker.h"
@@ -121,4 +126,9 @@ squeaker_speed_set (squeaker_t squeaker, squeaker_speed_t speed);
 extern void 
 squeaker_volume_set (squeaker_t squeaker, squeaker_volume_t volume);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

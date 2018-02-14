@@ -8,6 +8,11 @@
 #ifndef FAT_BOOT_H
 #define FAT_BOOT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 
 
@@ -15,4 +20,9 @@ bool
 fat_boot_read (fat_t *fat);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

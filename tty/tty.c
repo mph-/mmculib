@@ -1,7 +1,7 @@
 /** @file   tty.c
     @author M. P. Hayes, UCECE
     @date   24 January 2008
-    @brief  A non-blocking TTY driver.  It does not support termio.  
+    @brief  TTY driver.  It does not support termio.  
     @note The TTY device is a stream oriented device that handles line
           buffering mode.  In this mode, strings are not passed to the
           application until a line has been received.  The TTY driver
@@ -14,7 +14,7 @@
 #include "linebuffer.h"
 #include "tty.h"
 #include "sys.h"
-#include <errno.h>
+#include "errno.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,6 +30,8 @@ struct tty_struct
     sys_write_t write;
     bool (*update)(void);
     void (*shutdown)(void);
+    bool read_nonblock;
+    bool write_nonblock;        
 };
 
 
@@ -37,20 +39,31 @@ static int
 tty_getc1 (tty_t *tty)
 {
     char ch = 0;
+    int ret;
 
-    if (tty->read (tty->dev, &ch, 1) != 1)
-        return -1;
+    ret = tty->read (tty->dev, &ch, 1);
 
-    return ch;
+    if (ret == 1)
+        return ch;
+    return ret;
 }
 
 
 static int
 tty_putc1 (tty_t *tty, int ch)
 {
-    if (tty->write (tty->dev, &ch, 1) <= 0)
-        return -1;
+    int ret;    
 
+    /* TODO: add timeout.  */
+    do
+    {
+        ret = tty->write (tty->dev, &ch, 1);
+    }
+    while (ret < 0 && errno == EAGAIN && ! tty->write_nonblock);
+
+    if (ret < 0)
+        return -1;
+    
     return ch;
 }
 
@@ -66,51 +79,7 @@ tty_putc (tty_t *tty, int ch)
 }
 
 
-static int
-tty_putc1_block (tty_t *tty, int ch)
-{
-    int ret;    
-
-    /* TODO: add timeout.  */
-    do
-    {
-        ret = tty_putc1 (tty, ch);
-    }
-    while (ret < 0 && errno == EAGAIN);
-
-    return ch;
-}
-
-
-int
-tty_putc_block (tty_t *tty, int ch)
-{
-    /* Convert newline to carriage return/line feed.  */
-    if (ch ==  '\n')
-        tty_putc1_block (tty, '\r');
-    
-    return tty_putc1_block (tty, ch);
-}
-
-
-/** Blocking string write.  */
-int
-tty_puts_block (tty_t *tty, const char *s)
-{
-    int ret;
-
-    while (*s)
-    {
-        ret = tty_putc_block (tty, *s++);
-
-        if (ret < 0)
-            return ret;
-    }
-    return 1;
-}
-
-
-/** Non-blocking string write.  */
+/** String write.  */
 int
 tty_puts (tty_t *tty, const char *s)
 {
@@ -153,7 +122,7 @@ tty_poll (tty_t *tty)
 }
 
 
-/** This is a non-blocking version of fgetc.  
+/** tty version of fgetc.  
     @param tty a pointer to the tty device
     @return next character from line buffer otherwise -1 if no character
             is available.
@@ -161,11 +130,23 @@ tty_poll (tty_t *tty)
 int
 tty_getc (tty_t *tty)
 {
-    return linebuffer_getc (tty->linebuffer);
+    int ret;        
+
+    /* TODO: add timeout.  */
+    do
+    {
+        ret = linebuffer_getc (tty->linebuffer);
+
+        if (ret < 0)
+            tty_poll (tty);        
+    }
+    while (ret < 0 && errno == EAGAIN && ! tty->read_nonblock);    
+
+    return ret;
 }
 
 
-/** This is a non-blocking version of fgets.   If the tty linebuffer
+/** tty version of fgets.   If the tty linebuffer
     contains a newline, then the linebuffer is copied into the user's
     buffer up to and including the newline, provided the user's buffer
     is large enough.
@@ -196,7 +177,7 @@ tty_printf (tty_t *tty, const char *fmt, ...)
     ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
     va_end (ap);
 
-    if (tty_puts_block (tty, buffer) < 0)
+    if (tty_puts (tty, buffer) < 0)
         return -1;
 
     return ret;
@@ -276,6 +257,8 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->write = cfg->write;
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
+    tty->read_nonblock = cfg->read_nonblock;
+    tty->write_nonblock = cfg->write_nonblock;        
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)

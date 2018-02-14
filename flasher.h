@@ -6,6 +6,11 @@
 #ifndef FLASHER_H
 #define FLASHER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /* This parameter is for internal use only.  It's purpose is to 
@@ -98,4 +103,9 @@ flasher_update (flasher_t);
    the FLASH to operate on.  */
 extern flasher_t
 flasher_init (flasher_obj_t *info);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

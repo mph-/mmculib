@@ -7,6 +7,11 @@
 #ifndef SPI_PGA_H
 #define SPI_PGA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "spi_pga_dev.h"
 
@@ -61,4 +66,9 @@ spi_pga_wakeup (spi_pga_t pga);
 spi_pga_t
 spi_pga_init (const spi_pga_cfg_t *cfg);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

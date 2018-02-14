@@ -7,6 +7,11 @@
 #ifndef SPI_PGA_DEV_H
 #define SPI_PGA_DEV_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "spi.h"
 
@@ -64,4 +69,9 @@ typedef struct spi_pga_dev_struct spi_pga_dev_t;
 bool
 spi_pga_command (spi_pga_t pga, uint8_t *commands, uint8_t len);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

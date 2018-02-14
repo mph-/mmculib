@@ -6,6 +6,11 @@
 #ifndef MCLEDS_H
 #define MCLEDS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "cleds.h"
 #include "colourmap.h"
@@ -88,4 +93,9 @@ mcleds_colourmap_set (mcleds_t mcleds,
     mcleds->colourmap = colourmap;
     mcleds->colourmap_size = colourmap_size;
 }
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

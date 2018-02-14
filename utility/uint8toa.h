@@ -7,6 +7,11 @@
 #ifndef UINT8TOA_H
 #define UINT8TOA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -17,4 +22,9 @@
 void
 uint8toa (uint8_t num, char *str, bool leading_zeroes);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

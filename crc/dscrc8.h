@@ -6,6 +6,11 @@
 #ifndef DSCRC8_H
 #define DSCRC8_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #ifndef CRC8540_H
 #define CRC8540_H
 
@@ -29,4 +34,9 @@ extern crc8_t dscrc8_byte (crc8_t crc, uint8_t val);
 extern crc8_t dscrc8 (crc8_t crc, uint8_t *bytes, uint8_t size);
 
 #endif
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /* DSCRC8_H  */
+

@@ -7,6 +7,11 @@
 #ifndef LMATRIX_H
 #define LMATRIX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "port.h"
 
@@ -59,4 +64,9 @@ lmatrix_update (lmatrix_t lmatrix);
    instance is supported with parameters specified by target.h.  */
 extern lmatrix_t
 lmatrix_init (lmatrix_obj_t *info);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

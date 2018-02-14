@@ -6,6 +6,11 @@
 #ifndef TCM8230_H
 #define TCM8230_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef enum 
@@ -105,4 +110,9 @@ bool tcm8230_hsync_high_wait (uint32_t timeout_us);
 
 bool tcm8230_hsync_low_wait (uint32_t timeout_us);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

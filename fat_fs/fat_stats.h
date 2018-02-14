@@ -8,6 +8,11 @@
 #ifndef FAT_STATS_H
 #define FAT_STATS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "fat.h"
 
 
@@ -23,4 +28,9 @@ typedef struct fat_stats_struct
 
 void fat_stats (fat_t *fat, fat_stats_t *stats);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

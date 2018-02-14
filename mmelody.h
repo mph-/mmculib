@@ -6,6 +6,11 @@
 #ifndef MMELODY_H
 #define MMELODY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "font.h"
 #include "ticker.h"
@@ -64,4 +69,9 @@ mmelody_speed_set (mmelody_t mmelody, mmelody_speed_t speed);
 extern void 
 mmelody_volume_set (mmelody_t mmelody, mmelody_volume_t volume);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

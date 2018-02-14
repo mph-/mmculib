@@ -7,11 +7,21 @@
 #ifndef UINT16TODEC_H
 #define UINT16TODEC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 extern void 
 uint16todec (uint16_t number, char *str, unsigned int digits, 
              bool leading_zeros);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

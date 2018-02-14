@@ -7,6 +7,11 @@
 #ifndef DIALOG_H
 #define DIALOG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 #ifndef ARRAY_SIZE
@@ -49,4 +54,9 @@ void
 dialog_init (uint8_t rows, uint8_t cols,
              void (*display)(uint8_t row, const char *str));
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

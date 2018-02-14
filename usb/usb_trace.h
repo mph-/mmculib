@@ -1,6 +1,11 @@
 #ifndef USB_TRACE_H
 #define USB_TRACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "trace.h"
 
@@ -70,5 +75,10 @@
 #endif
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

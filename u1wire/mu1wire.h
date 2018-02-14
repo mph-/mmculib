@@ -6,6 +6,11 @@
 #ifndef MU1WIRE_H
 #define MU1WIRE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 enum
@@ -91,4 +96,9 @@ mu1wire_init (mu1wire_obj_t *devices, uint8_t devices_max);
 extern void
 mu1wire_debug (mu1wire_t dev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

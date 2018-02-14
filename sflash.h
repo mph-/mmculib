@@ -6,6 +6,11 @@
 #ifndef SFLASH_H
 #define SFLASH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -62,4 +67,9 @@ sflash_pattern_get (sflash_t sflash)
 extern bool
 sflash_update (sflash_t);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

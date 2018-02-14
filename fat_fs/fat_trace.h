@@ -7,6 +7,11 @@
 #ifndef FAT_TRACE_H
 #define FAT_TRACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "trace.h"
 
 
@@ -24,4 +29,9 @@
 #define TRACE_FAT_DEBUG(...)
 #endif
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

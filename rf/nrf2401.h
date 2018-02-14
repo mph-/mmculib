@@ -7,6 +7,11 @@
 #ifndef NRF2401_H
 #define NRF2401_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "spi.h"
 #include "pio.h"
@@ -174,4 +179,9 @@ extern bool
 nrf_data_ready_p (nrf_t nrf);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

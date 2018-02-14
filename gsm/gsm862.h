@@ -7,6 +7,11 @@
 #ifndef GSM862_H
 #define GSM862_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "busart.h"
 #include "pio.h"
 
@@ -88,4 +93,9 @@ gsm862_gprs_senddata (gsm862_t gsm, char *data);
 gsm862_t
 gsm862_init(const gsm862_cfg_t *cfg);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

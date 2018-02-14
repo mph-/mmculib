@@ -6,6 +6,11 @@
 #ifndef SPWM_H
 #define SPWM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "port.h"
 
@@ -38,4 +43,9 @@ spwm_update (spwm_t);
    the FLASH to operate on.  */
 extern spwm_t
 spwm_init (spwm_obj_t *info);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

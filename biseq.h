@@ -6,6 +6,11 @@
 #ifndef BISEQ_H
 #define BISEQ_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef enum {BISEQ_MODE_NORMAL, 
@@ -41,4 +46,9 @@ extern biseq_mode_t biseq_mode_get (biseq_t biseq);
 /* Returns non-zero at end of bisequence.  */
 extern int8_t biseq_update (biseq_t biseq);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

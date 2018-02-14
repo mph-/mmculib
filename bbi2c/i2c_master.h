@@ -9,6 +9,11 @@
 #ifndef I2C_MASTER_H
 #define I2C_MASTER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "i2c.h"
 
 i2c_t
@@ -41,4 +46,9 @@ i2c_ret_t
 i2c_master_read (i2c_t i2c, i2c_id_t slave_addr,
                  void *buffer, uint8_t size);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

@@ -9,6 +9,11 @@
 #ifndef PGA_H
 #define PGA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "spi.h"
 #include "config.h"
 #include "port.h"
@@ -78,5 +83,10 @@ void pga_chip_deselect (pga_t pga);
 pga_t pga_init (pga_obj_t *dev, const pga_cfg_t *cfg);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 

@@ -7,8 +7,18 @@
 #ifndef MCP6S2X_H
 #define MCP6S2X_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 extern spi_pga_ops_t mcp6s2x_ops;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

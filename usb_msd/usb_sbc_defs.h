@@ -1,6 +1,11 @@
 #ifndef USB_SBC_DEFS_H_
 #define USB_SBC_DEFS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** 
@@ -446,4 +451,9 @@ typedef union
 } __packed__ S_sbc_command;
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

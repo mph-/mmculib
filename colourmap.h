@@ -7,6 +7,11 @@
 #ifndef COLOURMAP_H
 #define COLOURMAP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /* The only constraints on the colourmap is that the first entry is
@@ -45,4 +50,9 @@ typedef uint8_t colourmap_elt_t;
 typedef colourmap_elt_t colourmap_t[3];
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

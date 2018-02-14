@@ -8,6 +8,11 @@
 #ifndef SPI_DATAFLASH_H
 #define SPI_DATAFLASH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 
 #include "config.h"
 #include "iovec.h"
@@ -83,4 +88,9 @@ spi_dataflash_init (const spi_dataflash_cfg_t *cfg);
 extern void
 spi_dataflash_shutdown (spi_dataflash_t dev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

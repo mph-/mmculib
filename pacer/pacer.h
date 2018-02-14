@@ -29,6 +29,11 @@
 #ifndef PACER_H
 #define PACER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** Define size of pacer rates.  */
@@ -43,4 +48,9 @@ extern void pacer_wait (void);
     @param pacer_rate rate in Hz.  */
 extern void pacer_init (pacer_rate_t pacer_rate);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /* PACER_H  */
+

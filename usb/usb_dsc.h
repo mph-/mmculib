@@ -1,6 +1,11 @@
 #ifndef USB_DSC_H_
 #define USB_DSC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -170,4 +175,9 @@ typedef struct
 } usb_dsc_t;
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif  /*USB_DSC_H_*/
+

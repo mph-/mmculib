@@ -6,6 +6,11 @@
 #ifndef CHASER_H
 #define CHASER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "flasher.h"
 #include "font.h"
@@ -84,4 +89,9 @@ chaser_font_set (chaser_t chaser, font_t *font)
     dev->font = font;
 }
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

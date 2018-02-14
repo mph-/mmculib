@@ -7,10 +7,20 @@
 #ifndef UINT16TOA_H
 #define UINT16TOA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 /** Convert 16 bit unsigned integer to ASCII.  */
 void
 uint16toa (uint16_t num, char *str, bool leading_zeroes);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

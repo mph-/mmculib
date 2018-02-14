@@ -6,6 +6,11 @@
 #ifndef TICKER_H
 #define TICKER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 typedef struct
@@ -42,4 +47,9 @@ typedef struct
 #define TICKER_START(DEV)               \
     (DEV)->clock = (DEV)->period;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

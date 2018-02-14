@@ -1,6 +1,11 @@
 #ifndef USB_MSD_SBC_H_
 #define USB_MSD_SBC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "usb_sbc_defs.h"
 #include "usb_msd_lun.h"
@@ -25,4 +30,9 @@ uint8_t sbc_lun_num_get (void);
 
 void sbc_lun_write_protect_set (uint8_t lun_id, bool enable);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /*USB_MSD_SBC_H_*/
+

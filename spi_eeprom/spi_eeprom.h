@@ -8,6 +8,11 @@
 #ifndef SPI_EEPROM_H
 #define SPI_EEPROM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "pio.h"
 #include "spi.h"
@@ -68,4 +73,9 @@ spi_eeprom_write_setup (spi_eeprom_t dev, spi_eeprom_addr_t addr);
 uint8_t
 spi_eeprom_disable (spi_eeprom_t dev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

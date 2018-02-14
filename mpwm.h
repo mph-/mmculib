@@ -6,6 +6,11 @@
 #ifndef MPWM_H
 #define MPWM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -45,4 +50,9 @@ mpwm_update (mpwm_t);
    the FLASH to operate on.  */
 extern mpwm_t
 mpwm_init (mpwm_obj_t *info, mpwm_channel_t *channels, uint8_t num_channels);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

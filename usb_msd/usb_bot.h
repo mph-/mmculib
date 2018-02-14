@@ -1,6 +1,11 @@
 #ifndef USB_BOT_H_
 #define USB_BOT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "usb_msd_defs.h"
 #include "usb.h"
@@ -105,4 +110,9 @@ usb_bot_abort (S_usb_bot_command_state *pCommandState);
 void 
 usb_bot_error_log (usb_bot_status_t status);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /*USB_BOT_H_*/
+

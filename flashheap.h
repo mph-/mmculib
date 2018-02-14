@@ -8,6 +8,11 @@
 #ifndef FLASHHEAP_H
 #define FLASHHEAP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "iovec.h"
 
@@ -87,4 +92,9 @@ flashheap_init (flashheap_addr_t offset,
                 void *dev, flashheap_readv_t readv,
                 flashheap_writev_t writev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

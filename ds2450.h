@@ -6,6 +6,11 @@
 #ifndef DS2450_H
 #define DS2450_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "u1wire.h"
 
@@ -30,4 +35,9 @@ ds2450_debug (u1wire_t dev);
 
 extern u1wire_t
 ds2450_init (u1wire_obj_t *dev);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

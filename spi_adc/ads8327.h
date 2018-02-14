@@ -7,6 +7,11 @@
 #ifndef ADS8327_H
 #define ADS8327_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 extern void
@@ -19,6 +24,11 @@ ads8327_convert (void);
 
 extern int16_t
 ads8327_read (void);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 
 

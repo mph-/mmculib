@@ -6,6 +6,11 @@
 #ifndef MUXLEDS_H
 #define MUXLEDS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "port.h"
 
@@ -89,4 +94,9 @@ muxleds_init (muxleds_obj_t *dev, const muxleds_cfg_t *row_cfg,
              uint8_t row_size,
              const muxleds_cfg_t *col_cfg,
              uint8_t col_size);
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

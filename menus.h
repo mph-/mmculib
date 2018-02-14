@@ -7,6 +7,11 @@
 #ifndef MENUS_H
 #define MENUS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "menu.h"
 
 #define MENU_DEFINE(TITLE, NAME) 
@@ -77,4 +82,9 @@ static bool SUBMENU ## _menu_do (void)    \
 #undef MENU_ITEM_ACTION
 #undef MENU_ITEM_SUBMENU
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

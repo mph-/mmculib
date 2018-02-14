@@ -9,6 +9,11 @@
 #ifndef BUSART_H
 #define BUSART_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "sys.h"
 #include "ring.h"
@@ -128,4 +133,9 @@ busart_clear (busart_t busart);
 
 const sys_file_ops_t busart_file_ops;
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

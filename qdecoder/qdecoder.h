@@ -6,6 +6,11 @@
 #ifndef QDECODER_H
 #define QDECODER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "port.h"
 
@@ -120,4 +125,9 @@ qdecoder_init (qdecoder_obj_t *this, const qdecoder_cfg_t *cfg);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif /* QDECODER_H  */
+

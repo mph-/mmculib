@@ -7,6 +7,11 @@
 #ifndef SPI_ADC_H
 #define SPI_ADC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 
 
@@ -39,6 +44,11 @@ typedef enum
 
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
 
 

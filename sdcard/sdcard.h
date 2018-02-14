@@ -7,6 +7,11 @@
 #ifndef SDCARD_H
 #define SDCARD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "config.h"
 #include "spi.h"
 
@@ -97,4 +102,9 @@ sdcard_probe (sdcard_t dev);
 void
 sdcard_shutdown (sdcard_t dev);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

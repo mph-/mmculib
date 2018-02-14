@@ -6,6 +6,11 @@
 #ifndef LCD_H
 #define LCD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 
 #include "config.h"
 #include "port.h"
@@ -44,4 +49,9 @@ extern void lcd_goto (lcd_t dev, uint8_t row, uint8_t col);
 
 extern lcd_t lcd_init (lcd_obj_t *info, const lcd_cfg_t *cfg);
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+

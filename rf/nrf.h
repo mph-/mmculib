@@ -7,6 +7,11 @@
 #ifndef NRF_H
 #define NRF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+
 #include "nrf2401.h"
 
 typedef uint8_t nrf_size_t;
@@ -79,4 +84,9 @@ extern bool
 nrf_announce (nrf_t nrf, nrf_node_t *node, uint8_t *device_id);
 
 
+
+#ifdef __cplusplus
+}
+#endif    
 #endif
+
