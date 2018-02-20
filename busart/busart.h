@@ -131,7 +131,7 @@ busart_puts (busart_t busart, const char *str);
 void
 busart_clear (busart_t busart);
 
-const sys_file_ops_t busart_file_ops;
+extern const sys_file_ops_t busart_file_ops;
 
 
 #ifdef __cplusplus
