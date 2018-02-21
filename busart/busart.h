@@ -46,8 +46,8 @@ typedef struct
     ring_size_t tx_size;
     /* Size of the receive ring buffer in bytes.  */
     ring_size_t rx_size;
-    /* Non-zero for blocking I/O.  */
-    bool block;
+    int read_timeout_us;
+    int write_timeout_us;
 }
 busart_cfg_t;
 
@@ -61,30 +61,16 @@ busart_t
 busart_init (const busart_cfg_t *cfg);
 
 
-/* Read as many bytes as there are available in the ring buffer up to
-   the specifed size.  */
-ssize_t
-busart_read (busart_t busart, void *data, size_t size);
-
-
-/* Write size bytes.  Currently this only writes as many bytes (up to
-   the desired size) that can currently fit in the ring buffer.   */
-ssize_t
-busart_write (busart_t busart, const void *data, size_t size);
-
-
 /** Read size bytes.  Block until all the bytes have been read or
     until timeout occurs.  */
 ssize_t
-busart_read_timeout (busart_t busart, void *data, size_t size,
-                     uint32_t timeout_us);
+busart_read (busart_t busart, void *data, size_t size);
 
 
 /** Write size bytes.  Block until all the bytes have been transferred
     to the transmit ring buffer or until timeout occurs.  */
 ssize_t
-busart_write_timeout (busart_t busart, const void *data, size_t size,
-                      uint32_t timeout_us);
+busart_write (busart_t busart, const void *data, size_t size);
 
 
 /* Return the number of bytes immediately available for reading.  */

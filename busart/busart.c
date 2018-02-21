@@ -34,6 +34,8 @@ struct busart_dev_struct
     bool (*tx_finished_p) (void);
     ring_t tx_ring;
     ring_t rx_ring;
+    uint32_t read_timeout_us;
+    uint32_t write_timeout_us;        
 };
 
 
@@ -93,6 +95,9 @@ busart_init (const busart_cfg_t *cfg)
     if (!dev)
         return 0;
 
+    dev->read_timeout_us = cfg->read_timeout_us;
+    dev->write_timeout_us = cfg->write_timeout_us;
+    
     tx_buffer = cfg->tx_buffer;
     rx_buffer = cfg->rx_buffer;
 
@@ -121,10 +126,10 @@ busart_init (const busart_cfg_t *cfg)
 }
 
 
-/** Write size bytes.  Currently this only writes as many bytes (up to
-    the desired size) that can currently fit in the ring buffer.   */
-ssize_t
-busart_write (busart_t busart, const void *data, size_t size)
+/** Write as many bytes (up to the desired size) that can currently
+    fit in the ring buffer.  */
+static ssize_t
+busart_write_nonblock (busart_t busart, const void *data, size_t size)
 {
     ssize_t ret;
     busart_dev_t *dev = busart;
@@ -145,8 +150,8 @@ busart_write (busart_t busart, const void *data, size_t size)
 
 /** Read as many bytes as there are available in the ring buffer up to
     the specifed size.  */
-ssize_t
-busart_read (busart_t busart, void *data, size_t size)
+static ssize_t
+busart_read_nonblock (busart_t busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
     ssize_t ret;
@@ -166,22 +171,24 @@ busart_read (busart_t busart, void *data, size_t size)
 /** Read size bytes.  Block until all the bytes have been read or
     until timeout occurs.  */
 ssize_t
-busart_read_timeout (busart_t busart, void *data, size_t size,
-                      uint32_t timeout_us)
+busart_read (busart_t busart, void *data, size_t size)
 {
-    return sys_read_timeout (busart, data, size, timeout_us,
-                             (void *)busart_read);
+    busart_dev_t *dev = busart;
+    
+    return sys_read_timeout (busart, data, size, dev->read_timeout_us,
+                             (void *)busart_read_nonblock);
 }
 
 
 /** Write size bytes.  Block until all the bytes have been transferred
     to the transmit ring buffer or until timeout occurs.  */
 ssize_t
-busart_write_timeout (busart_t busart, const void *data, size_t size,
-                      uint32_t timeout_us)
+busart_write (busart_t busart, const void *data, size_t size)
 {
-    return sys_write_timeout (busart, data, size, timeout_us,
-                              (void *)busart_write);
+    busart_dev_t *dev = busart;
+    
+    return sys_write_timeout (busart, data, size, dev->write_timeout_us,
+                              (void *)busart_write_nonblock);
 }
 
 

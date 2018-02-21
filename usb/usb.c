@@ -394,7 +394,8 @@ usb_t usb_init (const usb_cfg_t *cfg,
     udp_cfg_t udp_cfg;
     usb_t usb = &usb_dev;
 
-    udp_cfg.block = cfg->block;    
+    udp_cfg.read_timeout_us = cfg->read_timeout_us;
+    udp_cfg.write_timeout_us = cfg->write_timeout_us;    
 
     usb->udp = udp_init (&udp_cfg, (void *)usb_request_handler, usb);
 

@@ -31,8 +31,9 @@ typedef enum
 /** usb configuration structure.  */
 typedef struct
 {
-    /* Non-zero for blocking I/O.  */
-    bool block;
+    /* Zero for non-blocking I/O.  */
+    uint32_t read_timeout_us;
+    uint32_t write_timeout_us;    
 }
 usb_cfg_t;
 
