@@ -30,8 +30,6 @@ struct tty_struct
     sys_write_t write;
     bool (*update)(void);
     void (*shutdown)(void);
-    bool read_nonblock;
-    bool write_nonblock;        
 };
 
 
@@ -54,12 +52,7 @@ tty_putc1 (tty_t *tty, int ch)
 {
     int ret;    
 
-    /* TODO: add timeout.  */
-    do
-    {
-        ret = tty->write (tty->dev, &ch, 1);
-    }
-    while (ret < 0 && errno == EAGAIN && ! tty->write_nonblock);
+    ret = tty->write (tty->dev, &ch, 1);
 
     if (ret < 0)
         return -1;
@@ -132,16 +125,8 @@ tty_getc (tty_t *tty)
 {
     int ret;        
 
-    /* TODO: add timeout.  */
-    do
-    {
-        ret = linebuffer_getc (tty->linebuffer);
-
-        if (ret < 0)
-            tty_poll (tty);        
-    }
-    while (ret < 0 && errno == EAGAIN && ! tty->read_nonblock);    
-
+    tty_poll (tty);        
+    ret = linebuffer_getc (tty->linebuffer);
     return ret;
 }
 
@@ -185,8 +170,8 @@ tty_printf (tty_t *tty, const char *fmt, ...)
 
 
 /** Read size bytes.  */
-int16_t
-tty_read (tty_t *tty, void *data, uint16_t size)
+ssize_t
+tty_read (void *tty, void *data, size_t size)
 {
     uint16_t count = 0;
     char *buffer = data;
@@ -211,8 +196,8 @@ tty_read (tty_t *tty, void *data, uint16_t size)
 
 
 /** Write size bytes.  */
-int16_t
-tty_write (tty_t *tty, const void *data, uint16_t size)
+ssize_t
+tty_write (void *tty, const void *data, size_t size)
 {
     uint16_t count = 0;
     const char *buffer = data;
@@ -257,8 +242,6 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->write = cfg->write;
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
-    tty->read_nonblock = cfg->read_nonblock;
-    tty->write_nonblock = cfg->write_nonblock;        
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)

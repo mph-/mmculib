@@ -171,7 +171,7 @@ busart_read_nonblock (busart_t busart, void *data, size_t size)
 /** Read size bytes.  Block until all the bytes have been read or
     until timeout occurs.  */
 ssize_t
-busart_read (busart_t busart, void *data, size_t size)
+busart_read (void *busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
     
@@ -183,7 +183,7 @@ busart_read (busart_t busart, void *data, size_t size)
 /** Write size bytes.  Block until all the bytes have been transferred
     to the transmit ring buffer or until timeout occurs.  */
 ssize_t
-busart_write (busart_t busart, const void *data, size_t size)
+busart_write (void *busart, const void *data, size_t size)
 {
     busart_dev_t *dev = busart;
     
@@ -288,6 +288,6 @@ busart_clear (busart_t busart)
 
 const sys_file_ops_t busart_file_ops =
 {
-    .read = (void *)busart_read,
-    .write = (void *)busart_write
+    .read = busart_read,
+    .write = busart_write
 };

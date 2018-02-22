@@ -28,12 +28,12 @@ typedef struct
 usb_cdc_cfg_t;
 
 
-size_t
-usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, ssize_t length);
+ssize_t
+usb_cdc_write (void *usb_cdc, const void *buffer, size_t length);
 
 
-size_t
-usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, ssize_t length);
+ssize_t
+usb_cdc_read (void *usb_cdc, void *buffer, size_t length);
 
 
 bool
@@ -76,7 +76,7 @@ bool
 usb_cdc_update (void);
 
 
-const sys_file_ops_t usb_cdc_file_ops;
+extern const sys_file_ops_t usb_cdc_file_ops;
 
 
 #ifdef __cplusplus

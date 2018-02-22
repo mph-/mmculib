@@ -177,12 +177,14 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 }
 
 
-size_t
-usb_cdc_read (usb_cdc_t usb_cdc, void *buffer, __unused__ ssize_t length)
+ssize_t
+usb_cdc_read (void *usb_cdc, void *buffer, __unused__ size_t length)
 {
+    usb_cdc_t dev = usb_cdc;
+    
     /* Ignore length and read only one char to avoid timeout resetting
        endpoint.  */
-    return usb_read (usb_cdc->usb, buffer, 1);
+    return usb_read (dev->usb, buffer, 1);
 }
 
 
@@ -195,10 +197,12 @@ usb_cdc_read_ready_p (usb_cdc_t usb_cdc)
 }
 
 
-size_t
-usb_cdc_write (usb_cdc_t usb_cdc, const void *buffer, ssize_t length)
+ssize_t
+usb_cdc_write (void *usb_cdc, const void *buffer, size_t length)
 {
-    return usb_write (usb_cdc->usb, buffer, length);
+    usb_cdc_t dev = usb_cdc;
+    
+    return usb_write (dev->usb, buffer, length);
 }
 
 
@@ -284,7 +288,7 @@ usb_cdc_update (void)
 
 const sys_file_ops_t usb_cdc_file_ops =
 {
-    .read = (void *)usb_cdc_read,
-    .write = (void *)usb_cdc_write
+    .read = usb_cdc_read,
+    .write = usb_cdc_write
 };
 

@@ -35,15 +35,11 @@ extern "C" {
 
 struct tty_cfg_struct
 {
-    bool (*update)(void);
-    void (*shutdown)(void);
     sys_read_t read;
     sys_write_t write;
     uint16_t linebuffer_size;
-    /* Non-zero for nonblocking reads.  */
-    bool read_nonblock;
-    /* Non-zero for nonblocking writes.  */    
-    bool write_nonblock;    
+    bool (*update)(void);
+    void (*shutdown)(void);
 };
 
 
@@ -106,13 +102,13 @@ tty_poll (tty_t *tty);
 
 
 /** Read size bytes.  */
-int16_t
-tty_read (tty_t *tty, void *data, uint16_t size);
+ssize_t
+tty_read (void *tty, void *data, size_t size);
 
 
 /** Write size bytes.  */
-int16_t
-tty_write (tty_t *tty, const void *data, uint16_t size);
+ssize_t
+tty_write (void *tty, const void *data, size_t size);
 
 
 tty_t *
