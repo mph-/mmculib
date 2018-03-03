@@ -198,7 +198,7 @@ tty_read (void *tty, void *data, size_t size)
         }
         *buffer++ = ch;
         if (ch == '\n')
-            break;
+            return count + 1;
     }
     return count;
 }
