@@ -13,6 +13,7 @@
 struct linebuffer_struct
 {
     ring_t ring;
+    uint8_t newlines;
 };
 
 
@@ -33,27 +34,10 @@ linebuffer_init (int size)
     linebuffer = malloc (sizeof (*linebuffer));
     if (!linebuffer)
         return 0;
+    linebuffer->newlines = 0;
     
     ring_init (&linebuffer->ring, buffer, size);
     return linebuffer;
-}
-
-
-/** This is a non-blocking version of fgetc.  
-    @param linebuffer a pointer to the linebuffer
-    @return next character from line buffer if it contains a newline 
-            otherwise -1.
-*/
-int
-linebuffer_getc (linebuffer_t *linebuffer)
-{
-    if (!ring_find (&linebuffer->ring, '\n'))
-    {
-        errno = EAGAIN;
-        return -1;
-    }
-
-    return ring_getc (&linebuffer->ring);
 }
 
 
@@ -65,20 +49,50 @@ linebuffer_add (linebuffer_t *linebuffer, char ch)
 {
     switch (ch)
     {
+    case '\0':
+        /* Ignore nulls.  */
+        break;
+        
     case '\b':
-        /* Discard last character from the linebuffer.  */
+        /* Discard last character from the linebuffer.
+           Hmmm, should stop at newline.  TODO.   */
         ring_getc (&linebuffer->ring);
         break;
 
     case '\r':
+    case '\n':        
         /* Replace carriage return with newline.  */
         ring_putc (&linebuffer->ring, '\n');
+        linebuffer->newlines++;        
         break;
 
     default:
         ring_putc (&linebuffer->ring, ch);
         break;
     }
+}
+
+
+/** This is a non-blocking version of fgetc.  
+    @param linebuffer a pointer to the linebuffer
+    @return next character from line buffer if it contains a newline 
+            otherwise -1.
+*/
+int
+linebuffer_getc (linebuffer_t *linebuffer)
+{
+    char ch;
+
+    if (linebuffer->newlines == 0)
+    {
+        errno = EAGAIN;
+        return -1;
+    }
+
+    ch = ring_getc (&linebuffer->ring);
+    if (ch == '\n')
+        linebuffer->newlines--;
+    return ch;
 }
 
 
@@ -96,22 +110,20 @@ linebuffer_gets (linebuffer_t *linebuffer, char *buffer, int size)
 {
     int i;
 
-    if (!ring_find (&linebuffer->ring, '\n'))
+    if (linebuffer->newlines == 0)
         return 0;
 
     for (i = 0; i < size - 1; i++)
     {
         char ch;
 
-        ch = ring_getc (&linebuffer->ring);
+        ch = linebuffer_getc (linebuffer);
         buffer[i] = ch;
         
         if (ch == '\n')
-        {
-            buffer[i + 1] = 0;
-            return buffer;
-        }
+            break;
     }
-     
+
+    buffer[i + 1] = 0;
     return buffer;
 }

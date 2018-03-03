@@ -178,7 +178,7 @@ tty_read (void *tty, void *data, size_t size)
 
     tty_poll (tty);
 
-    for (count = 0; count < size; count++)
+    for (count = 0; count < size - 1; count++)
     {
         int ch;
 
@@ -190,8 +190,11 @@ tty_read (void *tty, void *data, size_t size)
             return count;
         }
         *buffer++ = ch;
+        if (ch == '\n')
+            break;
     }
-    return size;
+    *buffer = 0;
+    return count;
 }
 
 
