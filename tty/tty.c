@@ -30,6 +30,7 @@ struct tty_struct
     sys_write_t write;
     bool (*update)(void);
     void (*shutdown)(void);
+    bool echo;
 };
 
 
@@ -106,9 +107,12 @@ tty_poll (tty_t *tty)
             return 1;
 
         /* Echo character.  */
-        tty_putc1 (tty, ch);
-        if (ch == '\r')
-            tty_putc1 (tty, '\n');
+        if (tty->echo)
+        {
+            tty_putc1 (tty, ch);
+            if (ch == '\r')
+                tty_putc1 (tty, '\n');
+        }
         
         linebuffer_add (tty->linebuffer, ch);
     }
@@ -235,6 +239,13 @@ tty_shutdown (tty_t *tty)
 }
 
 
+void
+tty_echo_set (tty_t *tty, bool echo)
+{
+    tty->echo = echo;
+}
+
+
 tty_t *
 tty_init (const tty_cfg_t *cfg, void *dev)
 {
@@ -251,6 +262,7 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->write = cfg->write;
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
+    tty->echo = 1;
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)

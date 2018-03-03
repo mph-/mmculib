@@ -118,6 +118,10 @@ tty_init (const tty_cfg_t *cfg, void *dev);
 void
 tty_shutdown (tty_t *tty);
 
+    
+void
+tty_echo_set (tty_t *tty, bool echo);
+    
 
 extern const sys_file_ops_t tty_file_ops;
 
