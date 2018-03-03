@@ -143,7 +143,14 @@ tty_getc (tty_t *tty)
 char *
 tty_gets (tty_t *tty, char *buffer, int size)
 {
-    return linebuffer_gets (tty->linebuffer, buffer, size);
+    ssize_t ret;
+
+    buffer[0] = 0;
+    ret = tty_read (tty, buffer, size - 1);
+    if (ret < 0)
+        return 0;
+    buffer[ret] = 0;
+    return buffer;
 }
 
 
@@ -193,7 +200,6 @@ tty_read (void *tty, void *data, size_t size)
         if (ch == '\n')
             break;
     }
-    *buffer = 0;
     return count;
 }
 

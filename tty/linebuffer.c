@@ -47,12 +47,11 @@ linebuffer_init (int size)
 void
 linebuffer_add (linebuffer_t *linebuffer, char ch)
 {
+    /* Perhaps could have cooked/raw modes and head down the rabbit
+     hole of termio?  */
+
     switch (ch)
     {
-    case '\0':
-        /* Ignore nulls.  */
-        break;
-        
     case '\b':
         /* Discard last character from the linebuffer.
            Hmmm, should stop at newline.  TODO.   */
@@ -93,37 +92,4 @@ linebuffer_getc (linebuffer_t *linebuffer)
     if (ch == '\n')
         linebuffer->newlines--;
     return ch;
-}
-
-
-/** This is a non-blocking version of fgets.   If the linebuffer
-    contains a newline, then the linebuffer is copied into the user's
-    buffer up to and including the newline, provided the user's buffer
-    is large enough.
-    @param linebuffer a pointer to the linebuffer
-    @param buffer is a pointer to a buffer
-    @param size is the number of bytes in the buffer
-    @return buffer if a line from the linebuffer has been copied otherwise 0.
-*/
-char *
-linebuffer_gets (linebuffer_t *linebuffer, char *buffer, int size)
-{
-    int i;
-
-    if (linebuffer->newlines == 0)
-        return 0;
-
-    for (i = 0; i < size - 1; i++)
-    {
-        char ch;
-
-        ch = linebuffer_getc (linebuffer);
-        buffer[i] = ch;
-        
-        if (ch == '\n')
-            break;
-    }
-
-    buffer[i + 1] = 0;
-    return buffer;
 }

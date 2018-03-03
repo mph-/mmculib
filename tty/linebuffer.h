@@ -39,20 +39,6 @@ linebuffer_add (linebuffer_t *linebuffer, char ch);
 int
 linebuffer_getc (linebuffer_t *linebuffer);
 
-
-/** This is a non-blocking version of fgets.   If the linebuffer
-    contains a newline, then the linebuffer is copied into the user's
-    buffer up to and including the newline, provided the user's buffer
-    is large enough.
-    @param linebuffer a pointer to the linebuffer
-    @param buffer is a pointer to a buffer
-    @param size is the number of bytes in the buffer
-    @return buffer if a line from the linebuffer has been copied otherwise 0.
-*/
-char *
-linebuffer_gets (linebuffer_t *linebuffer, char *buffer, int size);
-
-
 #ifdef __cplusplus
 }
 #endif    
