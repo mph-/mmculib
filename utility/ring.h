@@ -89,12 +89,23 @@ ring_size_t
 ring_init (ring_t *ring, void *buffer, ring_size_t size);
 
 
-/** Number of bytes in ring buffer for reading.  */
+/** Determine number of bytes in ring buffer ready for reading.
+    @param ring pointer to ring buffer structure
+    @return number of bytes in ring buffer ready for reading.  */    
 ring_size_t
 ring_read_num (ring_t *ring);
 
+ 
+/** Determine number of bytes in ring buffer ready for reading without wrapping.
+    @param ring pointer to ring buffer structure
+    @return number of bytes in ring buffer ready for reading.  */       
+ring_size_t
+ring_read_num_nowrap (ring_t *ring);    
 
-/** Number of bytes free in ring buffer for writing.  */
+
+/** Determine number of bytes in ring buffer free for writing.
+    @param ring pointer to ring buffer structure
+    @return number of bytes in ring buffer free for writing.  */    
 ring_size_t
 ring_write_num (ring_t *ring);
 
@@ -180,6 +191,24 @@ ring_getc (ring_t *ring)
     return c;
 }
 
+
+
+/** Peek at next character to read from ring buffer.
+    @param ring pointer to ring buffer structure
+    @return character or -1 if unsuccessful.  */
+static inline int
+ring_peek (ring_t *ring)
+{
+    int tmp;
+
+    /* Determine number of free entries in ring buffer
+       and give up if full.  */
+    if (!RING_READ_NUM (ring, tmp))
+        return -1;
+
+    return *ring->out;
+}
+    
 
 /** Search for character in ring buffer. 
     @param ring pointer to ring buffer structure

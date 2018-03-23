@@ -36,6 +36,22 @@ ring_read_num (ring_t *ring)
 }
 
 
+/** Determine number of bytes in ring buffer ready for reading without wrapping.
+    @param ring pointer to ring buffer structure
+    @return number of bytes in ring buffer ready for reading.  */       
+ring_size_t
+ring_read_num_nowrap (ring_t *ring)
+{
+    int num;
+
+    num = ring_read_num (ring);
+
+    if (ring->out + num >= ring->end)
+        return ring->end - ring->out;
+    return num;
+}
+
+
 /** Determine number of bytes in ring buffer free for writing.
     @param ring pointer to ring buffer structure
     @return number of bytes in ring buffer free for writing.  */
