@@ -53,16 +53,17 @@ linebuffer_add (linebuffer_t *linebuffer, char ch)
     switch (ch)
     {
     case '\b':
-        /* Discard last character from the linebuffer.
-           Hmmm, should stop at newline.  TODO.   */
-        ring_getc (&linebuffer->ring);
+        /* Discard last character from the linebuffer up until last
+           newline.  */
+        if (ring_peek (&linebuffer->ring) != '\n')
+            ring_getc (&linebuffer->ring);
         break;
 
     case '\r':
     case '\n':        
         /* Replace carriage return with newline.  */
-        ring_putc (&linebuffer->ring, '\n');
-        linebuffer->newlines++;        
+        if (ring_putc (&linebuffer->ring, '\n'))
+            linebuffer->newlines++;        
         break;
 
     default:
@@ -80,7 +81,7 @@ linebuffer_add (linebuffer_t *linebuffer, char ch)
 int
 linebuffer_getc (linebuffer_t *linebuffer)
 {
-    char ch;
+    int ch;
 
     if (linebuffer->newlines == 0)
     {
@@ -89,6 +90,16 @@ linebuffer_getc (linebuffer_t *linebuffer)
     }
 
     ch = ring_getc (&linebuffer->ring);
+    if (ch == -1)
+    {
+        /* Something is wrong.  We think we have some newlines in the
+           ring buffer but the ring buffer is empty!  */
+        while (1)
+            continue;
+        linebuffer->newlines = 0;
+        return ch;
+    }
+    
     if (ch == '\n')
         linebuffer->newlines--;
     return ch;
