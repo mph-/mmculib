@@ -215,6 +215,9 @@ tty_write (void *tty, const void *data, size_t size)
     uint16_t count = 0;
     const char *buffer = data;
 
+    /* TODO:  This could be optimised by sending all the bytes
+       up to a newline with a block write.  */
+    
     for (count = 0; count < size; count++)
     {
         int ret;

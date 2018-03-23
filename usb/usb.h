@@ -10,6 +10,7 @@ extern "C" {
 #include "udp.h"
 #include "usb_dsc.h"
 #include "usb_std.h"
+#include "ring.h"
 
 typedef usb_dsc_t usb_descriptors_t;
 
@@ -27,15 +28,6 @@ typedef enum
     USB_STATUS_PENDING = 4,
 } usb_status_t;
 
-
-/** usb configuration structure.  */
-typedef struct
-{
-    /* Zero for non-blocking I/O.  */
-    uint32_t read_timeout_us;
-    uint32_t write_timeout_us;    
-}
-usb_cfg_t;
 
 typedef udp_setup_t usb_setup_t;
 
@@ -72,9 +64,7 @@ bool usb_halt_p (usb_t usb, udp_ep_t endpoint);
 
 bool usb_read_ready_p (usb_t usb);
 
-ssize_t usb_read (usb_t usb, void *buffer, size_t length);
-
-ssize_t usb_write (usb_t usb, const void *buffer, size_t length);
+ssize_t usb_read_nonblock (usb_t usb, void *buffer, size_t length);
 
 usb_status_t usb_write_async (usb_t usb, const void *buffer, 
                               unsigned int length, 
@@ -93,7 +83,7 @@ bool usb_configured_p (usb_t usb);
 
 bool usb_awake_p (usb_t usb);
 
-usb_t usb_init (const usb_cfg_t *cfg, const usb_descriptors_t *descriptors,
+usb_t usb_init (const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler);
 
 

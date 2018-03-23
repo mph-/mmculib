@@ -1,6 +1,8 @@
 #include "usb.h"
 #include "usb_std.h"
 #include "trace.h"
+#include "ring.h"
+
 
 /* This module is mostly a wrapper for the device dependent UDP.
    It also handles setup and configuration requests. 
@@ -312,20 +314,6 @@ usb_read_ready_p (usb_t usb)
 }
 
 
-ssize_t
-usb_read (usb_t usb, void *buffer, size_t length)
-{
-    return udp_read (usb->udp, buffer, length);
-}
-
-
-ssize_t
-usb_write (usb_t usb, const void *buffer, size_t length)
-{
-    return udp_write (usb->udp, buffer, length);
-}
-
-
 usb_status_t
 usb_write_async (usb_t usb, const void *buffer, 
                  unsigned int length, 
@@ -343,6 +331,13 @@ usb_read_async (usb_t usb, void *buffer,
                 void *arg)
 {
     return udp_read_async (usb->udp, UDP_EP_OUT, buffer, length, callback, arg);
+}
+
+
+ssize_t
+usb_read_nonblock (usb_t usb, void *buffer, size_t length)
+{
+    return udp_read_nonblock (usb->udp, buffer, length);
 }
 
 
@@ -386,18 +381,13 @@ usb_shutdown (void)
 }
 
 
-usb_t usb_init (const usb_cfg_t *cfg,
-                const usb_descriptors_t *descriptors,
+usb_t usb_init (const usb_descriptors_t *descriptors,
                 udp_request_handler_t request_handler)
 {
     static usb_dev_t usb_dev;
-    udp_cfg_t udp_cfg;
     usb_t usb = &usb_dev;
 
-    udp_cfg.read_timeout_us = cfg->read_timeout_us;
-    udp_cfg.write_timeout_us = cfg->write_timeout_us;    
-
-    usb->udp = udp_init (&udp_cfg, (void *)usb_request_handler, usb);
+    usb->udp = udp_init ((void *)usb_request_handler, usb);
 
     usb->descriptors = descriptors;
     usb->request_handler = request_handler;

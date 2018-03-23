@@ -8,10 +8,16 @@ extern "C" {
 
 #include "config.h"
 #include "usb.h"
+#include "ring.h"
+    
 
 typedef struct usb_cdc_struct
 {
     usb_t usb;
+    ring_t tx_ring;
+    uint32_t read_timeout_us;
+    uint32_t write_timeout_us;
+    volatile bool writing;
 } usb_cdc_dev_t;
 
 typedef usb_cdc_dev_t *usb_cdc_t;

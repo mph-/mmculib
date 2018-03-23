@@ -2,16 +2,22 @@
 #include "usb_cdc.h"
 #include "usb_dsc.h"
 #include "usb.h"
+#include <stdlib.h>
 
 
 /* CDC communication device class. 
 
    Using sudo modprobe usbserial vendor=0x03EB product=0x6124
    will create a tty device such as /dev/ttyUSB0
+   or /dev/ttyACM0
 */
 
 #ifndef USB_CURRENT_MA
 #define USB_CURRENT_MA 100
+#endif
+
+#ifndef USB_CDC_TX_RING_SIZE
+#define USB_CDC_TX_RING_SIZE 80
 #endif
 
 
@@ -177,17 +183,6 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 }
 
 
-ssize_t
-usb_cdc_read (void *usb_cdc, void *buffer, __unused__ size_t length)
-{
-    usb_cdc_t dev = usb_cdc;
-    
-    /* Ignore length and read only one char to avoid timeout resetting
-       endpoint.  */
-    return usb_read (dev->usb, buffer, 1);
-}
-
-
 /* Checks if at least one character can be read without
    blocking.  */
 bool
@@ -197,12 +192,102 @@ usb_cdc_read_ready_p (usb_cdc_t usb_cdc)
 }
 
 
-ssize_t
-usb_cdc_write (void *usb_cdc, const void *buffer, size_t length)
+static int16_t
+usb_cdc_read_nonblock (usb_cdc_t usb_cdc, void *data, uint16_t size)
 {
-    usb_cdc_t dev = usb_cdc;
+    int ret;
     
-    return usb_write (dev->usb, buffer, length);
+    ret = usb_read_nonblock (usb_cdc->usb, data, size);
+    
+    if (ret == 0)
+    {
+        errno = EAGAIN;
+        return -1;
+    }
+    return ret;
+}    
+
+
+static void
+usb_cdc_write_next (usb_cdc_dev_t *dev);
+
+
+static void
+usb_cdc_write_callback (void *usb_cdc, usb_transfer_t *transfer)
+{
+    usb_cdc_dev_t *dev = usb_cdc;    
+    
+    ring_read_advance (&dev->tx_ring, transfer->transferred);
+    dev->writing = 0;
+    usb_cdc_write_next (dev);
+}
+
+
+static void
+usb_cdc_write_next (usb_cdc_dev_t *dev)
+{
+    int read_num;
+
+    read_num = ring_read_num_nowrap (&dev->tx_ring);
+    if (read_num == 0)
+        return;
+
+    /* TODO fix possible race condition with shared variable writing.  */
+    
+    dev->writing = 1;
+    if (usb_write_async (dev->usb, dev->tx_ring.out, read_num,
+                         usb_cdc_write_callback, dev) != USB_STATUS_SUCCESS)
+        dev->writing = 0;
+}
+
+
+static ssize_t
+usb_cdc_write_nonblock (usb_cdc_t usb_cdc, const void *data, size_t size)
+{
+    int ret;
+    usb_cdc_dev_t *dev = usb_cdc;    
+
+    /* Assume async write not taking place.  FIXME.  */
+    
+    ret = ring_write (&dev->tx_ring, data, size);
+    
+    if (ret == 0)
+    {
+        errno = EAGAIN;
+        ret = -1;
+    }
+
+    if (!dev->writing)
+        usb_cdc_write_next (dev);
+    return ret;
+}
+
+
+/** Write size bytes.  Block until all the bytes have been transferred
+    to the transmit ring buffer or until timeout occurs.  */
+ssize_t
+usb_cdc_write (void *usb_cdc, const void *data, size_t size)
+{
+    usb_cdc_dev_t *dev = usb_cdc;
+    
+    return sys_write_timeout (usb_cdc, data, size, dev->write_timeout_us,
+                             (void *)usb_cdc_write_nonblock);
+}
+
+
+/** Read size bytes.  Block until all the bytes have been read or
+    until timeout occurs.  */
+ssize_t
+usb_cdc_read (void *usb_cdc, void *data, size_t size)
+{
+    usb_cdc_dev_t *dev = usb_cdc;
+
+    /* Ignore size and read only one char to avoid timeout resetting
+       endpoint.  */
+    size = 1;
+    
+    return sys_read_timeout (usb_cdc, data, size, dev->read_timeout_us,
+                             (void *)usb_cdc_read_nonblock);
 }
 
 
@@ -223,20 +308,26 @@ usb_cdc_shutdown (void)
 usb_cdc_t
 usb_cdc_init (const usb_cdc_cfg_t *cfg)
 {
-    usb_cfg_t usb_cfg;
-    usb_cdc_t usb_cdc = &usb_cdc_dev;
+    usb_cdc_t dev = &usb_cdc_dev;
+    char *buffer;
+    
+    dev->read_timeout_us = cfg->read_timeout_us;
+    dev->write_timeout_us = cfg->write_timeout_us;
+    dev->writing = 0;
 
-    usb_cfg.read_timeout_us = cfg->read_timeout_us;
-    usb_cfg.write_timeout_us = cfg->write_timeout_us;        
+    buffer = malloc (USB_CDC_TX_RING_SIZE);
+    if (!buffer)
+        return 0;
+        
+    ring_init (&dev->tx_ring, buffer, USB_CDC_TX_RING_SIZE);
+    
+    dev->usb = usb_init (&usb_cdc_descriptors, 
+                         (void *)usb_cdc_request_handler);
 
-    usb_cdc->usb = usb_init (&usb_cfg, &usb_cdc_descriptors, 
-                             (void *)usb_cdc_request_handler);
-
-    return usb_cdc;
+    return dev;
 }
 
 
-/** Read character.  This blocks until the character can be read.  */
 int
 usb_cdc_getc (usb_cdc_t usb_cdc)
 {
@@ -252,8 +343,7 @@ usb_cdc_getc (usb_cdc_t usb_cdc)
 }
 
 
-/** Write character.  This blocks until the character can be
-    written.  */
+
 int
 usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
 {
@@ -266,7 +356,6 @@ usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
 }
 
 
-/** Write string.  This blocks until the string is buffered.  */
 int
 usb_cdc_puts (usb_cdc_t usb_cdc, const char *str)
 {
