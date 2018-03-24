@@ -167,6 +167,15 @@ ring_putc (ring_t *ring, char c)
 }
 
 
+/** Write single character to ring buffer.  If the buffer
+    is full, overwrite last character.
+    @param ring pointer to ring buffer structure
+    @param c character to write
+    @return non-zero if successful.  */
+ring_size_t
+ring_putc_force (ring_t *ring, char c);    
+
+
 /** Read single character from ring buffer.
     @param ring pointer to ring buffer structure
     @return character or -1 if unsuccessful.  */

@@ -271,6 +271,28 @@ ring_find (ring_t *ring, char ch)
     return 0;
 }
 
+/** Write single character to ring buffer.  If the buffer
+    is full, overwrite last character.
+    @param ring pointer to ring buffer structure
+    @param c character to write
+    @return non-zero if successful.  */
+ring_size_t
+ring_putc_force (ring_t *ring, char c)
+{
+    ring_size_t ret;
+
+    ret = ring_putc (ring, c);
+    if (ret != 0)
+        return ret;
+
+    if (ring->in == ring->top)
+        ring->in = ring->end - 1;
+    else
+        ring->in--;
+
+    return ring_putc (ring, c);    
+}
+
 
 /** Empties the ring buffer to it's original state.
     @param ring, pointer to ring buffer structure. */
