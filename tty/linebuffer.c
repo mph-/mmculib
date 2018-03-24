@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include "errno.h"
-#include "utility/ring.h"
+#include "ring.h"
 #include "linebuffer.h"
 
 struct linebuffer_struct

@@ -184,6 +184,39 @@ ring_write (ring_t *ring, const void *buffer, ring_size_t size)
 }
 
 
+/** Write to a ring buffer.   Older data is overwritten to ensure
+    the new data is written.
+    @param ring pointer to ring buffer structure
+    @param buffer pointer to memory buffer
+    @param size number of bytes to write
+    @return number of bytes actually written.  */
+ring_size_t
+ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size)
+{
+    ring_size_t write_num;
+    ring_size_t ring_size;
+
+    write_num = ring_write_num (ring);
+
+    ring_size = RING_SIZE (ring);
+    
+    while (size > ring_size)
+    {
+        buffer += ring_size;
+        size -= ring_size;
+    }
+
+    if (size > write_num)
+    {
+        /* Loose previous data.  */
+        ring_read_advance (ring, size - write_num);
+        size = write_num;
+    }
+
+    return ring_write (ring, buffer, size);    
+}
+
+
 /** Determine where would write into ring buffer after size bytes.
     @param ring pointer to ring buffer structure
     @param size number of bytes to next write

@@ -80,6 +80,16 @@ ring_size_t
 ring_write (ring_t *ring, const void *buffer, ring_size_t size);
 
 
+/** Write to a ring buffer.   Older data is overwritten to ensure
+    the new data is written.
+    @param ring pointer to ring buffer structure
+    @param buffer pointer to memory buffer
+    @param size number of bytes to write
+    @return number of bytes actually written.  */
+ring_size_t
+ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size);
+    
+
 /** Initialise a ring buffer structure to use a specified buffer.
     @param ring pointer to ring buffer structure
     @param buffer pointer to memory buffer

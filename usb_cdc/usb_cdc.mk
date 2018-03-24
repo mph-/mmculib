@@ -1,12 +1,12 @@
 USB_CDC_DIR = $(DRIVER_DIR)/usb_cdc
 
 VPATH += $(USB_CDC_DIR)
-INCLUDES += -I$(USB_CDC_DIR) -I$(BUSART_DIR)/../utility/
+INCLUDES += -I$(USB_CDC_DIR)
 
 PERIPHERALS += udp
-DRIVERS += usb
+DRIVERS += usb ring
 
-SRC += usb_cdc.c usb.c ring.c
+SRC += usb_cdc.c usb.c
 
 
 
