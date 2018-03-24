@@ -216,9 +216,13 @@ static void
 usb_cdc_write_callback (void *usb_cdc, usb_transfer_t *transfer)
 {
     usb_cdc_dev_t *dev = usb_cdc;    
-    
+
     ring_read_advance (&dev->tx_ring, transfer->transferred);
     dev->writing = 0;
+
+    if (transfer->status != USB_STATUS_SUCCESS)
+        return;
+
     usb_cdc_write_next (dev);
 }
 
@@ -233,7 +237,7 @@ usb_cdc_write_next (usb_cdc_dev_t *dev)
         return;
 
     /* TODO fix possible race condition with shared variable writing.  */
-    
+
     dev->writing = 1;
     if (usb_write_async (dev->usb, dev->tx_ring.out, read_num,
                          usb_cdc_write_callback, dev) != USB_STATUS_SUCCESS)
@@ -318,7 +322,7 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
     buffer = malloc (USB_CDC_TX_RING_SIZE);
     if (!buffer)
         return 0;
-        
+
     ring_init (&dev->tx_ring, buffer, USB_CDC_TX_RING_SIZE);
     
     dev->usb = usb_init (&usb_cdc_descriptors, 
