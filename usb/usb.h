@@ -14,20 +14,18 @@ extern "C" {
 
 typedef usb_dsc_t usb_descriptors_t;
 
-typedef enum
-{
 //! Completed successfully
-    USB_STATUS_SUCCESS = 0,
+#define USB_STATUS_SUCCESS UDP_STATUS_SUCCESS
 //! Aborted because the recipient (device, endpoint, ...) was busy
-    USB_STATUS_BUSY = 1,
+#define USB_STATUS_BUSY UDP_STATUS_BUSY
 //! Aborted because of abnormal status
-    USB_STATUS_ABORTED = 2,
+#define USB_STATUS_ABORTED UDP_STATUS_ABORTED
 //! Aborted because the endpoint or the device has been reset
-    USB_STATUS_RESET = 3,
+#define USB_STATUS_RESET UDP_STATUS_RESET
 //! Waiting completion of transfer
-    USB_STATUS_PENDING = 4,
-} usb_status_t;
+#define USB_STATUS_PENDING UDP_STATUS_PENDING
 
+typedef udp_status_t usb_status_t;
 
 typedef udp_setup_t usb_setup_t;
 
