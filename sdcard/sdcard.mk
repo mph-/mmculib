@@ -5,4 +5,4 @@ SRC += sdcard.c
 
 PERIPHERALS += spi
 
-INCLUDES += -I$(SDCARD_DIR) -I$(SDCARD_DIR)/../utility/
+INCLUDES += -I$(SDCARD_DIR)
