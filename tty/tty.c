@@ -260,7 +260,10 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty->write = cfg->write;
     tty->update = cfg->update;
     tty->shutdown = cfg->shutdown;
-    tty->echo = 1;
+    /* Do not echo by default.  The linux ACM driver enables echo by
+      default; this is then turned off by serial terminal applications
+      such as gtkterm.  In the interim, we have an echo chamber.  */
+    tty->echo = 0;
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)

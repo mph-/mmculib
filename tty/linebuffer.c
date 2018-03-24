@@ -60,10 +60,12 @@ linebuffer_add (linebuffer_t *linebuffer, char ch)
         break;
 
     case '\r':
-    case '\n':        
         /* Replace carriage return with newline.  */
-        if (ring_putc (&linebuffer->ring, '\n'))
-            linebuffer->newlines++;        
+    case '\n':
+        /* Add newline to ring buffer.  If it is full, overwrite last
+           character.  */
+        ring_putc_force (&linebuffer->ring, '\n');
+        linebuffer->newlines++;
         break;
 
     default:
@@ -94,8 +96,6 @@ linebuffer_getc (linebuffer_t *linebuffer)
     {
         /* Something is wrong.  We think we have some newlines in the
            ring buffer but the ring buffer is empty!  */
-        while (1)
-            continue;
         linebuffer->newlines = 0;
         return ch;
     }
