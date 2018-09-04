@@ -18,6 +18,7 @@ typedef struct usb_cdc_struct
     uint32_t read_timeout_us;
     uint32_t write_timeout_us;
     volatile bool writing;
+    bool connected;
 } usb_cdc_dev_t;
 
 typedef usb_cdc_dev_t *usb_cdc_t;
