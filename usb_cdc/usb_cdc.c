@@ -173,6 +173,10 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 
     case SET_CONTROL_LINE_STATE:
         usb_control_write_zlp (usb);
+        
+        // The value field of the message indicates that the terminal is ready to receive.
+        // See SiLabs app note AN758 for a description of this field.
+        usb_cdc_dev.connected = setup->value & 0x1;
         break;
 
     default:
@@ -318,6 +322,7 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
     dev->read_timeout_us = cfg->read_timeout_us;
     dev->write_timeout_us = cfg->write_timeout_us;
     dev->writing = 0;
+    dev->connected = 0;
 
     buffer = malloc (USB_CDC_TX_RING_SIZE);
     if (!buffer)
