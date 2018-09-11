@@ -340,7 +340,7 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
 int
 usb_cdc_getc (usb_cdc_t usb_cdc)
 {
-    int ret = -1;
+    char ret = 0;
 
     if (! usb_cdc_read (usb_cdc, &ret, sizeof (ret)))
         return -1;
