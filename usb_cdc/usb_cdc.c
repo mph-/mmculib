@@ -342,7 +342,7 @@ usb_cdc_getc (usb_cdc_t usb_cdc)
 {
     char ret = 0;
 
-    if (! usb_cdc_read (usb_cdc, &ret, sizeof (ret)))
+    if (usb_cdc_read (usb_cdc, &ret, sizeof (ret)) < 0)
         return -1;
 
     if (ret == '\r')
@@ -359,7 +359,7 @@ usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
     if (ch == '\n')
         usb_cdc_putc (usb_cdc, '\r');    
 
-    if (! usb_cdc_write (usb_cdc, &ch, sizeof (ch)))
+    if (usb_cdc_write (usb_cdc, &ch, sizeof (ch)) < 0)
         return -1;
     return ch;
 }
