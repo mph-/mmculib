@@ -380,7 +380,13 @@ bool
 usb_cdc_update (void)
 {
     /* This is needed to signal USB device.  */
-    return usb_poll ((&usb_cdc_dev)->usb);
+    bool ret = usb_poll ((&usb_cdc_dev)->usb);
+
+    /* USB disconnect == no terminal connected. */
+    if (!ret && usb_cdc_dev.connected)
+        usb_cdc_dev.connected = 0;
+
+    return ret;
 }
 
 
