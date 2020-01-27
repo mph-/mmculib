@@ -30,7 +30,10 @@ struct tty_struct
     sys_write_t write;
     bool (*update)(void);
     void (*shutdown)(void);
+    // TODO, replace with bitmasks
     bool echo;
+    bool onlcr;                 /* Translate NL -> CR, NL */
+    bool icrnl;                 /* Translate CR -> NL */
 };
 
 
@@ -66,7 +69,7 @@ int
 tty_putc (tty_t *tty, int ch)
 {
     /* Convert newline to carriage return/line feed.  */
-    if (ch ==  '\n')
+    if (tty->onlcr && ch ==  '\n')
         tty_putc1 (tty, '\r');
 
     return tty_putc1 (tty, ch);
@@ -106,13 +109,12 @@ tty_poll (tty_t *tty)
         if (ch < 0)
             return 1;
 
+        if (tty->icrnl && ch == '\r')
+            ch = '\n';
+
         /* Echo character.  */
         if (tty->echo)
-        {
-            tty_putc1 (tty, ch);
-            if (ch == '\r')
-                tty_putc1 (tty, '\n');
-        }
+            tty_putc (tty, ch);
         
         linebuffer_add (tty->linebuffer, ch);
     }
@@ -244,6 +246,20 @@ tty_echo_set (tty_t *tty, bool echo)
 }
 
 
+void
+tty_onlcr_set (tty_t *tty, bool onlcr)
+{
+    tty->onlcr = onlcr;
+}
+
+
+void
+tty_icrnl_set (tty_t *tty, bool icrnl)
+{
+    tty->icrnl = icrnl;
+}
+
+
 tty_t *
 tty_init (const tty_cfg_t *cfg, void *dev)
 {
@@ -263,7 +279,10 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     /* Do not echo by default.  The linux ACM driver enables echo by
       default; this is then turned off by serial terminal applications
       such as gtkterm.  In the interim, we have an echo chamber.  */
-    tty->echo = 0;
+    tty_echo_set (tty, 0);
+
+    tty_onlcr_set (tty, 1);
+    tty_icrnl_set (tty, 1);    
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)
