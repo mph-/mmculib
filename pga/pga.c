@@ -2,6 +2,7 @@
     @author Michael Hayes
     @date   8 February 2005
     @brief Interface routines for Microchip PGAs (MCP6S2x)
+    @note  This has been superseded by spi_pga.
 */
 
 #define PGA_TRANSPARENT
