@@ -7,6 +7,8 @@ extern "C" {
     
 
 #include "config.h"
+#include "usb_cdc.h"
+#include "tty.h"    
 
 /** usb_serial configuration structure.  */
 typedef struct
@@ -19,10 +21,26 @@ typedef struct
 }
 usb_serial_cfg_t;
 
+
+typedef struct
+{
+    usb_cdc_t usb_cdc;        
+    tty_t *tty;    
+} usb_serial_t;
     
-bool
+    
+    
+usb_serial_t *
 usb_serial_init (const usb_serial_cfg_t *cfg);
 
+
+void
+usb_serial_shutdown (usb_serial_t *dev);
+
+
+void
+usb_serial_echo_set (usb_serial_t *dev, bool echo);
+    
 
 #ifdef __cplusplus
 }
