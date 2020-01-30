@@ -13,11 +13,8 @@ extern "C" {
 /** usb_serial configuration structure.  */
 typedef struct
 {
-    /* Zero for non-blocking I/O.  */    
-    uint32_t read_timeout_us;
-    uint32_t write_timeout_us;
-    bool echo;
-    const char *devname;
+    usb_cdc_cfg_t usb_cdc;
+    const char *devname;    
 }
 usb_serial_cfg_t;
 

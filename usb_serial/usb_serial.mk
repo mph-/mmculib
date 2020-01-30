@@ -6,6 +6,3 @@ INCLUDES += -I$(USB_SERIAL_DIR)
 DRIVERS += usb_cdc tty
 
 SRC += usb_serial.c
-
-
-
