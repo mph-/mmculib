@@ -11,12 +11,7 @@ extern "C" {
 #include "tty.h"    
 
 /** usart_serial configuration structure.  */
-typedef struct
-{
-    busart_cfg_t usart;
-    const char *devname;
-}
-usart_serial_cfg_t;
+typedef busart_cfg_t usart_serial_cfg_t;
 
 
 typedef struct
@@ -28,7 +23,7 @@ typedef struct
     
     
 usart_serial_t *
-usart_serial_init (const usart_serial_cfg_t *cfg);
+usart_serial_init (const usart_serial_cfg_t *cfg, const char *devname);
 
 
 void

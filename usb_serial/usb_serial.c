@@ -6,7 +6,7 @@
 
 
 usb_serial_t *
-usb_serial_init (const usb_serial_cfg_t *cfg)
+usb_serial_init (const usb_serial_cfg_t *cfg, const char *devname)
 {
     usb_serial_t *dev;
     tty_cfg_t tty_cfg =
@@ -20,7 +20,7 @@ usb_serial_init (const usb_serial_cfg_t *cfg)
     if (! dev)
         return 0;
 
-    dev->usb_cdc = usb_cdc_init (&cfg->usb_cdc);
+    dev->usb_cdc = usb_cdc_init (cfg);
     if (! dev->usb_cdc)
     {
         free (dev);
@@ -34,7 +34,7 @@ usb_serial_init (const usb_serial_cfg_t *cfg)
         return 0;
     }
 
-    sys_device_register (cfg->devname, &tty_file_ops, dev->tty);
+    sys_device_register (devname, &tty_file_ops, dev->tty);
     return dev;
 }
 

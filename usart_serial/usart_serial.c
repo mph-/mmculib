@@ -6,7 +6,7 @@
 
 
 usart_serial_t *
-usart_serial_init (const usart_serial_cfg_t *cfg)
+usart_serial_init (const usart_serial_cfg_t *cfg, const char *devname)
 {
     usart_serial_t *dev;
     tty_cfg_t tty_cfg =
@@ -20,7 +20,7 @@ usart_serial_init (const usart_serial_cfg_t *cfg)
     if (! dev)
         return 0;
 
-    dev->busart = busart_init (&cfg->usart);
+    dev->busart = busart_init (cfg);
     if (! dev->busart)
     {
         free (dev);
@@ -34,7 +34,7 @@ usart_serial_init (const usart_serial_cfg_t *cfg)
         return 0;
     }
 
-    sys_device_register (cfg->devname, &tty_file_ops, dev->tty);
+    sys_device_register (devname, &tty_file_ops, dev->tty);
     return dev;
 }
 

@@ -11,12 +11,7 @@ extern "C" {
 #include "tty.h"    
 
 /** usb_serial configuration structure.  */
-typedef struct
-{
-    usb_cdc_cfg_t usb_cdc;
-    const char *devname;    
-}
-usb_serial_cfg_t;
+typedef usb_cdc_cfg_t usb_serial_cfg_t;
 
 
 typedef struct
@@ -28,7 +23,7 @@ typedef struct
     
     
 usb_serial_t *
-usb_serial_init (const usb_serial_cfg_t *cfg);
+usb_serial_init (const usb_serial_cfg_t *cfg, const char *devname);
 
 
 void
