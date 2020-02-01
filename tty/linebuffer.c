@@ -27,11 +27,11 @@ linebuffer_init (int size)
     char *buffer;
     linebuffer_t *linebuffer;
     
-    buffer = malloc (size);
+    buffer = calloc (1, size);
     if (!buffer)
         return 0;
 
-    linebuffer = malloc (sizeof (*linebuffer));
+    linebuffer = calloc (1, sizeof (*linebuffer));
     if (!linebuffer)
         return 0;
     linebuffer->newlines = 0;

@@ -34,6 +34,13 @@ void
 usb_serial_echo_set (usb_serial_t *dev, bool echo);
     
 
+void
+usb_serial_puts (usb_serial_t *dev, const char *str);
+
+
+char *
+usb_serial_gets (usb_serial_t *dev, char *buffer, int size);
+    
 #ifdef __cplusplus
 }
 #endif    
