@@ -48,3 +48,15 @@ void usart_serial_shutdown (usart_serial_t *dev)
 {
     // TODO, shutdown appropriate peripheral
 }
+
+
+void usart_serial_puts (usart_serial_t *dev, const char *str)
+{
+    tty_puts (dev->tty, str);
+}
+
+
+char *usart_serial_gets (usart_serial_t *dev, char *buffer, int size)
+{
+    return tty_gets (dev->tty, buffer, size);
+}

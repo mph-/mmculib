@@ -34,6 +34,13 @@ usb_serial_init (const usb_serial_cfg_t *cfg, const char *devname)
         return 0;
     }
 
+    /* Do not echo by default.  The linux ACM driver creates a new
+       instance with echo enabled every time the embedded program
+       starts.  The echoing is not turned off until a serial terminal
+       applications such as gtkterm is run or using stty -F
+       /dev/ttyACM0 -echo.  If we also echo, then we have an echo
+       chamber.  */
+    
     sys_device_register (devname, &tty_file_ops, dev->tty);
     return dev;
 }
@@ -44,7 +51,20 @@ void usb_serial_echo_set (usb_serial_t *dev, bool echo)
     tty_echo_set (dev->tty, echo);
 }
 
+
 void usb_serial_shutdown (usb_serial_t *dev)
 {
     usb_cdc_shutdown ();
+}
+
+
+void usb_serial_puts (usb_serial_t *dev, const char *str)
+{
+    tty_puts (dev->tty, str);
+}
+
+
+char *usb_serial_gets (usb_serial_t *dev, char *buffer, int size)
+{
+    return tty_gets (dev->tty, buffer, size);
 }

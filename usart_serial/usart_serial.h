@@ -34,6 +34,13 @@ void
 usart_serial_echo_set (usart_serial_t *dev, bool echo);
     
 
+void
+usart_serial_puts (usart_serial_t *dev, const char *str);
+
+
+char *
+usart_serial_gets (usart_serial_t *dev, char *buffer, int size);
+    
 #ifdef __cplusplus
 }
 #endif    
