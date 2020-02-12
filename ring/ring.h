@@ -91,11 +91,11 @@ ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size);
     
 
 /** Initialise a ring buffer structure to use a specified buffer.
-    @param ring pointer to ring buffer structure
-    @param buffer pointer to memory buffer
+    @param ring pointer to ring buffer structure, if 0 it is malloced
+    @param buffer pointer to memory buffer, if 0 it is malloced
     @param size size of memory buffer in bytes
     @return size size of memory buffer in bytes or zero if error.  */
-ring_size_t
+ring_t *
 ring_init (ring_t *ring, void *buffer, ring_size_t size);
 
 

@@ -5,6 +5,7 @@
 */
 
 #include <string.h>
+#include <stdlib.h>
 #include "ring.h"
 
 
@@ -69,18 +70,28 @@ ring_write_num (ring_t *ring)
     @param buffer pointer to memory buffer
     @param size size of memory buffer in bytes
     @return size size of memory buffer in bytes or zero if error.  */
-ring_size_t 
+ring_t *
 ring_init (ring_t *ring, void *buffer, ring_size_t size)
 {
-    if (!ring || !buffer)
+    if (! ring)
+        ring = malloc (sizeof (*ring));
+    if (! ring)
         return 0;
 
+    if (! buffer)
+        buffer = calloc (1, size);
+    if (! buffer)
+    {
+        free (ring);
+        return 0;
+    }
+    
     ring->top = buffer;
     ring->end = (char *)buffer + size;
 
     ring_clear (ring);
 
-    return size;
+    return ring;
 }
 
 
