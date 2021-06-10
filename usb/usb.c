@@ -69,8 +69,8 @@ static const usb_dsc_dev_t devDescriptor =
     sizeof (usb_dsc_dev_t),          // Size of this descriptor in bytes
     USB_DEVICE_DESCRIPTOR,           // DEVICE Descriptor Type
     0x0200,                          // USB specification 2.0 in BCD
-    0x00,                            // Class is specified in the interface descriptor.
-    0x00,                            // Subclass is specified in the interface descriptor.
+    0x02,                            // Class is specified in the interface descriptor.
+    0x02,                            // Subclass is specified in the interface descriptor.
     0x00,                            // Protocol is specified in the interface descriptor.
     UDP_EP_CONTROL_SIZE,             // Maximum packet size for endpoint zero
     USB_VENDOR_ID,                   // Vendor ID
