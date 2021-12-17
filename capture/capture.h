@@ -44,7 +44,6 @@ struct capture_struct
 capture_t *
 capture_init (void);
 
-
 void
 capture_start (capture_t *cap,
                capture_sample_t *buffer,
