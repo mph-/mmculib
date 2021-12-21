@@ -5,11 +5,17 @@
 #include <stdlib.h>
 
 
-/* CDC communication device class. 
+/* CDC communication device class.
 
    Using sudo modprobe usbserial vendor=0x03EB product=0x6124
    will create a tty device such as /dev/ttyUSB0
    or /dev/ttyACM0
+
+   Writing works by:
+   1. copying data to a ring buffer
+   2. using asynchronous I/O to transmit a block from the ring buffer
+      (without wrap-around) to the USB driver
+   3. the asynchronous callback repeats step 2 until the ring buffer is empty.
 */
 
 #ifndef USB_CURRENT_MA
@@ -26,7 +32,7 @@
 #endif
 
 
-static const char usb_cdc_cfg_descriptor[] = 
+static const char usb_cdc_cfg_descriptor[] =
 {
     /* ============== CONFIGURATION 1 =========== */
     /* Configuration 1 descriptor */
@@ -39,7 +45,7 @@ static const char usb_cdc_cfg_descriptor[] =
     0x00,   // CiConfiguration
     0xC0,   // CbmAttributes 0xA0
     USB_CURRENT_MA / 2,   // CMaxPower
-    
+
     /* Communication Class Interface Descriptor Requirement */
     0x09, // bLength
     0x04, // bDescriptorType
@@ -50,34 +56,34 @@ static const char usb_cdc_cfg_descriptor[] =
     0x02, // bInterfaceSubclass
     0x00, // bInterfaceProtocol
     0x00, // iInterface
-    
+
     /* Header Functional Descriptor */
     0x05, // bFunction Length
     0x24, // bDescriptor type: CS_INTERFACE
     0x00, // bDescriptor subtype: Header Func Desc
     0x10, // bcdCDC:1.1
     0x01,
-    
+
     /* ACM Functional Descriptor */
     0x04, // bFunctionLength
     0x24, // bDescriptor Type: CS_INTERFACE
     0x02, // bDescriptor Subtype: ACM Func Desc
     0x00, // bmCapabilities
-    
+
     /* Union Functional Descriptor */
     0x05, // bFunctionLength
     0x24, // bDescriptorType: CS_INTERFACE
     0x06, // bDescriptor Subtype: Union Func Desc
     0x00, // bMasterInterface: Communication Class Interface
     0x01, // bSlaveInterface0: Data Class Interface
-    
+
     /* Call Management Functional Descriptor */
     0x05, // bFunctionLength
     0x24, // bDescriptor Type: CS_INTERFACE
     0x01, // bDescriptor Subtype: Call Management Func Desc
     0x00, // bmCapabilities: D1 + D0
     0x01, // bDataInterface: Data Class Interface 1
-    
+
     /* Endpoint 1 descriptor */
     0x07,   // bLength
     0x05,   // bDescriptorType
@@ -86,7 +92,7 @@ static const char usb_cdc_cfg_descriptor[] =
     0x08,   // wMaxPacketSize
     0x00,
     0xFF,   // bInterval
-    
+
     /* Data Class Interface Descriptor Requirement */
     0x09, // bLength
     0x04, // bDescriptorType
@@ -97,7 +103,7 @@ static const char usb_cdc_cfg_descriptor[] =
     0x00, // bInterfaceSubclass
     0x00, // bInterfaceProtocol
     0x00, // iInterface
-    
+
     /* First alternate setting */
     /* Endpoint 1 descriptor */
     0x07,   // bLength
@@ -107,7 +113,7 @@ static const char usb_cdc_cfg_descriptor[] =
     UDP_EP_OUT_SIZE,   // wMaxPacketSize
     0x00,
     0x00,   // bInterval
-    
+
     /* Endpoint 2 descriptor */
     0x07,   // bLength
     0x05,   // bDescriptorType
@@ -134,7 +140,7 @@ static const usb_descriptors_t usb_cdc_descriptors =
 #define SET_CONTROL_LINE_STATE        0x2221
 
 
-typedef struct 
+typedef struct
 {
     unsigned int dwDTERRate;
     char bCharFormat;
@@ -173,8 +179,10 @@ usb_cdc_request_handler (usb_t usb, usb_setup_t *setup)
 
     case SET_CONTROL_LINE_STATE:
         usb_control_write_zlp (usb);
-        
-        // The value field of the message indicates that the terminal is ready to receive.
+
+        // The value field of the message indicates that the terminal
+        // is ready to receive.
+
         // See SiLabs app note AN758 for a description of this field.
         usb_cdc_dev.connected = setup->value & 0x1;
         break;
@@ -200,16 +208,16 @@ static int16_t
 usb_cdc_read_nonblock (usb_cdc_t usb_cdc, void *data, uint16_t size)
 {
     int ret;
-    
+
     ret = usb_read_nonblock (usb_cdc->usb, data, size);
-    
+
     if (ret == 0)
     {
         errno = EAGAIN;
         return -1;
     }
     return ret;
-}    
+}
 
 
 static void
@@ -219,7 +227,7 @@ usb_cdc_write_next (usb_cdc_dev_t *dev);
 static void
 usb_cdc_write_callback (void *usb_cdc, usb_transfer_t *transfer)
 {
-    usb_cdc_dev_t *dev = usb_cdc;    
+    usb_cdc_dev_t *dev = usb_cdc;
 
     ring_read_advance (&dev->tx_ring, transfer->transferred);
     dev->writing = 0;
@@ -236,11 +244,24 @@ usb_cdc_write_next (usb_cdc_dev_t *dev)
 {
     int read_num;
 
+    // The writing flag indicates aysnc I/O is in operation.   It
+    // is cleared by the callback running in interrupt context.
+
+    // There is a potential race condition here where the ISR may
+    // change the flag after it has been read.  However, this should
+    // have no effect.
+    //  Read value   changed value
+    //  0            0               start next transfer
+    //  0            1               cannot happen, no transfer in progress
+    //  1            1               transfer in progress, nothing to do
+    //  1            0               transfer finished, nothing to do
+    if (dev->writing)
+        return;
+
+    // Determine number of bytes able to be read without wrap around.
     read_num = ring_read_num_nowrap (&dev->tx_ring);
     if (read_num == 0)
         return;
-
-    /* TODO fix possible race condition with shared variable writing.  */
 
     dev->writing = 1;
     if (usb_write_async (dev->usb, dev->tx_ring.out, read_num,
@@ -249,24 +270,22 @@ usb_cdc_write_next (usb_cdc_dev_t *dev)
 }
 
 
+/** Write up to size bytes but return if have to block.  */
 static ssize_t
 usb_cdc_write_nonblock (usb_cdc_t usb_cdc, const void *data, size_t size)
 {
     int ret;
-    usb_cdc_dev_t *dev = usb_cdc;    
+    usb_cdc_dev_t *dev = usb_cdc;
 
-    /* Assume async write not taking place.  FIXME.  */
-    
     ret = ring_write (&dev->tx_ring, data, size);
-    
+
     if (ret == 0)
     {
         errno = EAGAIN;
         ret = -1;
     }
 
-    if (!dev->writing)
-        usb_cdc_write_next (dev);
+    usb_cdc_write_next (dev);
     return ret;
 }
 
@@ -277,7 +296,7 @@ ssize_t
 usb_cdc_write (void *usb_cdc, const void *data, size_t size)
 {
     usb_cdc_dev_t *dev = usb_cdc;
-    
+
     return sys_write_timeout (usb_cdc, data, size, dev->write_timeout_us,
                              (void *)usb_cdc_write_nonblock);
 }
@@ -293,7 +312,7 @@ usb_cdc_read (void *usb_cdc, void *data, size_t size)
     /* Ignore size and read only one char to avoid timeout resetting
        endpoint.  */
     size = 1;
-    
+
     return sys_read_timeout (usb_cdc, data, size, dev->read_timeout_us,
                              (void *)usb_cdc_read_nonblock);
 }
@@ -318,7 +337,7 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
 {
     usb_cdc_t dev = &usb_cdc_dev;
     char *buffer;
-    
+
     dev->read_timeout_us = cfg->read_timeout_us;
     dev->write_timeout_us = cfg->write_timeout_us;
     dev->writing = 0;
@@ -329,8 +348,8 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
         return 0;
 
     ring_init (&dev->tx_ring, buffer, USB_CDC_TX_RING_SIZE);
-    
-    dev->usb = usb_init (&usb_cdc_descriptors, 
+
+    dev->usb = usb_init (&usb_cdc_descriptors,
                          (void *)usb_cdc_request_handler);
 
     return dev;
@@ -352,12 +371,11 @@ usb_cdc_getc (usb_cdc_t usb_cdc)
 }
 
 
-
 int
 usb_cdc_putc (usb_cdc_t usb_cdc, char ch)
 {
     if (ch == '\n')
-        usb_cdc_putc (usb_cdc, '\r');    
+        usb_cdc_putc (usb_cdc, '\r');
 
     if (usb_cdc_write (usb_cdc, &ch, sizeof (ch)) < 0)
         return -1;
@@ -395,4 +413,3 @@ const sys_file_ops_t usb_cdc_file_ops =
     .read = usb_cdc_read,
     .write = usb_cdc_write
 };
-
