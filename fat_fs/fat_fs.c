@@ -71,7 +71,7 @@ fat_fs_init (msd_t *msd, sys_fs_t *fat_fs)
 
     fat_fs->file_ops = &fat_file_ops;
     fat_fs->fs_ops = &fat_fs_ops;
-    fat_fs->private = fat;
+    fat_fs->handle = fat;
     return 1;
 }
 

@@ -12,7 +12,7 @@
 
    For a partial block write we read the block into a temporary buffer
    overwrite the buffer with the user's data then write the temporary
-   buffer (assuming that the write does an erase first). 
+   buffer (assuming that the write does an erase first).
 
    Some flash devices such as dataflash allow partial block writes
    but SD cards do not (although they can do partial block reads).
@@ -41,7 +41,7 @@ typedef struct msd_cache_struct
 static msd_cache_t msd_cache;
 
 
-static msd_size_t 
+static msd_size_t
 msd_cache_flush (msd_t *msd)
 {
     msd_size_t bytes;
@@ -69,7 +69,7 @@ msd_cache_flush (msd_t *msd)
 }
 
 
-static msd_size_t 
+static msd_size_t
 msd_cache_fill (msd_t *msd, msd_addr_t addr)
 {
     msd_size_t bytes;
@@ -89,14 +89,14 @@ msd_cache_fill (msd_t *msd, msd_addr_t addr)
             break;
         msd->read_errors++;
     }
-    
+
     msd_cache.msd = msd;
     msd_cache.addr = addr;
     return bytes;
 }
 
 
-msd_size_t 
+msd_size_t
 msd_read (msd_t *msd, msd_addr_t addr, void *buffer, msd_size_t size)
 {
     msd_addr_t block;
@@ -203,7 +203,7 @@ msd_status_get (msd_t *msd)
 
 
 msd_addr_t
-sdcard_msd_probe (msd_t *msd)
+msd_probe (msd_t *msd)
 {
     return msd->ops->probe (msd->handle);
 }
