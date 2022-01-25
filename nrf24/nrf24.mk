@@ -1,0 +1,8 @@
+NRF24_DIR = $(DRIVER_DIR)/nrf24
+
+VPATH += $(NRF24_DIR)
+SRC += nrf24.c
+
+PERIPHERALS += spi
+
+INCLUDES += -I$(NRF24_DIR)
