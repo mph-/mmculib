@@ -70,17 +70,25 @@ char *usb_serial_gets (usb_serial_t *dev, char *buffer, int size)
 }
 
 
-void *usb_serial_stdio_init (void)
+int usb_serial_stdio_init (void)
 {
     usb_serial_cfg_t usb_serial_cfg =
         {
             .read_timeout_us = 1,
             .write_timeout_us = 1,
         };
-    
-    // Create non-blocking tty device for USB CDC connection.
-    usb_serial_init (&usb_serial_cfg, "/dev/usb_tty");
 
-    freopen ("/dev/usb_tty", "a", stdout);
-    freopen ("/dev/usb_tty", "r", stdin);
+    // Create non-blocking tty device for USB CDC connection.
+    if (!usb_serial_init (&usb_serial_cfg, "/dev/usb_tty"))
+        return -1;
+
+    if (!freopen ("/dev/usb_tty", "a", stdout))
+        return -1;
+
+    if (!freopen ("/dev/usb_tty", "r", stdin))
+        return -1;
+
+    setlinebuf (stdout);
+
+    return 0;
 }

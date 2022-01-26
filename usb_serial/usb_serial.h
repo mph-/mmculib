@@ -42,7 +42,7 @@ char *
 usb_serial_gets (usb_serial_t *dev, char *buffer, int size);
 
 
-void *
+int
 usb_serial_stdio_init (void);
     
     
