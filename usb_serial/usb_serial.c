@@ -88,5 +88,7 @@ int usb_serial_stdio_init (void)
     if (!freopen ("/dev/usb_tty", "r", stdin))
         return -1;
 
+    setlinebuf (stdout);
+
     return 0;
 }
