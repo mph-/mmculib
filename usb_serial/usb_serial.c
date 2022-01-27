@@ -14,7 +14,7 @@ usb_serial_init (const usb_serial_cfg_t *cfg, const char *devname)
             .read = (void *)usb_cdc_read,
             .write = (void *)usb_cdc_write,
             .linebuffer_size = 80
-        };        
+        };
 
     dev = calloc (1, sizeof (*dev));
     if (! dev)
@@ -40,7 +40,7 @@ usb_serial_init (const usb_serial_cfg_t *cfg, const char *devname)
        applications such as gtkterm is run or using stty -F
        /dev/ttyACM0 -echo.  If we also echo, then we have an echo
        chamber.  */
-    
+
     sys_device_register (devname, &tty_file_ops, dev->tty);
     return dev;
 }
@@ -82,13 +82,18 @@ int usb_serial_stdio_init (void)
     if (!usb_serial_init (&usb_serial_cfg, "/dev/usb_tty"))
         return -1;
 
-    if (!freopen ("/dev/usb_tty", "a", stdout))
+    if (! freopen ("/dev/usb_tty", "r", stdin))
         return -1;
 
-    if (!freopen ("/dev/usb_tty", "r", stdin))
+    if (! freopen ("/dev/usb_tty", "a", stdout))
         return -1;
 
-    setlinebuf (stdout);
+    setvbuf (stdout, NULL, _IOLBF, 0);
+
+    if (! freopen ("/dev/usb_tty", "a", stderr))
+        return -1;
+
+    setvbuf (stderr, NULL, _IONBF, 0);
 
     return 0;
 }
