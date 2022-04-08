@@ -13,6 +13,7 @@ extern "C" {
     
 
 #include "fat.h"
+#include "fat_de.h"
 #include <sys/types.h>
 
 typedef struct fat_file_struct fat_file_t;
@@ -45,6 +46,8 @@ void fat_file_debug (fat_file_t *file);
 
 bool fat_init (fat_t *fat, void *dev, fat_dev_read_t dev_read, 
                fat_dev_write_t dev_write);
+
+bool fat_search (fat_t *fat, const char *pathname, fat_ff_t *ff);
 
 
 #ifdef __cplusplus

@@ -63,7 +63,7 @@ fat_create (fat_file_t *file, const char *pathname, fat_ff_t *ff)
 
 /* Search the filesystem for the directory entry for pathname, a file
    or directory.  */
-static bool
+bool
 fat_search (fat_t *fat, const char *pathname, fat_ff_t *ff)
 {
     const char *p;
@@ -74,6 +74,9 @@ fat_search (fat_t *fat, const char *pathname, fat_ff_t *ff)
         return 0;
 
     p = pathname;
+
+    if (*p == '/')
+        p++;
 
     ff->parent_dir_cluster = fat->root_dir_cluster;
     
