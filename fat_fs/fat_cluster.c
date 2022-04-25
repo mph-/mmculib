@@ -5,11 +5,12 @@
 */
 
 
+#include <inttypes.h>
+
 #include "fat.h"
 #include "fat_fsinfo.h"
 #include "fat_cluster.h"
 #include "fat_io.h"
-
 
 #define CLUST_FREE      0               //!< Cluster 0 also means a free cluster
 #define CLUST_FIRST     2               //!< First legal cluster number 
@@ -365,9 +366,9 @@ fat_cluster_stats_dump (fat_t *fat)
 
     fat_cluster_stats (fat, &stats);
     
-    TRACE_ERROR (FAT, "Free  %u\n", stats.free);
-    TRACE_ERROR (FAT, "Alloc %u\n", stats.alloc);
-    TRACE_ERROR (FAT, "Total %u\n", stats.total);
+    TRACE_ERROR (FAT, "Free  %" PRIu32 "\n", stats.free);
+    TRACE_ERROR (FAT, "Alloc %" PRIu32 "\n", stats.alloc);
+    TRACE_ERROR (FAT, "Total %" PRIu32 "\n", stats.total);
 }
 
 

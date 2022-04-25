@@ -5,6 +5,7 @@
 */
 
 
+#include <inttypes.h>
 #include <string.h>
 #include <ctype.h>
 #include "fat_de.h"
@@ -459,7 +460,7 @@ fat_de_dir_dump (fat_t *fat, uint32_t dir_cluster)
     fat_de_iter_t de_iter;
     fat_de_t *de;
 
-    TRACE_ERROR (FAT, "Dir cluster %d\n", dir_cluster);            
+    TRACE_ERROR (FAT, "Dir cluster %" PRIu32 "\n", dir_cluster);
     for (de = fat_de_first (fat, dir_cluster, &de_iter);
          !fat_de_last_p (de); de = fat_de_next (&de_iter))
     {
