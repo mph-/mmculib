@@ -4,4 +4,3 @@ VPATH += $(BUTTON_DIR)
 SRC += button.c
 
 INCLUDES += -I$(BUTTON_DIR)
-
