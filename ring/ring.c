@@ -39,7 +39,7 @@ ring_read_num (ring_t *ring)
 
 /** Determine number of bytes in ring buffer ready for reading without wrapping.
     @param ring pointer to ring buffer structure
-    @return number of bytes in ring buffer ready for reading.  */       
+    @return number of bytes in ring buffer ready for reading.  */
 ring_size_t
 ring_read_num_nowrap (ring_t *ring)
 {
@@ -85,7 +85,7 @@ ring_init (ring_t *ring, void *buffer, ring_size_t size)
         free (ring);
         return 0;
     }
-    
+
     ring->top = buffer;
     ring->end = (char *)buffer + size;
 
@@ -159,11 +159,10 @@ ring_write (ring_t *ring, const void *buffer, ring_size_t size)
 
     /* Determine number of free entries in ring buffer.  */
     count = RING_WRITE_NUM (ring, tmp);
-    if (size > count)
-        size = count;
 
-    /* Return if buffer full.  */
-    if (!size)
+    /* Only write into ring buffer if can fit all the bytes.
+       This is important if writing integers, structs, etc.  */
+    if (count < size)
         return 0;
 
     if (ring->in + size >= ring->end)
@@ -210,7 +209,7 @@ ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size)
     write_num = ring_write_num (ring);
 
     ring_size = RING_SIZE (ring);
-    
+
     while (size > ring_size)
     {
         buffer += ring_size;
@@ -224,7 +223,7 @@ ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size)
         size = write_num;
     }
 
-    return ring_write (ring, buffer, size);    
+    return ring_write (ring, buffer, size);
 }
 
 
@@ -284,7 +283,7 @@ ring_read_advance (ring_t *ring, ring_size_t size)
 }
 
 
-/** Search for character in ring buffer. 
+/** Search for character in ring buffer.
     @param ring pointer to ring buffer structure
     @param ch character to find
     @return non-zero if character found.  */
@@ -334,7 +333,7 @@ ring_putc_force (ring_t *ring, char c)
     else
         ring->in--;
 
-    return ring_putc (ring, c);    
+    return ring_putc (ring, c);
 }
 
 
@@ -345,4 +344,3 @@ ring_clear (ring_t *ring)
 {
     ring->in = ring->out = ring->top;
 }
-
