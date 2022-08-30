@@ -35,7 +35,7 @@ struct busart_dev_struct
     ring_t tx_ring;
     ring_t rx_ring;
     uint32_t read_timeout_us;
-    uint32_t write_timeout_us;        
+    uint32_t write_timeout_us;
 };
 
 
@@ -69,11 +69,12 @@ struct busart_dev_struct
     @param cfg pointer to configuration structure.
     @return pointer to busart device structure.
 */
-busart_t 
+busart_t
 busart_init (const busart_cfg_t *cfg)
 {
     busart_dev_t *dev = 0;
     uint16_t baud_divisor;
+    ring_size_t size;
     char *tx_buffer;
     char *rx_buffer;
 
@@ -97,17 +98,27 @@ busart_init (const busart_cfg_t *cfg)
 
     dev->read_timeout_us = cfg->read_timeout_us;
     dev->write_timeout_us = cfg->write_timeout_us;
-    
+
     tx_buffer = cfg->tx_buffer;
     rx_buffer = cfg->rx_buffer;
 
     if (!tx_buffer)
-        tx_buffer = malloc (cfg->tx_size);
+    {
+        size = cfg->tx_size;
+        if (size == 0)
+            size = 64;
+        tx_buffer = malloc (size);
+    }
     if (!tx_buffer)
         return 0;
 
     if (!rx_buffer)
-        rx_buffer = malloc (cfg->rx_size);
+    {
+        size = cfg->rx_size;
+        if (size == 0)
+            size = 64;
+        rx_buffer = malloc (size);
+    }
     if (!rx_buffer)
     {
         free (tx_buffer);
@@ -115,7 +126,7 @@ busart_init (const busart_cfg_t *cfg)
     }
 
     ring_init (&dev->tx_ring, tx_buffer, cfg->tx_size);
-    
+
     ring_init (&dev->rx_ring, rx_buffer, cfg->rx_size);
 
     /* Enable the rx interrupt now.  The tx interrupt is enabled
@@ -157,7 +168,7 @@ busart_read_nonblock (busart_t busart, void *data, size_t size)
     ssize_t ret;
 
     ret = ring_read (&dev->rx_ring, data, size);
-    
+
     if (ret == 0 && size != 0)
     {
         /* Would block.  */
@@ -174,7 +185,7 @@ ssize_t
 busart_read (void *busart, void *data, size_t size)
 {
     busart_dev_t *dev = busart;
-    
+
     return sys_read_timeout (busart, data, size, dev->read_timeout_us,
                              (void *)busart_read_nonblock);
 }
@@ -186,7 +197,7 @@ ssize_t
 busart_write (void *busart, const void *data, size_t size)
 {
     busart_dev_t *dev = busart;
-    
+
     return sys_write_timeout (busart, data, size, dev->write_timeout_us,
                               (void *)busart_write_nonblock);
 }
@@ -256,7 +267,7 @@ int
 busart_putc (busart_t busart, char ch)
 {
     if (ch == '\n')
-        busart_putc (busart, '\r');    
+        busart_putc (busart, '\r');
 
     if (busart_write (busart, &ch, sizeof (ch)) != sizeof (ch))
         return -1;
