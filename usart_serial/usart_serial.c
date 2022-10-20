@@ -14,7 +14,7 @@ usart_serial_init (const usart_serial_cfg_t *cfg, const char *devname)
             .read = (void *)busart_read,
             .write = (void *)busart_write,
             .linebuffer_size = 80
-        };    
+        };
 
     dev = calloc (1, sizeof (*dev));
     if (! dev)
@@ -59,4 +59,33 @@ void usart_serial_puts (usart_serial_t *dev, const char *str)
 char *usart_serial_gets (usart_serial_t *dev, char *buffer, int size)
 {
     return tty_gets (dev->tty, buffer, size);
+}
+
+
+int usart_serial_stdio_init (void)
+{
+    usart_serial_cfg_t usart_serial_cfg =
+        {
+            .read_timeout_us = 1,
+            .write_timeout_us = 1,
+        };
+
+    // Create non-blocking tty device for USART connection.
+    if (!usart_serial_init (&usart_serial_cfg, "/dev/usart_tty"))
+        return -1;
+
+    if (! freopen ("/dev/usart_tty", "r", stdin))
+        return -1;
+
+    if (! freopen ("/dev/usart_tty", "a", stdout))
+        return -1;
+
+    setvbuf (stdout, NULL, _IOLBF, 0);
+
+    if (! freopen ("/dev/usart_tty", "a", stderr))
+        return -1;
+
+    setvbuf (stderr, NULL, _IONBF, 0);
+
+    return 0;
 }
