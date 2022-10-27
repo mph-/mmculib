@@ -44,6 +44,7 @@ void usart_serial_echo_set (usart_serial_t *dev, bool echo)
     tty_echo_set (dev->tty, echo);
 }
 
+
 void usart_serial_shutdown (usart_serial_t *dev)
 {
     // TODO, shutdown appropriate peripheral
@@ -62,27 +63,25 @@ char *usart_serial_gets (usart_serial_t *dev, char *buffer, int size)
 }
 
 
-int usart_serial_stdio_init (void)
+int usart_serial_stdio_init (const usart_serial_cfg_t *cfg)
 {
-    usart_serial_cfg_t usart_serial_cfg =
-        {
-            .read_timeout_us = 1,
-            .write_timeout_us = 1,
-        };
+    char devname[] = "/dev/usart_tty0";
+
+    devname[14] += cfg->channel;
 
     // Create non-blocking tty device for USART connection.
-    if (!usart_serial_init (&usart_serial_cfg, "/dev/usart_tty"))
+    if (!usart_serial_init (cfg, devname))
         return -1;
 
-    if (! freopen ("/dev/usart_tty", "r", stdin))
+    if (! freopen (devname, "r", stdin))
         return -1;
 
-    if (! freopen ("/dev/usart_tty", "a", stdout))
+    if (! freopen (devname, "a", stdout))
         return -1;
 
     setvbuf (stdout, NULL, _IOLBF, 0);
 
-    if (! freopen ("/dev/usart_tty", "a", stderr))
+    if (! freopen (devname, "a", stderr))
         return -1;
 
     setvbuf (stderr, NULL, _IONBF, 0);

@@ -22,7 +22,7 @@ typedef struct
 
 
 int
-usart_serial_stdio_init (void);
+usart_serial_stdio_init (const usart_serial_cfg_t *cfg);
 
 
 usart_serial_t *
