@@ -1,7 +1,7 @@
 /** @file   tty.h
     @author M. P. Hayes
     @date   12 May 2016
-    @brief  TTY driver.  It does not support termio.  
+    @brief  TTY driver.  It does not support termio.
     @note The TTY device is a stream oriented device that handles line
           buffering mode.  In this mode, strings are not passed to the
           application until a line has been received.  The TTY driver
@@ -48,9 +48,9 @@ typedef struct tty_struct tty_t;
 typedef struct tty_cfg_struct tty_cfg_t;
 
 
-/** tty version of fgetc.  
+/** tty version of fgetc.
     @param tty a pointer to the tty device
-    @return next character from line buffer if it contains a newline 
+    @return next character from line buffer if it contains a newline
             otherwise -1.
 */
 int
@@ -82,7 +82,7 @@ tty_gets (tty_t *tty, char *buffer, int size);
 /** tty version of fputs.
     @param tty a pointer to the tty device
     @param s pointer to string to send
-    @return 1 if okay otherwise -1 for error.    
+    @return 1 if okay otherwise -1 for error.
 */
 int
 tty_puts (tty_t *tty, const char *s);
@@ -97,7 +97,7 @@ tty_printf (tty_t *tty, const char *fmt, ...);
 
 /** Read characters (if any) from the input stream and store in the
     linebuffer.  */
-bool 
+bool
 tty_poll (tty_t *tty);
 
 
@@ -118,15 +118,19 @@ tty_init (const tty_cfg_t *cfg, void *dev);
 void
 tty_shutdown (tty_t *tty);
 
-    
+
 void
 tty_echo_set (tty_t *tty, bool echo);
 
 
 void
-tty_icrnl_set (tty_t *tty, bool icrnl);    
+tty_icrnl_set (tty_t *tty, bool icrnl);
 
-    
+
+void
+tty_onlcr_set (tty_t *tty, bool onlcr);
+
+
 void
 tty_echo_set (tty_t *tty, bool echo);
 
@@ -135,5 +139,5 @@ extern const sys_file_ops_t tty_file_ops;
 
 #ifdef __cplusplus
 }
-#endif    
+#endif
 #endif

@@ -1,7 +1,7 @@
 /** @file   tty.c
     @author M. P. Hayes, UCECE
     @date   24 January 2008
-    @brief  TTY driver.  It does not support termio.  
+    @brief  TTY driver.  It does not support termio.
     @note The TTY device is a stream oriented device that handles line
           buffering mode.  In this mode, strings are not passed to the
           application until a line has been received.  The TTY driver
@@ -52,15 +52,17 @@ tty_getc1 (tty_t *tty)
 
 
 static int
-tty_putc1 (tty_t *tty, int ch)
+tty_putc1 (tty_t *tty, int c)
 {
-    int ret;    
+    int ret;
+    char ch;
 
-    ret = tty->write (tty->dev, &ch, 1);
+    ch = c;
+    ret = tty->write (tty->dev, &c, 1);
 
     if (ret < 0)
         return -1;
-    
+
     return ch;
 }
 
@@ -100,7 +102,7 @@ tty_poll (tty_t *tty)
 {
     int ch;
 
-    while (1)
+    while (! linebuffer_full_p (tty->linebuffer))
     {
         if (tty->update && !tty->update ())
             return 0;
@@ -115,13 +117,14 @@ tty_poll (tty_t *tty)
         /* Echo character.  */
         if (tty->echo)
             tty_putc (tty, ch);
-        
+
         linebuffer_add (tty->linebuffer, ch);
     }
+    return 0;
 }
 
 
-/** tty version of fgetc.  
+/** tty version of fgetc.
     @param tty a pointer to the tty device
     @return next character from line buffer otherwise -1 if no character
             is available.
@@ -129,9 +132,9 @@ tty_poll (tty_t *tty)
 int
 tty_getc (tty_t *tty)
 {
-    int ret;        
+    int ret;
 
-    tty_poll (tty);        
+    tty_poll (tty);
     ret = linebuffer_getc (tty->linebuffer);
     return ret;
 }
@@ -144,7 +147,7 @@ tty_getc (tty_t *tty)
     @param tty a pointer to the tty device
     @param buffer is a pointer to a buffer
     @param size is the number of bytes in the buffer
-    @return buffer if a line from the linebuffer has been copied otherwise 0. 
+    @return buffer if a line from the linebuffer has been copied otherwise 0.
 */
 char *
 tty_gets (tty_t *tty, char *buffer, int size)
@@ -170,7 +173,7 @@ tty_printf (tty_t *tty, const char *fmt, ...)
 
     /* FIXME for buffer overrun.  Currently, the output will be
        truncated to a length given by TTY_OUTPUT_BUFFER_SIZE.  */
-    
+
     va_start (ap, fmt);
     ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
     va_end (ap);
@@ -282,7 +285,7 @@ tty_init (const tty_cfg_t *cfg, void *dev)
     tty_echo_set (tty, 0);
 
     tty_onlcr_set (tty, 1);
-    tty_icrnl_set (tty, 1);    
+    tty_icrnl_set (tty, 1);
 
     linebuffer_size = cfg->linebuffer_size;
     if (! linebuffer_size)
@@ -299,4 +302,3 @@ const sys_file_ops_t tty_file_ops =
     .read = (void *)tty_read,
     .write = (void *)tty_write,
 };
-

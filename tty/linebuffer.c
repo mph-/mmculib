@@ -19,14 +19,14 @@ struct linebuffer_struct
 
 /** Initialise line buffer.
     @param size is the maximum linebuffer size
-    @return pointer to linebuffer 
+    @return pointer to linebuffer
 */
 linebuffer_t *
 linebuffer_init (int size)
 {
     char *buffer;
     linebuffer_t *linebuffer;
-    
+
     buffer = calloc (1, size);
     if (!buffer)
         return 0;
@@ -35,7 +35,7 @@ linebuffer_init (int size)
     if (!linebuffer)
         return 0;
     linebuffer->newlines = 0;
-    
+
     ring_init (&linebuffer->ring, buffer, size);
     return linebuffer;
 }
@@ -75,9 +75,16 @@ linebuffer_add (linebuffer_t *linebuffer, char ch)
 }
 
 
-/** This is a non-blocking version of fgetc.  
+bool
+linebuffer_full_p (linebuffer_t *linebuffer)
+{
+    return ring_write_num (&linebuffer->ring) == 0;
+}
+
+
+/** This is a non-blocking version of fgetc.
     @param linebuffer a pointer to the linebuffer
-    @return next character from line buffer if it contains a newline 
+    @return next character from line buffer if it contains a newline
             otherwise -1.
 */
 int
@@ -99,7 +106,7 @@ linebuffer_getc (linebuffer_t *linebuffer)
         linebuffer->newlines = 0;
         return ch;
     }
-    
+
     if (ch == '\n')
         linebuffer->newlines--;
     return ch;
