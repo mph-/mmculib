@@ -44,6 +44,11 @@ usart_serial_puts (usart_serial_t *dev, const char *str);
 char *
 usart_serial_gets (usart_serial_t *dev, char *buffer, int size);
 
+
+int
+usart_serial_getc (usart_serial_t *dev);
+
+
 #ifdef __cplusplus
 }
 #endif

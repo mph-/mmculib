@@ -63,6 +63,12 @@ char *usart_serial_gets (usart_serial_t *dev, char *buffer, int size)
 }
 
 
+int usart_serial_getc (usart_serial_t *dev)
+{
+    return tty_getc (dev->tty);
+}
+
+
 int usart_serial_stdio_init (const usart_serial_cfg_t *cfg)
 {
     char devname[] = "/dev/usart_tty0";
