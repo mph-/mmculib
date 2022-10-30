@@ -27,6 +27,17 @@
 #endif
 
 
+#ifndef BUSART_LINE_BUFFER_SIZE
+#define BUSART_LINE_BUFFER_SIZE 82
+#endif
+
+
+#ifndef BUSART_SPRINTF_BUFFER_SIZE
+#define BUSART_SPRINTF_BUFFER_SIZE 128
+#endif
+
+
+
 struct busart_dev_struct
 {
     void (*tx_irq_enable) (void);
@@ -283,6 +294,61 @@ busart_puts (busart_t busart, const char *str)
         if (busart_putc (busart, *str++) < 0)
             return -1;
     return 1;
+}
+
+
+/* Non-blocking equivalent to fgets.  Returns 0 if a line is not available
+   other pointer to buffer.  */
+char *
+busart_gets (busart_t busart, char *buffer, int size)
+{
+    static char line_buffer[BUSART_LINE_BUFFER_SIZE] = "";
+    static int count = 0;
+    int c;
+    int i;
+
+    while (1)
+    {
+        c = busart_getc (busart);
+        if (c == -1)
+            return 0;
+
+        line_buffer[count] = c;
+        count++;
+        if (c == '\n' || count >= size)
+            break;
+    }
+
+    if (size > count)
+        size = count;
+
+    for (i = 0; i < size; i++)
+        buffer[i] = line_buffer[i];
+    buffer[i] = 0;
+
+    /* Could use ring buffer to avoid copying.  */
+    for (i = count - size - 1; i >= 0; i--)
+        line_buffer[i] = line_buffer[i + count];
+    count -= size;
+
+    return buffer;
+}
+
+
+int
+busart_printf (busart_t busart, const char *fmt, ...)
+{
+    // FIXME, long strings can overflow the buffer and thus be truncated.
+    char buffer[BUSART_SPRINTF_BUFFER_SIZE];
+    va_list ap;
+    int ret;
+
+    va_start (ap, fmt);
+    ret = vsnprintf (buffer, sizeof (buffer), fmt, ap);
+    va_end (ap);
+
+    busart_puts (busart, buffer);
+    return ret;
 }
 
 

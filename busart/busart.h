@@ -17,8 +17,9 @@ extern "C" {
 #include "config.h"
 #include "sys.h"
 #include "ring.h"
-
 #include "usart0.h"
+#include <stdarg.h>
+
 
 typedef struct busart_dev_struct busart_dev_t;
 
@@ -111,6 +112,16 @@ busart_putc (busart_t busart, char ch);
 /* Write string.  This blocks until the string is buffered.  */
 int
 busart_puts (busart_t busart, const char *str);
+
+
+/* Non-blocking equivalent to fgets.  Returns 0 if a line is not available
+   other pointer to buffer.  */
+char *
+busart_gets (busart_t busart, char *buffer, int size);
+
+
+int
+busart_printf (busart_t busart, const char *fmt, ...);
 
 
 /* Clears the busart's transmit and receive buffers.  */
