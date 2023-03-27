@@ -2,7 +2,6 @@
 #include "usb_cdc.h"
 #include "usb_dsc.h"
 #include "usb.h"
-#include <stdlib.h>
 
 
 /* CDC communication device class.
@@ -20,10 +19,6 @@
 
 #ifndef USB_CURRENT_MA
 #define USB_CURRENT_MA 100
-#endif
-
-#ifndef USB_CDC_TX_RING_SIZE
-#define USB_CDC_TX_RING_SIZE 80
 #endif
 
 
@@ -343,11 +338,7 @@ usb_cdc_init (const usb_cdc_cfg_t *cfg)
     dev->writing = 0;
     dev->connected = 0;
 
-    buffer = malloc (USB_CDC_TX_RING_SIZE);
-    if (!buffer)
-        return 0;
-
-    ring_init (&dev->tx_ring, buffer, USB_CDC_TX_RING_SIZE);
+    ring_init (&dev->tx_ring, dev->tx_ring_buffer, USB_CDC_TX_RING_SIZE);
 
     dev->usb = usb_init (&usb_cdc_descriptors,
                          (void *)usb_cdc_request_handler);
