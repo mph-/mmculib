@@ -266,8 +266,15 @@ int
 busart_getc (busart_t busart)
 {
     uint8_t ch = 0;
+    int ret;
 
-    if (busart_read (busart, &ch, sizeof (ch)) != sizeof (ch))
+    /* Optimise if want to do a quick check.  */
+    if (busart->read_timeout_us == 0)
+        ret = busart_read_nonblock (busart, &ch, sizeof (ch));
+    else
+        ret = busart_read (busart, &ch, sizeof (ch));
+
+    if (ret != sizeof (ch))
         return -1;
     return ch;
 }
@@ -297,8 +304,10 @@ busart_puts (busart_t busart, const char *str)
 }
 
 
-/* Non-blocking equivalent to fgets.  Returns 0 if a line is not available
-   other pointer to buffer.  */
+/* Non-blocking equivalent to fgets.  Returns 0 if a line is not
+   available otherwise return pointer to buffer.  Note, this keeps its
+   own buffer of an incomplete line so cannot be interspersed with
+   busart_getc.  */
 char *
 busart_gets (busart_t busart, char *buffer, int size)
 {
