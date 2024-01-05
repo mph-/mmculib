@@ -1,7 +1,7 @@
 /** @file   lusart.c
     @author M. P. Hayes, UCECE
     @date   15 May 2007
-    @brief  Buffered USART implementation.  */
+    @brief  Line buffered USART implementation.  */
 
 #include "errno.h"
 #include "lusart.h"
@@ -48,11 +48,11 @@ struct lusart_dev_struct
     char *rx_buffer;
     uint16_t tx_size;
     uint16_t tx_in;
-    uint16_t tx_out;
+    volatile uint16_t tx_out;
     uint16_t rx_size;
-    uint16_t rx_in;
+    volatile uint16_t rx_in;
     uint16_t rx_out;
-    uint8_t rx_nl_in;
+    volatile uint8_t rx_nl_in;
     uint8_t rx_nl_out;
 };
 
@@ -92,7 +92,8 @@ lusart_init (const lusart_cfg_t *cfg)
 {
     lusart_dev_t *dev = 0;
     uint16_t baud_divisor;
-    uint16_t size;
+    uint16_t rx_size;
+    uint16_t tx_size;
     char *tx_buffer;
     char *rx_buffer;
 
@@ -120,22 +121,26 @@ lusart_init (const lusart_cfg_t *cfg)
     tx_buffer = cfg->tx_buffer;
     rx_buffer = cfg->rx_buffer;
 
+    tx_size = cfg->tx_size;
     if (!tx_buffer)
     {
-        size = cfg->tx_size;
-        if (size == 0)
-            size = 64;
-        tx_buffer = malloc (size);
+        if (tx_size == 0)
+            tx_size = 64;
+        tx_buffer = malloc (tx_size);
     }
     if (!tx_buffer)
         return 0;
 
+    dev->tx_buffer = tx_buffer;
+    dev->tx_size = tx_size;
+    dev->tx_in = dev->tx_out = 0;
+
+    rx_size = cfg->rx_size;
     if (!rx_buffer)
     {
-        size = cfg->rx_size;
-        if (size == 0)
-            size = 64;
-        rx_buffer = malloc (size);
+        if (rx_size == 0)
+            rx_size = 64;
+        rx_buffer = malloc (rx_size);
     }
     if (!rx_buffer)
     {
@@ -143,12 +148,9 @@ lusart_init (const lusart_cfg_t *cfg)
         return 0;
     }
 
-    dev->tx_buffer = tx_buffer;
     dev->rx_buffer = rx_buffer;
-
+    dev->rx_size = rx_size;
     dev->rx_in = dev->rx_out = 0;
-    dev->tx_in = dev->tx_out = 0;
-
     dev->rx_nl_in = dev->rx_nl_out = 0;
 
     /* Enable the rx interrupt now.  The tx interrupt is enabled
@@ -165,8 +167,7 @@ lusart_write_finished_p (lusart_t lusart)
 {
     lusart_dev_t *dev = lusart;
 
-    return dev->tx_in == dev->tx_out
-        && dev->tx_finished_p ();
+    return dev->tx_in == dev->tx_out && dev->tx_finished_p ();
 }
 
 
@@ -198,14 +199,17 @@ lusart_putc (lusart_t lusart, char ch)
 {
     lusart_dev_t *dev = lusart;
 
-    if (ch == '\n')
+    if (0 && ch == '\n')
         lusart_putc (lusart, '\r');
+
+    // What if the buffer is full?
 
     dev->tx_buffer[dev->tx_in] = ch;
     dev->tx_in++;
     if (dev->tx_in >= dev->tx_size)
         dev->tx_in = 0;
 
+    dev->tx_irq_enable ();
     return ch;
 }
 
@@ -240,7 +244,10 @@ lusart_gets (lusart_t lusart, char *buffer, int size)
 
         buffer[i] = ch;
         if (ch == '\n')
+        {
+            i++;
             break;
+        }
     }
     buffer[i] = 0;
 
@@ -273,4 +280,5 @@ lusart_clear (lusart_t lusart)
 
     dev->tx_in = dev->tx_out = 0;
     dev->rx_in = dev->rx_out = 0;
+    dev->rx_nl_in = dev->rx_nl_out = 0;
 }
