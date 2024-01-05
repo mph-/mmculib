@@ -1,0 +1,8 @@
+LUSART_DIR = $(DRIVER_DIR)/lusart
+
+VPATH += $(LUSART_DIR)
+INCLUDES += -I$(LUSART_DIR)
+
+PERIPHERALS += usart
+
+SRC += lusart.c
