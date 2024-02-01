@@ -85,7 +85,8 @@ busart_init (const busart_cfg_t *cfg)
 {
     busart_dev_t *dev = 0;
     uint16_t baud_divisor;
-    ring_size_t size;
+    uint16_t rx_size;
+    uint16_t tx_size;
     char *tx_buffer;
     char *rx_buffer;
 
@@ -113,22 +114,22 @@ busart_init (const busart_cfg_t *cfg)
     tx_buffer = cfg->tx_buffer;
     rx_buffer = cfg->rx_buffer;
 
+    tx_size = cfg->tx_size;
     if (!tx_buffer)
     {
-        size = cfg->tx_size;
-        if (size == 0)
-            size = 64;
-        tx_buffer = malloc (size);
+        if (tx_size == 0)
+            tx_size = 64;
+        tx_buffer = malloc (tx_size);
     }
     if (!tx_buffer)
         return 0;
 
+    rx_size = cfg->rx_size;
     if (!rx_buffer)
     {
-        size = cfg->rx_size;
-        if (size == 0)
-            size = 64;
-        rx_buffer = malloc (size);
+        if (rx_size == 0)
+            rx_size = 64;
+        rx_buffer = malloc (rx_size);
     }
     if (!rx_buffer)
     {
@@ -136,9 +137,9 @@ busart_init (const busart_cfg_t *cfg)
         return 0;
     }
 
-    ring_init (&dev->tx_ring, tx_buffer, cfg->tx_size);
+    ring_init (&dev->tx_ring, tx_buffer, tx_size);
 
-    ring_init (&dev->rx_ring, rx_buffer, cfg->rx_size);
+    ring_init (&dev->rx_ring, rx_buffer, rx_size);
 
     /* Enable the rx interrupt now.  The tx interrupt is enabled
        when we perform a write.  */
