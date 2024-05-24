@@ -1,0 +1,6 @@
+STRFIFO_DIR = $(DRIVER_DIR)/strfifo
+
+VPATH += $(STRFIFO_DIR)
+INCLUDES += -I$(STRFIFO_DIR)
+
+SRC += strfifo.c

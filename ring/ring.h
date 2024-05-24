@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 
 #include "config.h"
 
@@ -67,7 +67,7 @@ ring_full_p (ring_t *ring);
     @param buffer pointer to memory buffer
     @param size maximum number of bytes to read
     @return number of bytes actually read.  */
-ring_size_t 
+ring_size_t
 ring_read (ring_t *ring, void *buffer, ring_size_t size);
 
 
@@ -88,7 +88,7 @@ ring_write (ring_t *ring, const void *buffer, ring_size_t size);
     @return number of bytes actually written.  */
 ring_size_t
 ring_write_continuous (ring_t *ring, const void *buffer, ring_size_t size);
-    
+
 
 /** Initialise a ring buffer structure to use a specified buffer.
     @param ring pointer to ring buffer structure, if 0 it is malloced
@@ -101,21 +101,21 @@ ring_init (ring_t *ring, void *buffer, ring_size_t size);
 
 /** Determine number of bytes in ring buffer ready for reading.
     @param ring pointer to ring buffer structure
-    @return number of bytes in ring buffer ready for reading.  */    
+    @return number of bytes in ring buffer ready for reading.  */
 ring_size_t
 ring_read_num (ring_t *ring);
 
- 
+
 /** Determine number of bytes in ring buffer ready for reading without wrapping.
     @param ring pointer to ring buffer structure
-    @return number of bytes in ring buffer ready for reading.  */       
+    @return number of bytes in ring buffer ready for reading.  */
 ring_size_t
-ring_read_num_nowrap (ring_t *ring);    
+ring_read_num_nowrap (ring_t *ring);
 
 
 /** Determine number of bytes in ring buffer free for writing.
     @param ring pointer to ring buffer structure
-    @return number of bytes in ring buffer free for writing.  */    
+    @return number of bytes in ring buffer free for writing.  */
 ring_size_t
 ring_write_num (ring_t *ring);
 
@@ -183,7 +183,7 @@ ring_putc (ring_t *ring, char c)
     @param c character to write
     @return non-zero if successful.  */
 ring_size_t
-ring_putc_force (ring_t *ring, char c);    
+ring_putc_force (ring_t *ring, char c);
 
 
 /** Read single character from ring buffer.
@@ -227,9 +227,9 @@ ring_peek (ring_t *ring)
 
     return *ring->out;
 }
-    
 
-/** Search for character in ring buffer. 
+
+/** Search for character in ring buffer.
     @param ring pointer to ring buffer structure
     @param ch character to find
     @return non-zero if character found.  */
@@ -246,6 +246,5 @@ ring_clear (ring_t *ring);
 
 #ifdef __cplusplus
 }
-#endif    
 #endif
-
+#endif

@@ -36,7 +36,6 @@
 #endif
 
 
-
 struct lusart_dev_struct
 {
     void (*tx_irq_enable) (void);
@@ -122,13 +121,13 @@ lusart_init (const lusart_cfg_t *cfg)
     rx_buffer = cfg->rx_buffer;
 
     tx_size = cfg->tx_size;
-    if (!tx_buffer)
+    if (! tx_buffer)
     {
         if (tx_size == 0)
             tx_size = 64;
         tx_buffer = malloc (tx_size);
     }
-    if (!tx_buffer)
+    if (! tx_buffer)
         return 0;
 
     dev->tx_buffer = tx_buffer;
@@ -136,13 +135,13 @@ lusart_init (const lusart_cfg_t *cfg)
     dev->tx_in = dev->tx_out = 0;
 
     rx_size = cfg->rx_size;
-    if (!rx_buffer)
+    if (! rx_buffer)
     {
         if (rx_size == 0)
             rx_size = 64;
         rx_buffer = malloc (rx_size);
     }
-    if (!rx_buffer)
+    if (! rx_buffer)
     {
         free (tx_buffer);
         return 0;
@@ -167,7 +166,7 @@ lusart_write_finished_p (lusart_t lusart)
 {
     lusart_dev_t *dev = lusart;
 
-    return dev->tx_in == dev->tx_out && dev->tx_finished_p ();
+    return (dev->tx_in == dev->tx_out) && dev->tx_finished_p ();
 }
 
 
@@ -233,14 +232,24 @@ lusart_gets (lusart_t lusart, char *buffer, int size)
     lusart_dev_t *dev = lusart;
     int i;
 
+    // rx_nl_in is incremented by the ISR whenever a newline is read.
+    // rx_nl_out is incremented whenever lusart_getc returns a newline.
+    // If they are the same, there are no unread lines.
     if (dev->rx_nl_in == dev->rx_nl_out)
         return 0;
 
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size - 1; i++)
     {
         char ch;
 
         ch = lusart_getc (dev);
+
+        // Have a problem since the newline count indicates we have data...
+        if (ch == (char) -1)
+        {
+            dev->rx_nl_out == dev->rx_nl_in;
+            return 0;
+        }
 
         buffer[i] = ch;
         if (ch == '\n')

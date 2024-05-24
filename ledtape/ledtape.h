@@ -8,6 +8,18 @@ extern "C" {
 #include "config.h"
 #include "pio.h"
 
+/*
+ * TPERIOD may need to be manually tuned to generate the correct 800 kHz
+ * waveforms. If LED tape is not working properly, check frequency of the
+ * generated signal; if it is not close to 800 kHz, adjust the value of TPERIOD
+ * accordingly. To *decrease* the frequency, *increase* the value.
+ */
+#ifndef LEDTAPE_TPERIOD
+#define LEDTAPE_TPERIOD (0.4)  // value of 0.4 seems to work well
+#endif
+
+_Static_assert(LEDTAPE_TPERIOD > 0, "LEDTAPE_TPERIOD must be >0");
+
 /**
  * @brief Write some WS2812B LED data out onto a pin.
  * @param pin The pin to write the data to.

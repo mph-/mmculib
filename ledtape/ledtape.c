@@ -1,9 +1,7 @@
 #include "delay.h"
 #include "pio.h"
 
-// TPERIOD is manually tuned to generate the correct 800 kHz waveforms
-// The sum of the delays + the time it takes to set the PIO pin is about 1.25 uS
-#define TPERIOD     (0.2)
+#include "ledtape.h"
 
 __attribute__((optimize (2)))
 __always_inline__
@@ -14,13 +12,13 @@ static void ledtape_write_byte (pio_t pin, uint8_t byte)
     for (j = 0; j < 8; j++)
     {
         pio_output_high (pin);
-        DELAY_US (TPERIOD);
+        DELAY_US (LEDTAPE_TPERIOD);
         // MSB first
         if (! (byte & 0x80))
             pio_output_low (pin);
-        DELAY_US (TPERIOD);
+        DELAY_US (LEDTAPE_TPERIOD);
         pio_output_low (pin);
-        DELAY_US (TPERIOD);
+        DELAY_US (LEDTAPE_TPERIOD);
         byte <<= 1;
     }
 }
