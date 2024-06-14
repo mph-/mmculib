@@ -46,8 +46,6 @@ typedef struct
     uint16_t tx_size;
     /* Size of the receive ring buffer in bytes (default 64).  */
     uint16_t rx_size;
-    int read_timeout_us;
-    int write_timeout_us;
 }
 lusart_cfg_t;
 

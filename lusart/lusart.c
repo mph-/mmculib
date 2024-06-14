@@ -41,8 +41,6 @@ struct lusart_dev_struct
     void (*tx_irq_enable) (void);
     void (*rx_irq_enable) (void);
     bool (*tx_finished_p) (void);
-    uint32_t read_timeout_us;
-    uint32_t write_timeout_us;
     char *tx_buffer;
     char *rx_buffer;
     uint16_t tx_size;
@@ -53,6 +51,8 @@ struct lusart_dev_struct
     uint16_t rx_out;
     volatile uint8_t rx_nl_in;
     uint8_t rx_nl_out;
+    uint8_t tx_overruns;
+    uint8_t rx_overruns;
 };
 
 
@@ -113,9 +113,6 @@ lusart_init (const lusart_cfg_t *cfg)
 
     if (!dev)
         return 0;
-
-    dev->read_timeout_us = cfg->read_timeout_us;
-    dev->write_timeout_us = cfg->write_timeout_us;
 
     tx_buffer = cfg->tx_buffer;
     rx_buffer = cfg->rx_buffer;
@@ -197,19 +194,28 @@ int
 lusart_putc (lusart_t lusart, char ch)
 {
     lusart_dev_t *dev = lusart;
+    uint16_t tx_in;
 
-    if (0 && ch == '\n')
-        lusart_putc (lusart, '\r');
+    tx_in = dev->tx_in;
+    tx_in++;
 
-    // What if the buffer is full?
+    if (tx_in >= dev->tx_size)
+        tx_in = 0;
 
-    dev->tx_buffer[dev->tx_in] = ch;
-    dev->tx_in++;
-    if (dev->tx_in >= dev->tx_size)
-        dev->tx_in = 0;
-
-    dev->tx_irq_enable ();
-    return ch;
+    if (tx_in != dev->tx_out)
+    {
+        dev->tx_buffer[dev->tx_in] = ch;
+        dev->tx_in = tx_in;
+        dev->tx_irq_enable ();
+        return ch;
+    }
+    else
+    {
+        // Fail if cannot fit ch in buffer.
+        dev->tx_overruns++;
+        dev->tx_irq_enable ();
+        return -1;
+    }
 }
 
 
@@ -287,7 +293,8 @@ lusart_clear (lusart_t lusart)
 {
     lusart_dev_t *dev = lusart;
 
-    dev->tx_in = dev->tx_out = 0;
-    dev->rx_in = dev->rx_out = 0;
+    dev->rx_in = dev->tx_in = 0;
+    dev->rx_out = dev->tx_out = 0;
     dev->rx_nl_in = dev->rx_nl_out = 0;
+    dev->rx_overruns = dev->tx_overruns = 0;
 }
