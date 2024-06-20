@@ -11,10 +11,16 @@ extern "C" {
 #include "ring.h"
     
 
+#ifndef USB_CDC_TX_RING_SIZE
+#define USB_CDC_TX_RING_SIZE 80
+#endif
+
+
 typedef struct usb_cdc_struct
 {
     usb_t usb;
     ring_t tx_ring;
+    uint8_t tx_ring_buffer[USB_CDC_TX_RING_SIZE];
     uint32_t read_timeout_us;
     uint32_t write_timeout_us;
     volatile bool writing;
