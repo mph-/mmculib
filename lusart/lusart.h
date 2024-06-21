@@ -94,6 +94,13 @@ void
 lusart_clear (lusart_t lusart);
 
 
+int
+lusart_tx_overruns_get (lusart_t lusart);
+
+
+int
+lusart_rx_overruns_get (lusart_t lusart);
+
 #ifdef __cplusplus
 }
 #endif

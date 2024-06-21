@@ -298,3 +298,21 @@ lusart_clear (lusart_t lusart)
     dev->rx_nl_in = dev->rx_nl_out = 0;
     dev->rx_overruns = dev->tx_overruns = 0;
 }
+
+
+int
+lusart_tx_overruns_get (lusart_t lusart)
+{
+    lusart_dev_t *dev = lusart;
+
+    return dev->tx_overruns;
+}
+
+
+int
+lusart_rx_overruns_get (lusart_t lusart)
+{
+    lusart_dev_t *dev = lusart;
+
+    return dev->rx_overruns;
+}
