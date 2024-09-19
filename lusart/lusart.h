@@ -101,6 +101,10 @@ lusart_tx_overruns_get (lusart_t lusart);
 int
 lusart_rx_overruns_get (lusart_t lusart);
 
+
+void
+lusart_baud_rate_set (lusart_t lusart, int baud_rate);
+
 #ifdef __cplusplus
 }
 #endif

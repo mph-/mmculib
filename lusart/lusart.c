@@ -41,6 +41,7 @@ struct lusart_dev_struct
     void (*tx_irq_enable) (void);
     void (*rx_irq_enable) (void);
     bool (*tx_finished_p) (void);
+    void (*baud_divisor_set) (uint16_t divisor);
     char *tx_buffer;
     char *rx_buffer;
     uint16_t tx_size;
@@ -315,4 +316,20 @@ lusart_rx_overruns_get (lusart_t lusart)
     lusart_dev_t *dev = lusart;
 
     return dev->rx_overruns;
+}
+
+
+void
+lusart_baud_divisor_set (lusart_t lusart, int baud_divisor)
+{
+    lusart_dev_t *dev = lusart;
+
+    return dev->baud_divisor_set (baud_divisor);
+}
+
+
+void
+lusart_baud_rate_set (lusart_t lusart, int baud_rate)
+{
+    lusart_baud_divisor_set (lusart, LUSART_BAUD_DIVISOR (baud_rate));
 }
