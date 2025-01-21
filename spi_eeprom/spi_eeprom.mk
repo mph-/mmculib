@@ -1,0 +1,6 @@
+SPI_EEPROM_DIR = $(DRIVER_DIR)/spi_eeprom
+
+VPATH += $(SPI_EEPROM_DIR)
+SRC += spi_eeprom.c
+
+INCLUDES += -I$(SPI_EEPROM_DIR)
