@@ -1,0 +1,8 @@
+MPU_DIR = $(DRIVER_DIR)/adxl362
+
+VPATH += $(MPU_DIR)
+SRC += adxl362.c
+
+PERIPHERALS += spi
+
+INCLUDES += -I$(MPU_DIR)
