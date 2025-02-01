@@ -35,33 +35,32 @@
 static adxl362_t _static_adxl362 = {};
 
 
-static uint8_t adxl362_read (adxl362_t *dev, const uint8_t addr)
+static uint8_t adxl362_read_register (adxl362_t *dev, const uint8_t addr)
 {
-    uint8_t response = 0;
+    uint8_t response = 0xFF;
     spi_ret_t status;
+    uint8_t message[] = {0x0B, addr};
 
-    status = spi_write (dev->spi, &addr, 1, 0);
-    if (status != 1)
+    status = spi_write (dev->spi, &message, sizeof (message), 0);
+    if (status != sizeof (message))
         return 0x0;
 
-    status = spi_read (dev->spi, &response, 1, 1);
-    if (status != 1)
+    status = spi_read (dev->spi, &response, sizeof (response), 1);
+    if (status != sizeof (response))
         return 0x0;
 
     return response;
 }
 
-static bool adxl362_write (adxl362_t *dev, const uint8_t addr,
-                           const uint8_t value)
+
+static bool adxl362_write_register (adxl362_t *dev, const uint8_t addr,
+                                    const uint8_t value)
 {
     spi_ret_t status;
-    uint8_t data[2];
+    uint8_t message[] = {0x0A, addr, value};
 
-    data[0] = addr;
-    data[1] = value;
-
-    status = spi_write (dev->spi, data, 2, 1);
-    return status == 2;
+    status = spi_write (dev->spi, &message, sizeof (message), 1);
+    return status == sizeof (message);
 }
 
 
@@ -69,16 +68,19 @@ bool adxl362_is_ready (adxl362_t *dev)
 {
     uint8_t response;
 
-    response = adxl362_read (dev, ADXL362_FIFO_SAMPLES);
+    response = adxl362_read_register (dev, ADXL362_FIFO_SAMPLES);
 
     return (response & 0x7f) != 0;
 }
 
 
-static bool adxl362_read_data (adxl362_t *dev, const uint8_t addr, int16_t data[3])
+static bool adxl362_read_data (adxl362_t *dev, const uint8_t addr,
+                               int16_t data[3])
 {
     uint8_t rawdata[6];
     spi_ret_t status;
+
+    // FIXME
 
     status = spi_read (dev->spi, rawdata, sizeof (rawdata), 1);
     if (status != 6)
@@ -105,53 +107,53 @@ void adxl362_autosleep (adxl362_t *dev)
 {
     uint8_t value;
 
-    adxl362_write (dev, ADXL362_INTMAP1, 0x40);
-    adxl362_write (dev, ADXL362_ACT_INACT_CTL, 0x3F);
+    adxl362_write_register (dev, ADXL362_INTMAP1, 0x40);
+    adxl362_write_register (dev, ADXL362_ACT_INACT_CTL, 0x3F);
 
     // Enable autosleep
-    value = adxl362_read (dev, ADXL362_POWER_CTL);
+    value = adxl362_read_register (dev, ADXL362_POWER_CTL);
     value |= BIT (2);
-    adxl362_write (dev, ADXL362_POWER_CTL, value);
+    adxl362_write_register (dev, ADXL362_POWER_CTL, value);
 
     // Enable measurement bit
-    value = adxl362_read (dev, ADXL362_POWER_CTL);
+    value = adxl362_read_register (dev, ADXL362_POWER_CTL);
     value |= BIT (1);
-    adxl362_write (dev, ADXL362_POWER_CTL, value);
+    adxl362_write_register (dev, ADXL362_POWER_CTL, value);
 
     // Make INT1 active low on awake
-    adxl362_write (dev, ADXL362_INTMAP1, BIT(6) | BIT (7));
+    adxl362_write_register (dev, ADXL362_INTMAP1, BIT(6) | BIT (7));
     // Make INT2 active low on awake
-    adxl362_write (dev, ADXL362_INTMAP2, BIT(6) | BIT (7));
+    adxl362_write_register (dev, ADXL362_INTMAP2, BIT(6) | BIT (7));
 }
 
 
 adxl362_t *adxl362_init (adxl362_cfg_t *cfg)
 {
     uint8_t response;
-
     adxl362_t *dev = &_static_adxl362;
+
     dev->spi = spi_init (&cfg->spi);
 
     /* Check the device ID.  */
-    response = adxl362_read (dev, ADXL362_DEVID_AD);
+    response = adxl362_read_register (dev, ADXL362_DEVID_AD);
     if (response != 0xAD)
         return 0;
 
-    response = adxl362_read (dev, ADXL362_DEVID_MST);
+    response = adxl362_read_register (dev, ADXL362_DEVID_MST);
     if (response != 0x1D)
         return 0;
 
-    response = adxl362_read (dev, ADXL362_DEVID_PARTID);
+    response = adxl362_read_register (dev, ADXL362_DEVID_PARTID);
     if (response != 0xF2)
         return 0;
 
     // CHECKME
 
     /* Set stream mode.  */
-    adxl362_write (dev, ADXL362_FIFO_CTL, 0x80);
+    adxl362_write_register (dev, ADXL362_FIFO_CTL, 0x80);
 
     /* Enable measurements.  */
-    adxl362_write (dev, ADXL362_POWER_CTL, 0x08);
+    adxl362_write_register (dev, ADXL362_POWER_CTL, 0x08);
 
     return dev;
 }
