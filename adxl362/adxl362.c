@@ -22,9 +22,16 @@
 #define ADXL362_ZDATA_L    0x12
 #define ADXL362_ZDATA_H    0x13
 #define ADXL362_SOFT_RESET 0x1F
+#define ADXL362_THRESH_ACT_L 0x20
+#define ADXL362_THRESH_ACT_H 0x21
+#define ADXL362_TIME_ACT 0x22
+#define ADXL362_THRESH_INACT_L 0x23
+#define ADXL362_THRESH_INACT_H 0x24
+#define ADXL362_TIME_INACT_L 0x25
+#define ADXL362_TIME_INACT_H 0x26
+#define ADXL362_ACT_INACT_CTL 0x27
 #define ADXL362_FIFO_CTL   0x28
 #define ADXL362_FIFO_SAMPLES 0x29
-#define ADXL362_ACT_INACT_CTL 0x27
 #define ADXL362_INTMAP1   0x2A
 #define ADXL362_INTMAP2   0x2B
 #define ADXL362_POWER_CTL 0x2D
@@ -37,19 +44,14 @@ static adxl362_t _static_adxl362 = {};
 
 static uint8_t adxl362_read_register (adxl362_t *dev, const uint8_t addr)
 {
-    uint8_t response = 0xFF;
     spi_ret_t status;
-    uint8_t message[] = {0x0B, addr};
+    uint8_t message[] = {0x0B, addr, 0};
 
-    status = spi_write (dev->spi, &message, sizeof (message), 0);
+    status = spi_transfer (dev->spi, &message, &message, sizeof (message), 1);
     if (status != sizeof (message))
         return 0x0;
 
-    status = spi_read (dev->spi, &response, sizeof (response), 1);
-    if (status != sizeof (response))
-        return 0x0;
-
-    return response;
+    return message[2];
 }
 
 
@@ -103,12 +105,34 @@ bool adxl362_accel_read (adxl362_t *dev, int16_t acceldata[3])
 }
 
 
+void adxl362_activity_set (adxl362_t *dev, uint16_t threshold,
+                           uint16_t time)
+{
+    // threshold is 11 bits and depends on measurement range
+    adxl362_write_register (dev, ADXL362_THRESH_ACT_H, threshold >> 8);
+    adxl362_write_register (dev, ADXL362_THRESH_ACT_L, threshold & 0xff);
+    adxl362_write_register (dev, ADXL362_TIME_ACT, time & 0xff);
+}
+
+
+void adxl362_inactivity_set (adxl362_t *dev, uint16_t threshold,
+                             uint16_t time)
+{
+    // threshold is 12 bits and depends on measurement range
+    adxl362_write_register (dev, ADXL362_THRESH_INACT_H, threshold >> 8);
+    adxl362_write_register (dev, ADXL362_THRESH_INACT_L, threshold & 0xff);
+    adxl362_write_register (dev, ADXL362_TIME_INACT_H, time >> 8);
+    adxl362_write_register (dev, ADXL362_TIME_INACT_L, time & 0xff);
+}
+
+
 void adxl362_autosleep (adxl362_t *dev)
 {
     uint8_t value;
 
-    adxl362_write_register (dev, ADXL362_INTMAP1, 0x40);
-    adxl362_write_register (dev, ADXL362_ACT_INACT_CTL, 0x3F);
+    // Activity enable (need linked or loop modes for autosleep)
+    // with referenced mode.
+    adxl362_write_register (dev, ADXL362_ACT_INACT_CTL, 0x33);
 
     // Enable autosleep
     value = adxl362_read_register (dev, ADXL362_POWER_CTL);

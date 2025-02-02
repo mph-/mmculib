@@ -57,6 +57,12 @@ void adxl362_autosleep (adxl362_t *dev);
 bool adxl362_accel_read (adxl362_t *dev, int16_t acceldata[3]);
 
 
+void adxl362_activity_set (adxl362_t *dev, uint16_t threshold,
+                           uint16_t time);
+
+void adxl362_inactivity_set (adxl362_t *dev, uint16_t threshold,
+                             uint16_t time);
+
 #ifdef __cplusplus
 }
 #endif
