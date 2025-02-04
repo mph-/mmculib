@@ -21,10 +21,19 @@ typedef struct
     spi_t spi;
 } adxl362_t;
 
+
 typedef struct
 {
     spi_cfg_t spi;
 } adxl362_cfg_t;
+
+
+typedef enum
+{
+    ADXL362_INT1,
+    ADXL362_INT2
+} adxl362_intpin_t;
+
 
 /**
  * Initialise the accelerometer, attached on a SPI/I2C bus
@@ -44,7 +53,8 @@ adxl362_t *adxl362_init (adxl362_cfg_t *cfg);
 bool adxl362_is_ready (adxl362_t *dev);
 
 
-void adxl362_sleep (adxl362_t *dev, bool relative);
+void adxl362_sleep (adxl362_t *dev, bool relative, adxl362_intpin_t intpin,
+                    bool active_high);
 
 
 /**

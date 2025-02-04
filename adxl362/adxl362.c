@@ -133,7 +133,8 @@ void adxl362_inactivity_set (adxl362_t *dev, uint16_t threshold,
 }
 
 
-void adxl362_sleep (adxl362_t *dev, bool relative)
+void adxl362_sleep (adxl362_t *dev, bool relative, adxl362_intpin_t intpin,
+                    bool active_high)
 {
     uint8_t value;
 
@@ -148,10 +149,20 @@ void adxl362_sleep (adxl362_t *dev, bool relative)
     // Read status register to clear interrupts.
     value = adxl362_register_read (dev, ADXL362_STATUS);
 
-    // Make INT1 active low on activity
-    adxl362_register_write (dev, ADXL362_INTMAP1, BIT(4) | BIT (7));
-    // Make INT2 active low on activity
-    adxl362_register_write (dev, ADXL362_INTMAP2, BIT(4) | BIT (7));
+    if (intpin == ADXL362_INT1)
+    {
+        if (active_high)
+            adxl362_register_write (dev, ADXL362_INTMAP1, BIT(4));
+        else
+            adxl362_register_write (dev, ADXL362_INTMAP1, BIT(4) | BIT (7));
+    }
+    else if (intpin == ADXL362_INT2)
+    {
+        if (active_high)
+            adxl362_register_write (dev, ADXL362_INTMAP2, BIT(4));
+        else
+            adxl362_register_write (dev, ADXL362_INTMAP2, BIT(4) | BIT (7));
+    }
 
     // Enable wakeup mode
     value = adxl362_register_read (dev, ADXL362_POWER_CTL);
@@ -165,7 +176,7 @@ void adxl362_sleep (adxl362_t *dev, bool relative)
 
     // Need to delay for 4 data clocks (at least 40 ms) for
     // relative measurements.
-    delay_ms (100);
+    delay_ms (50);
 
     if (relative)
     {
