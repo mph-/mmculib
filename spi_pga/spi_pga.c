@@ -7,7 +7,7 @@
 
 #ifndef SPI_PGA_DEVICES_NUM
 #define SPI_PGA_DEVICES_NUM 4
-#endif 
+#endif
 
 
 static uint8_t spi_pga_devices_num = 0;
@@ -31,7 +31,7 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
 
     spi_pga = spi_pga_devices + spi_pga_devices_num;
 
-    
+
     /* Initialise spi port.  */
     spi_pga->spi = spi_init (&cfg->spi);
     if (!spi_pga->spi)
@@ -50,7 +50,7 @@ spi_pga_init (const spi_pga_cfg_t *cfg)
     case SPI_PGA_MCP6S21:
     case SPI_PGA_MCP6S2X:
         spi_pga->ops = &mcp6s2x_ops;
-        /* The CS needs to be get low for the two 8 bit transfers.  */
+        /* The CS needs to be set low for the two 8 bit transfers.  */
         spi_cs_mode_set (spi_pga->spi, SPI_CS_MODE_FRAME);
         break;
 
@@ -71,7 +71,7 @@ spi_pga_gain_index_set (spi_pga_t pga, uint8_t gain_index)
 }
 
 
-spi_pga_gain_t 
+spi_pga_gain_t
 spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
 {
     unsigned int i;
@@ -86,24 +86,24 @@ spi_pga_gain_set (spi_pga_t pga, spi_pga_gain_t gain)
         continue;
 
     gain_index = i - 1;
-        
+
     spi_pga_gain_index_set (pga, gain_index);
     return gains[gain_index];
 }
 
 
-spi_pga_gain_t 
+spi_pga_gain_t
 spi_pga_gain_get (spi_pga_t pga)
 {
     const uint16_t *gains;
 
     gains = pga->ops->gains;
-    
+
     return gains[pga->gain_index];
 }
 
 
-spi_pga_gain_t 
+spi_pga_gain_t
 spi_pga_gain_next_get (spi_pga_t pga)
 {
     const uint16_t *gains;
@@ -111,7 +111,7 @@ spi_pga_gain_next_get (spi_pga_t pga)
     gains = pga->ops->gains;
     if (gains[pga->gain_index])
         pga->gain_index++;
-    
+
     return gains[pga->gain_index];
 }
 

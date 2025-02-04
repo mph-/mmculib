@@ -44,7 +44,7 @@ adxl362_t *adxl362_init (adxl362_cfg_t *cfg);
 bool adxl362_is_ready (adxl362_t *dev);
 
 
-void adxl362_autosleep (adxl362_t *dev);
+void adxl362_sleep (adxl362_t *dev, bool relative);
 
 
 /**
